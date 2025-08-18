@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, Clock, Star, BookOpen, Sparkles, User } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { supabase } from '../lib/supabase';
+import { localApi } from '../lib/localApi';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -79,7 +79,7 @@ const BaziDetailsPage: React.FC = () => {
     '阴': 'text-purple-600 bg-purple-50 border-purple-300'
   };
 
-  // 调用Supabase Edge Function获取八字详细信息
+  // 获取八字详细信息
   const fetchBaziDetails = async () => {
     if (!birthDate) {
       toast.error('请选择您的出生日期');
@@ -90,18 +90,20 @@ const BaziDetailsPage: React.FC = () => {
     setError(null);
 
     try {
-      // 调用Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('bazi-details', {
+      // 调用本地API
+      const response = await localApi.functions.invoke('bazi-details', {
         body: {
           birthDate,
           birthTime
         }
       });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
 
-      if (data?.data) {
-        setBaziData(data.data);
+      if (response.data?.data) {
+        setBaziData(response.data.data);
         toast.success('八字详情分析完成！');
       } else {
         throw new Error('排盘结果为空');

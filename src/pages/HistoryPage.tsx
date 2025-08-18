@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { localApi } from '../lib/localApi';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
@@ -24,22 +24,13 @@ const HistoryPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('reading-history', {
-        body: {
-          action: 'get_history',
-          user_id: user.id
-        }
-      });
+      const response = await localApi.history.getAll();
 
-      if (error) {
-        throw error;
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
-      if (data?.error) {
-        throw new Error(data.error.message);
-      }
-
-      const historyData = data.data || [];
+      const historyData = response.data || [];
       
       // 数据转换适配器：将旧格式转换为新格式
       const processedData = historyData.map((reading: any) => {
@@ -84,15 +75,10 @@ const HistoryPage: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('reading-history', {
-        body: {
-          action: 'delete_reading',
-          reading_id: readingId
-        }
-      });
+      const response = await localApi.history.delete(readingId);
 
-      if (error) {
-        throw error;
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
       setReadings(prev => prev.filter(r => r.id !== readingId));

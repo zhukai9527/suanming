@@ -3,7 +3,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { Calendar, Clock, Zap, BarChart3, Sparkles, TrendingUp } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { supabase } from '../lib/supabase';
+import { localApi } from '../lib/localApi';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -59,7 +59,7 @@ const WuxingAnalysisPage: React.FC = () => {
     '水': '💧'
   };
 
-  // 调用Supabase Edge Function进行五行分析
+  // 进行五行分析
   const fetchWuxingAnalysis = async () => {
     if (!birthDate) {
       toast.error('请选择您的出生日期');
@@ -70,18 +70,20 @@ const WuxingAnalysisPage: React.FC = () => {
     setError(null);
 
     try {
-      // 调用Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('bazi-wuxing-analysis', {
+      // 调用本地API
+      const response = await localApi.functions.invoke('bazi-wuxing-analysis', {
         body: {
           birthDate,
           birthTime
         }
       });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
 
-      if (data?.data) {
-        setAnalysisData(data.data);
+      if (response.data?.data) {
+        setAnalysisData(response.data.data);
         toast.success('五行分析完成！');
       } else {
         throw new Error('分析结果为空');

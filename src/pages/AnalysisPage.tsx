@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { localApi } from '../lib/localApi';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -35,13 +35,9 @@ const AnalysisPage: React.FC = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (data) {
+      const response = await localApi.profiles.get();
+      if (response.data && response.data.profile) {
+        const data = response.data.profile;
         setProfile(data);
         setFormData({
           name: data.full_name || '',
@@ -69,35 +65,32 @@ const AnalysisPage: React.FC = () => {
     setAnalysisResult(null);
 
     try {
-      // 对于八字分析，直接显示结果，不需要调用 Edge Function
-      if (analysisType === 'bazi') {
-        const birthData = {
-          date: formData.birth_date,
-          time: formData.birth_time || '12:00'
-        };
-        setAnalysisResult({ type: 'bazi', birthDate: birthData });
-        toast.success('分析完成！');
-        return;
-      }
-
-      // 对于其他分析类型，保持原有逻辑
-      const analysisRequest: AnalysisRequest = {
-        user_id: user.id,
-        reading_type: analysisType,
-        birth_data: {
-          name: formData.name,
-          birth_date: formData.birth_date,
-          birth_time: formData.birth_time,
-          gender: formData.gender,
-          birth_place: formData.birth_place,
-          ...(analysisType === 'yijing' && { question: formData.question })
-        }
+      const birthData = {
+        name: formData.name,
+        birth_date: formData.birth_date,
+        birth_time: formData.birth_time,
+        gender: formData.gender,
+        birth_place: formData.birth_place
       };
 
-      const functionName = `${analysisType}-analyzer?_t=${new Date().getTime()}`;
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: analysisRequest
-      });
+      let response;
+      
+      // 根据分析类型调用相应的API
+      switch (analysisType) {
+        case 'bazi':
+          response = await localApi.analysis.bazi(birthData);
+          break;
+        case 'ziwei':
+          response = await localApi.analysis.ziwei(birthData);
+          break;
+        case 'yijing':
+          response = await localApi.analysis.yijing(birthData, formData.question);
+          break;
+        default:
+          throw new Error(`不支持的分析类型: ${analysisType}`);
+      }
+
+      const { data, error } = response;
 
       if (error) {
         throw error;
@@ -107,7 +100,11 @@ const AnalysisPage: React.FC = () => {
         throw new Error(data.error.message);
       }
 
-      setAnalysisResult(data.data);
+      // 后端返回格式: { data: { record_id, analysis } }
+      setAnalysisResult({
+        type: analysisType,
+        data: data.analysis
+      });
       toast.success('分析完成！');
     } catch (error: any) {
       console.error('分析失败:', error);
@@ -287,9 +284,12 @@ const AnalysisPage: React.FC = () => {
       {/* 分析结果 */}
       {analysisResult && (
         <AnalysisResultDisplay 
-          analysisResult={analysisResult.type !== 'bazi' ? analysisResult : undefined}
+          analysisResult={analysisResult}
           analysisType={analysisType}
-          birthDate={analysisResult.type === 'bazi' ? analysisResult.birthDate : undefined}
+          birthDate={analysisResult.type === 'bazi' ? {
+            date: formData.birth_date,
+            time: formData.birth_time
+          } : undefined}
         />
       )}
     </div>

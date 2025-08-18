@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { localApi } from '../lib/localApi';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -30,17 +30,14 @@ const ProfilePage: React.FC = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      const response = await localApi.profiles.get();
+      
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
-      if (data) {
+      if (response.data && response.data.profile) {
+        const data = response.data.profile;
         setProfile(data);
         setFormData({
           full_name: data.full_name || '',
@@ -65,37 +62,18 @@ const ProfilePage: React.FC = () => {
 
     try {
       const profileData = {
-        user_id: user.id,
-        ...formData,
-        updated_at: new Date().toISOString()
+        ...formData
       };
 
-      let result;
-      if (profile) {
-        // 更新现有档案
-        result = await supabase
-          .from('user_profiles')
-          .update(profileData)
-          .eq('user_id', user.id)
-          .select()
-          .maybeSingle();
-      } else {
-        // 创建新档案
-        result = await supabase
-          .from('user_profiles')
-          .insert([{
-            ...profileData,
-            created_at: new Date().toISOString()
-          }])
-          .select()
-          .maybeSingle();
-      }
+      const result = await localApi.profiles.update(profileData);
 
       if (result.error) {
-        throw result.error;
+        throw new Error(result.error.message);
       }
 
-      setProfile(result.data);
+      if (result.data && result.data.profile) {
+        setProfile(result.data.profile);
+      }
       toast.success('档案保存成功！');
     } catch (error: any) {
       console.error('保存档案失败:', error);

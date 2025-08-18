@@ -44,19 +44,24 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ analysisR
 
   // 渲染八字命理分析
   const renderBaziAnalysis = () => {
-    // 如果有 birthDate，使用新的 BaziAnalysisDisplay 组件
+    // 如果有分析结果数据，优先使用 ComprehensiveBaziAnalysis 组件
+    if (analysisResult && analysisResult.data) {
+      return <ComprehensiveBaziAnalysis analysisResult={analysisResult} />;
+    }
+    // 如果有 birthDate 但没有分析结果，使用 BaziAnalysisDisplay 组件
     if (birthDate) {
       return <BaziAnalysisDisplay birthDate={birthDate} />;
     }
-    // 否则使用原来的 ComprehensiveBaziAnalysis 组件（向后兼容）
+    // 默认使用 ComprehensiveBaziAnalysis 组件（向后兼容）
     return <ComprehensiveBaziAnalysis analysisResult={analysisResult} />;
   };
 
   // 渲染紫微斗数分析
   const renderZiweiAnalysis = () => {
-    const data = analysisResult?.analysis || analysisResult?.data?.analysis || analysisResult;
-    const ziweiData = data?.ziwei || data;
-    const analysisData = data?.analysis || data;
+    // 处理新的数据结构: { type: 'ziwei', data: analysisResult }
+    const data = analysisResult?.data || analysisResult;
+    const ziweiData = data?.ziwei_analysis || data?.ziwei || data;
+    const analysisData = data?.detailed_analysis || data?.analysis || data;
     
 
     
@@ -204,7 +209,8 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ analysisR
 
   // 渲染易经占卜分析
   const renderYijingAnalysis = () => {
-    const data = analysisResult?.analysis || analysisResult?.data?.analysis || analysisResult;
+    // 处理新的数据结构: { type: 'yijing', data: analysisResult }
+    const data = analysisResult?.data || analysisResult;
     
     return (
       <div className="space-y-8">

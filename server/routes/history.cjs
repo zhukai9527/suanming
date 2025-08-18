@@ -1,0 +1,361 @@
+const express = require('express');
+const { getDB } = require('../database/index.cjs');
+const { authenticate } = require('../middleware/auth.cjs');
+const { AppError, asyncHandler } = require('../middleware/errorHandler.cjs');
+
+const router = express.Router();
+
+// 获取用户历史记录
+router.get('/', authenticate, asyncHandler(async (req, res) => {
+  const { page = 1, limit = 20, reading_type } = req.query;
+  
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const db = getDB();
+  
+  // 构建查询条件
+  let whereClause = 'WHERE user_id = ?';
+  let params = [req.user.id];
+  
+  if (reading_type && ['bazi', 'ziwei', 'yijing', 'wuxing'].includes(reading_type)) {
+    whereClause += ' AND reading_type = ?';
+    params.push(reading_type);
+  }
+  
+  // 获取总数
+  const countQuery = `SELECT COUNT(*) as total FROM numerology_readings ${whereClause}`;
+  const { total } = db.prepare(countQuery).get(...params);
+  
+  // 获取分页数据
+  const dataQuery = `
+    SELECT 
+      id,
+      reading_type,
+      name,
+      birth_date,
+      birth_time,
+      birth_place,
+      gender,
+      input_data,
+      results,
+      analysis,
+      status,
+      created_at,
+      updated_at
+    FROM numerology_readings 
+    ${whereClause}
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `;
+  
+  const readings = db.prepare(dataQuery).all(...params, parseInt(limit), offset);
+  
+  // 处理JSON字段
+  const processedReadings = readings.map(reading => {
+    const processed = { ...reading };
+    
+    // 解析JSON字段
+    try {
+      if (processed.input_data) {
+        processed.input_data = JSON.parse(processed.input_data);
+      }
+      if (processed.results) {
+        processed.results = JSON.parse(processed.results);
+      }
+      if (processed.analysis) {
+        processed.analysis = JSON.parse(processed.analysis);
+      }
+    } catch (error) {
+      console.error('JSON解析错误:', error);
+    }
+    
+    // 数据转换适配器：将旧格式转换为新格式
+    if (processed.analysis) {
+      // 如果有 analysis 字段，直接使用
+      return processed;
+    } else if (processed.results) {
+      // 如果只有 results 字段，转换为新格式
+      processed.analysis = {
+        [processed.reading_type]: {
+          [`${processed.reading_type}_analysis`]: processed.results
+        },
+        metadata: {
+          analysis_time: processed.created_at,
+          version: '1.0',
+          analysis_type: processed.reading_type,
+          migrated_from_results: true
+        }
+      };
+    }
+    
+    return processed;
+  });
+  
+  res.json({
+    data: processedReadings,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: total,
+      pages: Math.ceil(total / parseInt(limit))
+    }
+  });
+}));
+
+// 获取单个分析记录
+router.get('/:id', authenticate, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const db = getDB();
+  
+  const reading = db.prepare(`
+    SELECT 
+      id,
+      reading_type,
+      name,
+      birth_date,
+      birth_time,
+      birth_place,
+      gender,
+      input_data,
+      results,
+      analysis,
+      status,
+      created_at,
+      updated_at
+    FROM numerology_readings 
+    WHERE id = ? AND user_id = ?
+  `).get(id, req.user.id);
+  
+  if (!reading) {
+    throw new AppError('分析记录不存在', 404, 'READING_NOT_FOUND');
+  }
+  
+  // 处理JSON字段
+  try {
+    if (reading.input_data) {
+      reading.input_data = JSON.parse(reading.input_data);
+    }
+    if (reading.results) {
+      reading.results = JSON.parse(reading.results);
+    }
+    if (reading.analysis) {
+      reading.analysis = JSON.parse(reading.analysis);
+    }
+  } catch (error) {
+    console.error('JSON解析错误:', error);
+  }
+  
+  // 数据转换适配器
+  if (!reading.analysis && reading.results) {
+    reading.analysis = {
+      [reading.reading_type]: {
+        [`${reading.reading_type}_analysis`]: reading.results
+      },
+      metadata: {
+        analysis_time: reading.created_at,
+        version: '1.0',
+        analysis_type: reading.reading_type,
+        migrated_from_results: true
+      }
+    };
+  }
+  
+  res.json({
+    data: reading
+  });
+}));
+
+// 删除分析记录
+router.delete('/:id', authenticate, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const db = getDB();
+  
+  // 检查记录是否存在且属于当前用户
+  const reading = db.prepare(
+    'SELECT id FROM numerology_readings WHERE id = ? AND user_id = ?'
+  ).get(id, req.user.id);
+  
+  if (!reading) {
+    throw new AppError('分析记录不存在', 404, 'READING_NOT_FOUND');
+  }
+  
+  // 删除记录
+  const deleteReading = db.prepare('DELETE FROM numerology_readings WHERE id = ?');
+  deleteReading.run(id);
+  
+  res.json({
+    data: {
+      message: '分析记录删除成功'
+    }
+  });
+}));
+
+// 批量删除分析记录
+router.delete('/', authenticate, asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+  
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    throw new AppError('请提供要删除的记录ID列表', 400, 'MISSING_IDS');
+  }
+  
+  const db = getDB();
+  
+  // 验证所有记录都属于当前用户
+  const placeholders = ids.map(() => '?').join(',');
+  const readings = db.prepare(
+    `SELECT id FROM numerology_readings WHERE id IN (${placeholders}) AND user_id = ?`
+  ).all(...ids, req.user.id);
+  
+  if (readings.length !== ids.length) {
+    throw new AppError('部分记录不存在或无权限删除', 400, 'INVALID_RECORDS');
+  }
+  
+  // 批量删除
+  const deleteReadings = db.prepare(
+    `DELETE FROM numerology_readings WHERE id IN (${placeholders}) AND user_id = ?`
+  );
+  const result = deleteReadings.run(...ids, req.user.id);
+  
+  res.json({
+    data: {
+      message: `成功删除 ${result.changes} 条分析记录`
+    }
+  });
+}));
+
+// 获取分析统计信息
+router.get('/stats/summary', authenticate, asyncHandler(async (req, res) => {
+  const db = getDB();
+  
+  // 获取各类型分析数量
+  const typeStats = db.prepare(`
+    SELECT 
+      reading_type,
+      COUNT(*) as count
+    FROM numerology_readings 
+    WHERE user_id = ?
+    GROUP BY reading_type
+  `).all(req.user.id);
+  
+  // 获取总数和最近分析时间
+  const summary = db.prepare(`
+    SELECT 
+      COUNT(*) as total_readings,
+      MAX(created_at) as last_analysis_time,
+      MIN(created_at) as first_analysis_time
+    FROM numerology_readings 
+    WHERE user_id = ?
+  `).get(req.user.id);
+  
+  // 获取最近30天的分析数量
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentCount = db.prepare(`
+    SELECT COUNT(*) as recent_count
+    FROM numerology_readings 
+    WHERE user_id = ? AND created_at >= ?
+  `).get(req.user.id, thirtyDaysAgo.toISOString());
+  
+  res.json({
+    data: {
+      summary: {
+        total_readings: summary.total_readings || 0,
+        recent_readings: recentCount.recent_count || 0,
+        first_analysis_time: summary.first_analysis_time,
+        last_analysis_time: summary.last_analysis_time
+      },
+      type_distribution: typeStats.reduce((acc, stat) => {
+        acc[stat.reading_type] = stat.count;
+        return acc;
+      }, {})
+    }
+  });
+}));
+
+// 搜索分析记录
+router.get('/search/:query', authenticate, asyncHandler(async (req, res) => {
+  const { query } = req.params;
+  const { page = 1, limit = 20 } = req.query;
+  
+  if (!query || query.trim().length < 2) {
+    throw new AppError('搜索关键词至少2个字符', 400, 'INVALID_SEARCH_QUERY');
+  }
+  
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const db = getDB();
+  const searchTerm = `%${query.trim()}%`;
+  
+  // 搜索记录
+  const readings = db.prepare(`
+    SELECT 
+      id,
+      reading_type,
+      name,
+      birth_date,
+      birth_time,
+      birth_place,
+      gender,
+      input_data,
+      results,
+      analysis,
+      status,
+      created_at,
+      updated_at
+    FROM numerology_readings 
+    WHERE user_id = ? AND (
+      name LIKE ? OR 
+      birth_place LIKE ? OR
+      reading_type LIKE ?
+    )
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(req.user.id, searchTerm, searchTerm, searchTerm, parseInt(limit), offset);
+  
+  // 获取搜索结果总数
+  const { total } = db.prepare(`
+    SELECT COUNT(*) as total
+    FROM numerology_readings 
+    WHERE user_id = ? AND (
+      name LIKE ? OR 
+      birth_place LIKE ? OR
+      reading_type LIKE ?
+    )
+  `).get(req.user.id, searchTerm, searchTerm, searchTerm);
+  
+  // 处理JSON字段
+  const processedReadings = readings.map(reading => {
+    const processed = { ...reading };
+    
+    try {
+      if (processed.input_data) {
+        processed.input_data = JSON.parse(processed.input_data);
+      }
+      if (processed.results) {
+        processed.results = JSON.parse(processed.results);
+      }
+      if (processed.analysis) {
+        processed.analysis = JSON.parse(processed.analysis);
+      }
+    } catch (error) {
+      console.error('JSON解析错误:', error);
+    }
+    
+    return processed;
+  });
+  
+  res.json({
+    data: processedReadings,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: total,
+      pages: Math.ceil(total / parseInt(limit))
+    },
+    search: {
+      query: query,
+      results_count: processedReadings.length
+    }
+  });
+}));
+
+module.exports = router;

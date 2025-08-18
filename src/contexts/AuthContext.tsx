@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { localApi, User, AuthResponse } from '../lib/localApi';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<any>;
   signOut: () => Promise<any>;
 }
 
@@ -25,39 +24,59 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadUser() {
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+        const response = await localApi.auth.getUser();
+        if (response.data) {
+          setUser(response.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('加载用户信息失败:', error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     }
     loadUser();
-
-    // Set up auth listener - KEEP SIMPLE, avoid any async operations in callback
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        // NEVER use any async operations in callback
-        setUser(session?.user || null);
-      }
-    );
-
-    return () => subscription.unsubscribe();
   }, []);
 
   // Auth methods
   async function signIn(email: string, password: string) {
-    return await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const response = await localApi.auth.signInWithPassword({ email, password });
+      if (response.data) {
+        setUser(response.data.user);
+        return { data: response.data, error: null };
+      } else {
+        return { data: null, error: response.error };
+      }
+    } catch (error) {
+      return { data: null, error: { message: '登录失败' } };
+    }
   }
 
-  async function signUp(email: string, password: string) {
-    return await supabase.auth.signUp({
-      email,
-      password,
-    });
+  async function signUp(email: string, password: string, fullName?: string) {
+    try {
+      const response = await localApi.auth.signUp(email, password, fullName);
+      if (response.data) {
+        setUser(response.data.user);
+        return { data: response.data, error: null };
+      } else {
+        return { data: null, error: response.error };
+      }
+    } catch (error) {
+      return { data: null, error: { message: '注册失败' } };
+    }
   }
 
   async function signOut() {
-    return await supabase.auth.signOut();
+    try {
+      const response = await localApi.auth.signOut();
+      setUser(null);
+      return { error: null };
+    } catch (error) {
+      return { error: { message: '登出失败' } };
+    }
   }
 
   return (

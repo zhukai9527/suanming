@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
-import { supabase } from '../lib/supabase';
+import { localApi } from '../lib/localApi';
 
 interface BaziAnalysisDisplayProps {
   birthDate: {
@@ -85,10 +85,10 @@ const BaziAnalysisDisplay: React.FC<BaziAnalysisDisplayProps> = ({ birthDate }) 
 
         // 并行调用两个函数
         const [baziDetailsResponse, wuxingAnalysisResponse] = await Promise.all([
-          supabase.functions.invoke('bazi-details', {
+          localApi.functions.invoke('bazi-details', {
             body: requestBody
           }),
-          supabase.functions.invoke('bazi-wuxing-analysis', {
+          localApi.functions.invoke('bazi-wuxing-analysis', {
             body: requestBody
           })
         ]);

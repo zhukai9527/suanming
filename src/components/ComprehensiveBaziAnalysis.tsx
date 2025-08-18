@@ -22,7 +22,8 @@ const ComprehensiveBaziAnalysis: React.FC<ComprehensiveBaziAnalysisProps> = ({ a
     return current || defaultValue;
   };
 
-  const data = analysisResult?.analysis || analysisResult?.data?.analysis || analysisResult;
+  // 处理新的数据结构: { type: 'bazi', data: analysisResult }
+  const data = analysisResult?.data || analysisResult;
   
   // 五行颜色配置
   const elementColors: { [key: string]: string } = {
@@ -357,7 +358,7 @@ const ComprehensiveBaziAnalysis: React.FC<ComprehensiveBaziAnalysisProps> = ({ a
                 </div>
               </div>
               <p className="text-red-700 leading-relaxed">
-                {safeGet(data, 'wuxing_analysis.personal_traits', '您的日主特征体现了独特的性格魅力...')}
+                {safeGet(data, 'wuxing_analysis.personality_traits', '您的日主特征体现了独特的性格魅力...')}
               </p>
             </div>
           </div>
@@ -426,7 +427,7 @@ const ComprehensiveBaziAnalysis: React.FC<ComprehensiveBaziAnalysisProps> = ({ a
               <div className="bg-white p-4 rounded-lg border-l-4 border-green-500">
                 <h4 className="font-bold text-red-800 mb-2">调和建议</h4>
                 <p className="text-red-700 leading-relaxed">
-                  {safeGet(data, 'wuxing_analysis.suggestions', '建议通过特定的方式来平衡五行能量...')}
+                  {safeGet(data, 'wuxing_analysis.improvement_suggestions', '建议通过特定的方式来平衡五行能量...')}
                 </p>
               </div>
             </div>
