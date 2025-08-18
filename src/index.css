@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* 传统中式颜色 */
+    --chinese-red: #dc2626;
+    --chinese-gold: #facc15;
+    --chinese-dark-red: #991b1b;
+    --chinese-deep-gold: #d97706;
+  }
+
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+  
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: linear-gradient(135deg, #fef7cd 0%, #fed7aa 25%, #fecaca 50%, #fed7aa 75%, #fef7cd 100%);
+    background-attachment: fixed;
+    position: relative;
+  }
+  
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/chinese_golden_red_auspicious_cloud_pattern_background.jpg');
+    background-size: 400px 400px;
+    background-repeat: repeat;
+    opacity: 0.08;
+    z-index: -2;
+    pointer-events: none;
+  }
+  
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 20% 20%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(250, 204, 21, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.05) 0%, transparent 70%);
+    z-index: -1;
+    pointer-events: none;
+  }
+}
+
+/* 传统中式装饰类 */
+.chinese-traditional-bg {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #dc2626 100%);
+  position: relative;
+}
+
+.chinese-traditional-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/red_gold_chinese_auspicious_cloud_pattern_background.jpg');
+  background-size: 300px 300px;
+  background-repeat: repeat;
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.chinese-traditional-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+.chinese-golden-frame {
+  position: relative;
+  border: 3px solid transparent;
+  background: linear-gradient(#fef7cd, #fef7cd) padding-box,
+              linear-gradient(45deg, #facc15, #d97706, #facc15) border-box;
+  border-radius: 12px;
+}
+
+.chinese-golden-frame::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: linear-gradient(45deg, #facc15, #d97706, #facc15);
+  border-radius: 16px;
+  z-index: -1;
+  opacity: 0.8;
+}
+
+.chinese-card-decoration {
+  position: relative;
+  background: rgba(254, 247, 205, 0.95);
+  border: 2px solid #facc15;
+  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.15), 
+              inset 0 1px 0 rgba(250, 204, 21, 0.3);
+}
+
+.chinese-card-decoration::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.chinese-text-shadow {
+  text-shadow: 2px 2px 4px rgba(220, 38, 38, 0.3),
+               0 0 8px rgba(250, 204, 21, 0.4);
+}
+
+.chinese-golden-glow {
+  background: linear-gradient(135deg, #facc15 0%, #d97706 50%, #facc15 100%);
+  box-shadow: 0 4px 20px rgba(250, 204, 21, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.chinese-red-glow {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #dc2626 100%);
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.traditional-border {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(45deg, #facc15, #dc2626, #facc15, #dc2626) border-box;
+}
+
+.dragon-corner {
+  position: relative;
+}
+
+.dragon-corner::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  width: 40px;
+  height: 40px;
+  background-image: url('/traditional_chinese_gold_red_dragon_symbol.jpg');
+  background-size: cover;
+  background-position: center;
+  border-radius: 50%;
+  opacity: 0.7;
+  z-index: 1;
+}
+
+.dragon-corner::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 40px;
+  height: 40px;
+  background-image: url('/traditional_chinese_gold_red_dragon_symbol.jpg');
+  background-size: cover;
+  background-position: center;
+  border-radius: 50%;
+  opacity: 0.7;
+  z-index: 1;
+  transform: rotate(180deg);
+}
+
+.mystical-gradient {
+  background: linear-gradient(135deg, 
+    rgba(220, 38, 38, 0.1) 0%, 
+    rgba(250, 204, 21, 0.1) 25%, 
+    rgba(220, 38, 38, 0.1) 50%, 
+    rgba(250, 204, 21, 0.1) 75%, 
+    rgba(220, 38, 38, 0.1) 100%);
+}
+
+img {
+  object-position: top;
+}
+
+.fixed {
+  position: fixed;
+}
