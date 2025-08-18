@@ -30,25 +30,18 @@ const ProfilePage: React.FC = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (data) {
-        setProfile(data);
+      const response = await supabase.auth.getUser();
+      
+      if (response.data?.user) {
+        const userData = response.data.user;
+        setProfile(userData);
         setFormData({
-          full_name: data.full_name || '',
-          birth_date: data.birth_date || '',
-          birth_time: data.birth_time || '',
-          birth_location: data.birth_location || '',
-          gender: data.gender || 'male',
-          username: data.username || ''
+          full_name: userData.fullName || '',
+          birth_date: userData.birthDate || '',
+          birth_time: userData.birthTime || '',
+          birth_location: userData.birthPlace || '',
+          gender: userData.gender || 'male',
+          username: userData.email || ''
         });
       }
     } catch (error: any) {
@@ -64,39 +57,24 @@ const ProfilePage: React.FC = () => {
     setLoading(true);
 
     try {
-      const profileData = {
-        user_id: user.id,
-        ...formData,
-        updated_at: new Date().toISOString()
+      const updateData = {
+        fullName: formData.full_name,
+        birthDate: formData.birth_date,
+        birthTime: formData.birth_time,
+        birthPlace: formData.birth_location,
+        gender: formData.gender as 'male' | 'female'
       };
 
-      let result;
-      if (profile) {
-        // 更新现有档案
-        result = await supabase
-          .from('user_profiles')
-          .update(profileData)
-          .eq('user_id', user.id)
-          .select()
-          .maybeSingle();
-      } else {
-        // 创建新档案
-        result = await supabase
-          .from('user_profiles')
-          .insert([{
-            ...profileData,
-            created_at: new Date().toISOString()
-          }])
-          .select()
-          .maybeSingle();
+      const response = await supabase.auth.updateUser(updateData);
+
+      if (response.error) {
+        throw response.error;
       }
 
-      if (result.error) {
-        throw result.error;
+      if (response.data?.user) {
+        setProfile(response.data.user);
+        toast.success('档案保存成功！');
       }
-
-      setProfile(result.data);
-      toast.success('档案保存成功！');
     } catch (error: any) {
       console.error('保存档案失败:', error);
       toast.error('保存档案失败：' + error.message);
