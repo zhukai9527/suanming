@@ -1,5 +1,6 @@
 import React from 'react';
 import CompleteBaziAnalysis from './CompleteBaziAnalysis';
+import CompleteZiweiAnalysis from './CompleteZiweiAnalysis';
 import BaziAnalysisDisplay from './BaziAnalysisDisplay';
 
 interface AnalysisResultDisplayProps {
@@ -70,12 +71,28 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ analysisR
 
   // 渲染紫微斗数分析
   const renderZiweiAnalysis = () => {
-    // 处理新的数据结构: { type: 'ziwei', data: analysisResult }
+    // 如果有 birthDate，使用新的 CompleteZiweiAnalysis 组件
+    if (birthDate) {
+      return <CompleteZiweiAnalysis birthDate={birthDate} />;
+    }
+    // 如果有分析结果但没有 birthDate，尝试从结果中提取出生信息
+    if (analysisResult && analysisResult.data) {
+      const basicInfo = analysisResult.data.basic_info;
+      if (basicInfo && basicInfo.personal_data) {
+        const extractedBirthDate = {
+          date: basicInfo.personal_data.birth_date || '',
+          time: basicInfo.personal_data.birth_time || '12:00',
+          name: basicInfo.personal_data.name || '',
+          gender: basicInfo.personal_data.gender === '男性' ? 'male' : 'female'
+        };
+        return <CompleteZiweiAnalysis birthDate={extractedBirthDate} />;
+      }
+    }
+    
+    // 回退到旧的渲染方式（向后兼容）
     const data = analysisResult?.data || analysisResult;
     const ziweiData = data?.ziwei_analysis || data?.ziwei || data;
     const analysisData = data?.detailed_analysis || data?.analysis || data;
-    
-
     
     return (
       <div className="space-y-8">
