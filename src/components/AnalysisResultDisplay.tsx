@@ -1,5 +1,5 @@
 import React from 'react';
-import ComprehensiveBaziAnalysis from './ComprehensiveBaziAnalysis';
+import CompleteBaziAnalysis from './CompleteBaziAnalysis';
 import BaziAnalysisDisplay from './BaziAnalysisDisplay';
 
 interface AnalysisResultDisplayProps {
@@ -44,16 +44,28 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ analysisR
 
   // 渲染八字命理分析
   const renderBaziAnalysis = () => {
-    // 如果有分析结果数据，优先使用 ComprehensiveBaziAnalysis 组件
-    if (analysisResult && analysisResult.data) {
-      return <ComprehensiveBaziAnalysis analysisResult={analysisResult} />;
+    // 如果有 birthDate，使用新的 CompleteBaziAnalysis 组件
+    if (birthDate) {
+      return <CompleteBaziAnalysis birthDate={birthDate} />;
     }
-    // 如果有 birthDate 但没有分析结果，使用 BaziAnalysisDisplay 组件
+    // 如果有分析结果但没有 birthDate，尝试从结果中提取出生信息
+    if (analysisResult && analysisResult.data) {
+      const basicInfo = analysisResult.data.basic_info;
+      if (basicInfo && basicInfo.personal_data) {
+        const extractedBirthDate = {
+          date: basicInfo.personal_data.birth_date || '',
+          time: basicInfo.personal_data.birth_time || '12:00',
+          name: basicInfo.personal_data.name || '',
+          gender: basicInfo.personal_data.gender === '男性' ? 'male' : 'female'
+        };
+        return <CompleteBaziAnalysis birthDate={extractedBirthDate} />;
+      }
+    }
+    // 回退到旧的组件（向后兼容）
     if (birthDate) {
       return <BaziAnalysisDisplay birthDate={birthDate} />;
     }
-    // 默认使用 ComprehensiveBaziAnalysis 组件（向后兼容）
-    return <ComprehensiveBaziAnalysis analysisResult={analysisResult} />;
+    return <div className="text-center text-red-600 p-8">请提供出生日期和时间进行八字分析</div>;
   };
 
   // 渲染紫微斗数分析

@@ -1,10 +1,56 @@
 // 八字分析服务模块
-// 完全基于logic/bazi.txt的原始逻辑实现
+// 基于传统四柱八字理论的动态分析系统
 
 class BaziAnalyzer {
   constructor() {
     this.heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
     this.earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    
+    // 地支藏干表 - 传统命理核心数据
+    this.branchHiddenStems = {
+      '子': ['癸'],
+      '丑': ['己', '癸', '辛'],
+      '寅': ['甲', '丙', '戊'],
+      '卯': ['乙'],
+      '辰': ['戊', '乙', '癸'],
+      '巳': ['丙', '庚', '戊'],
+      '午': ['丁', '己'],
+      '未': ['己', '丁', '乙'],
+      '申': ['庚', '壬', '戊'],
+      '酉': ['辛'],
+      '戌': ['戊', '辛', '丁'],
+      '亥': ['壬', '甲']
+    };
+    
+    // 十神关系表
+    this.tenGods = {
+      '比肩': { same: true, description: '同我者为比肩' },
+      '劫财': { same: true, description: '同我者为劫财' },
+      '食神': { generate: true, description: '我生者为食神' },
+      '伤官': { generate: true, description: '我生者为伤官' },
+      '正财': { overcome: true, description: '我克者为正财' },
+      '偏财': { overcome: true, description: '我克者为偏财' },
+      '正官': { beOvercome: true, description: '克我者为正官' },
+      '七杀': { beOvercome: true, description: '克我者为七杀' },
+      '正印': { beGenerate: true, description: '生我者为正印' },
+      '偏印': { beGenerate: true, description: '生我者为偏印' }
+    };
+    
+    // 二十四节气表（简化版）
+    this.solarTerms = {
+      1: { start: 4, name: '立春' }, // 2月4日左右立春
+      2: { start: 19, name: '雨水' },
+      3: { start: 6, name: '惊蛰' },
+      4: { start: 21, name: '春分' },
+      5: { start: 5, name: '清明' },
+      6: { start: 21, name: '谷雨' },
+      7: { start: 6, name: '立夏' },
+      8: { start: 21, name: '小满' },
+      9: { start: 6, name: '芒种' },
+      10: { start: 22, name: '夏至' },
+      11: { start: 7, name: '小暑' },
+      12: { start: 23, name: '大暑' }
+    };
   }
 
   // 完全个性化的八字分析主函数 - 基于真实用户数据
@@ -43,6 +89,7 @@ class BaziAnalyzer {
             birth_place: birth_place || '未提供'
           },
           bazi_chart: baziChart,
+          pillar_interpretations: this.generatePillarInterpretations(baziChart, gender, personalizedName),
           lunar_info: this.calculateLunarInfo(birth_date)
         },
         wuxing_analysis: {
@@ -61,10 +108,13 @@ class BaziAnalyzer {
         },
         dayun_analysis: {
           current_age: fortuneAnalysis.current_age,
-          current_dayun: fortuneAnalysis.current_period,
+          start_luck_age: fortuneAnalysis.start_luck_age,
+          current_dayun: fortuneAnalysis.current_dayun,
           dayun_sequence: fortuneAnalysis.life_periods,
           yearly_fortune: fortuneAnalysis.current_year_analysis,
-          future_outlook: fortuneAnalysis.next_decade_forecast
+          future_outlook: fortuneAnalysis.next_decade_forecast,
+          dayun_influence: fortuneAnalysis.dayun_analysis,
+          detailed_yearly_analysis: fortuneAnalysis.detailed_yearly_analysis
         },
         life_guidance: {
           overall_summary: lifeGuidance.comprehensive_summary,
@@ -87,7 +137,7 @@ class BaziAnalyzer {
     }
   }
 
-  // 精确计算八字四柱
+  // 精确计算八字四柱 - 基于传统万年历算法
   calculatePreciseBazi(birth_date, birth_time) {
     const birthDate = new Date(birth_date);
     const birthYear = birthDate.getFullYear();
@@ -95,99 +145,641 @@ class BaziAnalyzer {
     const birthDay = birthDate.getDate();
     const birthHour = birth_time ? parseInt(birth_time.split(':')[0]) : 12;
 
-    // 精确的干支计算
-    const yearStemIndex = (birthYear - 4) % 10;
-    const yearBranchIndex = (birthYear - 4) % 12;
-    const monthStemIndex = (yearStemIndex * 2 + birthMonth) % 10;
-    const monthBranchIndex = (birthMonth + 1) % 12;
+    // 1. 年柱计算 - 基于立春节气
+    const yearPillar = this.calculateYearPillar(birthYear, birthMonth, birthDay);
     
-    const daysSinceEpoch = Math.floor((birthDate - new Date('1900-01-01')) / (1000 * 60 * 60 * 24));
-    const dayStemIndex = (daysSinceEpoch + 9) % 10;
-    const dayBranchIndex = (daysSinceEpoch + 9) % 12;
+    // 2. 月柱计算 - 基于节气交替
+    const monthPillar = this.calculateMonthPillar(birthYear, birthMonth, birthDay, yearPillar.stemIndex);
     
-    const hourStemIndex = (dayStemIndex * 2 + Math.floor((birthHour + 1) / 2)) % 10;
-    const hourBranchIndex = Math.floor((birthHour + 1) / 2) % 12;
+    // 3. 日柱计算 - 基于万年历推算
+    const dayPillar = this.calculateDayPillar(birthYear, birthMonth, birthDay);
+    
+    // 4. 时柱计算 - 基于日干推时干
+    const hourPillar = this.calculateHourPillar(birthHour, dayPillar.stemIndex);
 
-    return {
+    const result = {
       year_pillar: {
-        stem: this.heavenlyStems[yearStemIndex],
-        branch: this.earthlyBranches[yearBranchIndex],
-        element: this.getElementFromStem(this.heavenlyStems[yearStemIndex])
+        stem: yearPillar.stem,
+        branch: yearPillar.branch,
+        element: this.getElementFromStem(yearPillar.stem),
+        hidden_stems: this.branchHiddenStems[yearPillar.branch],
+        ten_god: this.calculateTenGod(dayPillar.stem, yearPillar.stem)
       },
       month_pillar: {
-        stem: this.heavenlyStems[monthStemIndex],
-        branch: this.earthlyBranches[monthBranchIndex],
-        element: this.getElementFromStem(this.heavenlyStems[monthStemIndex])
+        stem: monthPillar.stem,
+        branch: monthPillar.branch,
+        element: this.getElementFromStem(monthPillar.stem),
+        hidden_stems: this.branchHiddenStems[monthPillar.branch],
+        ten_god: this.calculateTenGod(dayPillar.stem, monthPillar.stem),
+        is_month_order: true // 月令为提纲
       },
       day_pillar: {
-        stem: this.heavenlyStems[dayStemIndex],
-        branch: this.earthlyBranches[dayBranchIndex],
-        element: this.getElementFromStem(this.heavenlyStems[dayStemIndex])
+        stem: dayPillar.stem,
+        branch: dayPillar.branch,
+        element: this.getElementFromStem(dayPillar.stem),
+        hidden_stems: this.branchHiddenStems[dayPillar.branch],
+        ten_god: '日主', // 日主本身
+        is_day_master: true
       },
       hour_pillar: {
-        stem: this.heavenlyStems[hourStemIndex],
-        branch: this.earthlyBranches[hourBranchIndex],
-        element: this.getElementFromStem(this.heavenlyStems[hourStemIndex])
+        stem: hourPillar.stem,
+        branch: hourPillar.branch,
+        element: this.getElementFromStem(hourPillar.stem),
+        hidden_stems: this.branchHiddenStems[hourPillar.branch],
+        ten_god: this.calculateTenGod(dayPillar.stem, hourPillar.stem)
       },
-      day_master: this.heavenlyStems[dayStemIndex],
-      complete_chart: `${this.heavenlyStems[yearStemIndex]}${this.earthlyBranches[yearBranchIndex]} ${this.heavenlyStems[monthStemIndex]}${this.earthlyBranches[monthBranchIndex]} ${this.heavenlyStems[dayStemIndex]}${this.earthlyBranches[dayBranchIndex]} ${this.heavenlyStems[hourStemIndex]}${this.earthlyBranches[hourBranchIndex]}`
+      day_master: dayPillar.stem,
+      day_master_element: this.getElementFromStem(dayPillar.stem),
+      month_order: monthPillar.branch,
+      complete_chart: `${yearPillar.stem}${yearPillar.branch} ${monthPillar.stem}${monthPillar.branch} ${dayPillar.stem}${dayPillar.branch} ${hourPillar.stem}${hourPillar.branch}`,
+      // 添加五行旺衰分析
+      element_strength: this.analyzeElementStrength(dayPillar.stem, monthPillar.branch, {
+        year: yearPillar,
+        month: monthPillar,
+        day: dayPillar,
+        hour: hourPillar
+      })
+    };
+    
+    return result;
+  }
+  
+  // 年柱计算 - 考虑立春节气
+  calculateYearPillar(year, month, day) {
+    let actualYear = year;
+    
+    // 如果在立春前，年柱应该是前一年
+    if (month === 1 || (month === 2 && day < 4)) {
+      actualYear = year - 1;
+    }
+    
+    const stemIndex = (actualYear - 4) % 10;
+    const branchIndex = (actualYear - 4) % 12;
+    
+    return {
+      stem: this.heavenlyStems[stemIndex],
+      branch: this.earthlyBranches[branchIndex],
+      stemIndex: stemIndex,
+      branchIndex: branchIndex
+    };
+  }
+  
+  // 月柱计算 - 基于节气
+  calculateMonthPillar(year, month, day, yearStemIndex) {
+    // 月支固定规律：寅月(立春)开始
+    let monthBranchIndex;
+    
+    if (month === 1 || (month === 2 && day < 4)) {
+      monthBranchIndex = 11; // 丑月
+    } else if (month === 2 || (month === 3 && day < 6)) {
+      monthBranchIndex = 2; // 寅月
+    } else if (month === 3 || (month === 4 && day < 5)) {
+      monthBranchIndex = 3; // 卯月
+    } else if (month === 4 || (month === 5 && day < 6)) {
+      monthBranchIndex = 4; // 辰月
+    } else if (month === 5 || (month === 6 && day < 6)) {
+      monthBranchIndex = 5; // 巳月
+    } else if (month === 6 || (month === 7 && day < 7)) {
+      monthBranchIndex = 6; // 午月
+    } else if (month === 7 || (month === 8 && day < 8)) {
+      monthBranchIndex = 7; // 未月
+    } else if (month === 8 || (month === 9 && day < 8)) {
+      monthBranchIndex = 8; // 申月
+    } else if (month === 9 || (month === 10 && day < 8)) {
+      monthBranchIndex = 9; // 酉月
+    } else if (month === 10 || (month === 11 && day < 7)) {
+      monthBranchIndex = 10; // 戌月
+    } else if (month === 11 || (month === 12 && day < 7)) {
+      monthBranchIndex = 11; // 亥月
+    } else {
+      monthBranchIndex = 0; // 子月
+    }
+    
+    // 月干推算：甲己之年丙作首
+    const monthStemBase = {
+      0: 2, // 甲年、己年从丙开始
+      1: 4, // 乙年、庚年从戊开始
+      2: 6, // 丙年、辛年从庚开始
+      3: 8, // 丁年、壬年从壬开始
+      4: 0, // 戊年、癸年从甲开始
+      5: 2, // 己年从丙开始
+      6: 4, // 庚年从戊开始
+      7: 6, // 辛年从庚开始
+      8: 8, // 壬年从壬开始
+      9: 0  // 癸年从甲开始
+    };
+    
+    const monthStemIndex = (monthStemBase[yearStemIndex] + monthBranchIndex - 2) % 10;
+    
+    return {
+      stem: this.heavenlyStems[monthStemIndex],
+      branch: this.earthlyBranches[monthBranchIndex],
+      stemIndex: monthStemIndex,
+      branchIndex: monthBranchIndex
+    };
+  }
+  
+  // 日柱计算 - 万年历推算
+  calculateDayPillar(year, month, day) {
+    // 使用简化的万年历算法
+    const baseDate = new Date(1900, 0, 31); // 1900年1月31日为甲子日
+    const currentDate = new Date(year, month - 1, day);
+    const daysDiff = Math.floor((currentDate - baseDate) / (1000 * 60 * 60 * 24));
+    
+    const stemIndex = (daysDiff + 0) % 10; // 甲子日开始
+    const branchIndex = (daysDiff + 0) % 12;
+    
+    return {
+      stem: this.heavenlyStems[stemIndex],
+      branch: this.earthlyBranches[branchIndex],
+      stemIndex: stemIndex,
+      branchIndex: branchIndex
+    };
+  }
+  
+  // 时柱计算 - 日干推时干
+  calculateHourPillar(hour, dayStemIndex) {
+    // 时支计算
+    const hourBranchIndex = Math.floor((hour + 1) / 2) % 12;
+    
+    // 时干推算：甲己还加甲
+    const hourStemBase = {
+      0: 0, // 甲日、己日从甲开始
+      1: 2, // 乙日、庚日从丙开始
+      2: 4, // 丙日、辛日从戊开始
+      3: 6, // 丁日、壬日从庚开始
+      4: 8, // 戊日、癸日从壬开始
+      5: 0, // 己日从甲开始
+      6: 2, // 庚日从丙开始
+      7: 4, // 辛日从戊开始
+      8: 6, // 壬日从庚开始
+      9: 8  // 癸日从壬开始
+    };
+    
+    const hourStemIndex = (hourStemBase[dayStemIndex] + hourBranchIndex) % 10;
+    
+    return {
+      stem: this.heavenlyStems[hourStemIndex],
+      branch: this.earthlyBranches[hourBranchIndex],
+      stemIndex: hourStemIndex,
+      branchIndex: hourBranchIndex
     };
   }
 
-  // 详细五行分析
+  // 计算十神关系
+  calculateTenGod(dayMaster, targetStem) {
+    if (dayMaster === targetStem) {
+      return '比肩';
+    }
+    
+    const dayElement = this.getElementFromStem(dayMaster);
+    const targetElement = this.getElementFromStem(targetStem);
+    const relation = this.getElementRelation(dayElement, targetElement);
+    
+    // 根据阴阳和五行关系确定十神
+    const dayYinYang = this.getStemYinYang(dayMaster);
+    const targetYinYang = this.getStemYinYang(targetStem);
+    const sameYinYang = dayYinYang === targetYinYang;
+    
+    switch (relation) {
+      case 'same':
+        return sameYinYang ? '比肩' : '劫财';
+      case 'generate': // 我生者
+        return sameYinYang ? '食神' : '伤官';
+      case 'overcome': // 我克者
+        return sameYinYang ? '偏财' : '正财';
+      case 'beOvercome': // 克我者
+        return sameYinYang ? '七杀' : '正官';
+      case 'beGenerated': // 生我者
+        return sameYinYang ? '偏印' : '正印';
+      default:
+        return '未知';
+    }
+  }
+  
+  // 获取天干阴阳属性
+  getStemYinYang(stem) {
+    const yangStems = ['甲', '丙', '戊', '庚', '壬'];
+    return yangStems.includes(stem) ? '阳' : '阴';
+  }
+  
+  // 五行旺衰分析 - 核心算法
+  analyzeElementStrength(dayMaster, monthBranch, pillars) {
+    const dayElement = this.getElementFromStem(dayMaster);
+    
+    // 1. 月令旺衰 - 最重要的因素
+    const monthStrength = this.getMonthStrength(dayElement, monthBranch);
+    
+    // 2. 地支藏干分析
+    const hiddenStemSupport = this.analyzeHiddenStemSupport(dayElement, pillars);
+    
+    // 3. 天干通根分析
+    const stemSupport = this.analyzeStemSupport(dayElement, pillars);
+    
+    // 4. 综合旺衰判断
+    const overallStrength = this.calculateOverallStrength(monthStrength, hiddenStemSupport, stemSupport);
+    
+    return {
+      month_strength: monthStrength,
+      hidden_stem_support: hiddenStemSupport,
+      stem_support: stemSupport,
+      overall_strength: overallStrength,
+      strength_level: this.getStrengthLevel(overallStrength),
+      use_god_analysis: this.analyzeUseGod(dayElement, overallStrength, pillars)
+    };
+  }
+  
+  // 月令旺衰判断
+  getMonthStrength(element, monthBranch) {
+    const seasonStrength = {
+      '木': { '寅': '旺', '卯': '旺', '辰': '余气', '巳': '死', '午': '死', '未': '死', '申': '绝', '酉': '绝', '戌': '墓', '亥': '生', '子': '生', '丑': '休' },
+      '火': { '寅': '生', '卯': '生', '辰': '休', '巳': '旺', '午': '旺', '未': '余气', '申': '死', '酉': '死', '戌': '墓', '亥': '绝', '子': '绝', '丑': '死' },
+      '土': { '寅': '死', '卯': '死', '辰': '旺', '巳': '相', '午': '相', '未': '旺', '申': '休', '酉': '休', '戌': '旺', '亥': '死', '子': '死', '丑': '旺' },
+      '金': { '寅': '绝', '卯': '绝', '辰': '墓', '巳': '死', '午': '死', '未': '死', '申': '旺', '酉': '旺', '戌': '余气', '亥': '生', '子': '生', '丑': '相' },
+      '水': { '寅': '死', '卯': '死', '辰': '墓', '巳': '绝', '午': '绝', '未': '死', '申': '生', '酉': '生', '戌': '死', '亥': '旺', '子': '旺', '丑': '余气' }
+    };
+    
+    return seasonStrength[element]?.[monthBranch] || '平';
+  }
+  
+  // 地支藏干支持度分析
+  analyzeHiddenStemSupport(dayElement, pillars) {
+    let supportScore = 0;
+    const supportDetails = [];
+    
+    Object.values(pillars).forEach(pillar => {
+      const hiddenStems = this.branchHiddenStems[pillar.branch];
+      hiddenStems.forEach((hiddenStem, index) => {
+        const hiddenElement = this.getElementFromStem(hiddenStem);
+        const relation = this.getElementRelation(hiddenElement, dayElement);
+        
+        let score = 0;
+        if (relation === 'same') score = 3;
+        else if (relation === 'beGenerated') score = 2;
+        else if (relation === 'generate') score = -1;
+        else if (relation === 'overcome') score = -2;
+        else if (relation === 'beOvercome') score = -3;
+        
+        // 本气得分最高，中气次之，余气最低
+        const positionMultiplier = index === 0 ? 1.0 : index === 1 ? 0.6 : 0.3;
+        const finalScore = score * positionMultiplier;
+        
+        supportScore += finalScore;
+        if (Math.abs(finalScore) > 0.5) {
+          supportDetails.push({
+            branch: pillar.branch,
+            hidden_stem: hiddenStem,
+            relation: relation,
+            score: finalScore
+          });
+        }
+      });
+    });
+    
+    return {
+      total_score: supportScore,
+      details: supportDetails,
+      level: supportScore > 3 ? '强' : supportScore > 0 ? '中' : supportScore > -3 ? '弱' : '很弱'
+    };
+  }
+  
+  // 天干支持度分析
+  analyzeStemSupport(dayElement, pillars) {
+    let supportScore = 0;
+    const supportDetails = [];
+    
+    Object.entries(pillars).forEach(([position, pillar]) => {
+      if (position === 'day') return; // 跳过日主本身
+      
+      const stemElement = this.getElementFromStem(pillar.stem);
+      const relation = this.getElementRelation(stemElement, dayElement);
+      
+      let score = 0;
+      if (relation === 'same') score = 2;
+      else if (relation === 'beGenerated') score = 1.5;
+      else if (relation === 'generate') score = -0.5;
+      else if (relation === 'overcome') score = -1;
+      else if (relation === 'beOvercome') score = -1.5;
+      
+      supportScore += score;
+      if (Math.abs(score) > 0) {
+        supportDetails.push({
+          position: position,
+          stem: pillar.stem,
+          relation: relation,
+          score: score
+        });
+      }
+    });
+    
+    return {
+      total_score: supportScore,
+      details: supportDetails,
+      level: supportScore > 2 ? '强' : supportScore > 0 ? '中' : supportScore > -2 ? '弱' : '很弱'
+    };
+  }
+  
+  // 综合旺衰计算
+  calculateOverallStrength(monthStrength, hiddenSupport, stemSupport) {
+    const monthScore = {
+      '旺': 4, '相': 2, '休': 0, '囚': -2, '死': -3, '绝': -4, '墓': -1, '生': 1, '余气': 1
+    }[monthStrength] || 0;
+    
+    const totalScore = monthScore + hiddenSupport.total_score + stemSupport.total_score;
+    
+    return {
+      month_score: monthScore,
+      hidden_score: hiddenSupport.total_score,
+      stem_score: stemSupport.total_score,
+      total_score: totalScore
+    };
+  }
+  
+  // 旺衰等级判断
+  getStrengthLevel(overallStrength) {
+    const score = overallStrength.total_score;
+    if (score >= 6) return '太旺';
+    if (score >= 3) return '偏旺';
+    if (score >= -1) return '中和';
+    if (score >= -4) return '偏弱';
+    return '太弱';
+  }
+  
+  // 用神分析
+  analyzeUseGod(dayElement, strengthAnalysis, pillars) {
+    const strengthLevel = this.getStrengthLevel(strengthAnalysis);
+    let useGod = '';
+    let avoidGod = '';
+    let analysis = '';
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      // 身旺用官杀、食伤、财星
+      const restrainElements = this.getRestrainElements(dayElement);
+      const drainElements = this.getDrainElements(dayElement);
+      const consumeElements = this.getConsumeElements(dayElement);
+      
+      useGod = `${restrainElements.join('、')}（官杀）、${drainElements.join('、')}（食伤）、${consumeElements.join('、')}（财星）`;
+      avoidGod = `${dayElement}（比劫）、${this.getGenerateElements(dayElement).join('、')}（印星）`;
+      analysis = `日主${dayElement}${strengthLevel}，需要克泄耗来平衡，宜用官杀制身、食伤泄秀、财星耗身。`;
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      // 身弱用印星、比劫
+      const generateElements = this.getGenerateElements(dayElement);
+      
+      useGod = `${generateElements.join('、')}（印星）、${dayElement}（比劫）`;
+      avoidGod = `${this.getRestrainElements(dayElement).join('、')}（官杀）、${this.getDrainElements(dayElement).join('、')}（食伤）、${this.getConsumeElements(dayElement).join('、')}（财星）`;
+      analysis = `日主${dayElement}${strengthLevel}，需要生扶来增强，宜用印星生身、比劫助身。`;
+    } else {
+      // 中和命格
+      useGod = '因时制宜，随运而变';
+      avoidGod = '过旺过弱之五行';
+      analysis = `日主${dayElement}中和，命格平衡，宜顺其自然，忌大起大落。`;
+    }
+    
+    return {
+      use_god: useGod,
+      avoid_god: avoidGod,
+      analysis: analysis,
+      strength_level: strengthLevel
+    };
+  }
+  
+  // 获取克制元素
+  getRestrainElements(element) {
+    const restrainMap = {
+      '木': ['金'],
+      '火': ['水'],
+      '土': ['木'],
+      '金': ['火'],
+      '水': ['土']
+    };
+    return restrainMap[element] || [];
+  }
+  
+  // 获取泄秀元素
+  getDrainElements(element) {
+    const drainMap = {
+      '木': ['火'],
+      '火': ['土'],
+      '土': ['金'],
+      '金': ['水'],
+      '水': ['木']
+    };
+    return drainMap[element] || [];
+  }
+  
+  // 获取耗身元素
+  getConsumeElements(element) {
+    const consumeMap = {
+      '木': ['土'],
+      '火': ['金'],
+      '土': ['水'],
+      '金': ['木'],
+      '水': ['火']
+    };
+    return consumeMap[element] || [];
+  }
+  
+  // 获取生扶元素
+  getGenerateElements(element) {
+    const generateMap = {
+      '木': ['水'],
+      '火': ['木'],
+      '土': ['火'],
+      '金': ['土'],
+      '水': ['金']
+    };
+    return generateMap[element] || [];
+  }
+  
+  // 详细五行分析 - 基于真实旺衰
   performDetailedWuxingAnalysis(baziChart, gender, name) {
     const dayMaster = baziChart.day_master;
-    const dayMasterElement = this.getElementFromStem(dayMaster);
+    const dayMasterElement = baziChart.day_master_element;
+    const strengthAnalysis = baziChart.element_strength;
 
-    // 统计五行分布
+    // 统计五行分布（包含地支藏干）
     const elements = { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 };
+    const elementDetails = { '木': [], '火': [], '土': [], '金': [], '水': [] };
     
+    // 统计天干
     ['year_pillar', 'month_pillar', 'day_pillar', 'hour_pillar'].forEach(pillar => {
       const stemElement = baziChart[pillar].element;
-      const branchElement = this.getBranchElement(baziChart[pillar].branch);
-      elements[stemElement]++;
-      elements[branchElement]++;
+      elements[stemElement] += 2; // 天干力量较强
+      elementDetails[stemElement].push(`${pillar.replace('_pillar', '')}干${baziChart[pillar].stem}`);
+    });
+    
+    // 统计地支藏干
+    ['year_pillar', 'month_pillar', 'day_pillar', 'hour_pillar'].forEach(pillar => {
+      const hiddenStems = baziChart[pillar].hidden_stems;
+      hiddenStems.forEach((hiddenStem, index) => {
+        const hiddenElement = this.getElementFromStem(hiddenStem);
+        const weight = index === 0 ? 1.5 : index === 1 ? 1.0 : 0.5; // 本气、中气、余气权重
+        elements[hiddenElement] += weight;
+        elementDetails[hiddenElement].push(`${pillar.replace('_pillar', '')}支藏${hiddenStem}`);
+      });
     });
 
-    const sortedElements = Object.entries(elements).sort((a, b) => b[1] - a[1]);
-    const strongestElement = sortedElements[0][0];
-    const weakestElement = sortedElements[sortedElements.length - 1][0];
-
-    // 生成完全个性化的分析
+    // 生成个性化分析
     const genderTitle = gender === 'male' || gender === '男' ? '男命' : '女命';
-    const personalityTraits = this.generatePersonalityFromDayMaster(dayMaster, gender, elements);
-    const balanceAnalysis = this.generateBalanceAnalysis(elements, dayMasterElement, strongestElement, weakestElement, name);
-    const improvementSuggestions = this.generateImprovementSuggestions(dayMasterElement, weakestElement, strongestElement, name, gender);
+    const strengthLevel = strengthAnalysis.strength_level;
+    const useGodAnalysis = strengthAnalysis.use_god_analysis;
+    
+    const personalityTraits = this.generateAdvancedPersonalityTraits(dayMaster, strengthLevel, useGodAnalysis, gender);
+    const balanceAnalysis = this.generateAdvancedBalanceAnalysis(elements, dayMasterElement, strengthAnalysis, name);
+    const improvementSuggestions = this.generateAdvancedImprovementSuggestions(useGodAnalysis, strengthLevel, name, gender);
 
     return {
       distribution: elements,
-      detailed_analysis: `${name}的八字中，日主${dayMaster}(${dayMasterElement}元素)，${genderTitle}${dayMasterElement}命格具有${this.getElementNatureDescription(dayMasterElement)}的特质。${balanceAnalysis}`,
+      element_details: elementDetails,
+      detailed_analysis: `${name}的八字中，日主${dayMaster}(${dayMasterElement}元素)${strengthLevel}，${genderTitle}${dayMasterElement}命格。${useGodAnalysis.analysis}${balanceAnalysis}`,
       personality_traits: personalityTraits,
-      improvement_suggestions: improvementSuggestions
+      improvement_suggestions: improvementSuggestions,
+      strength_analysis: strengthAnalysis
     };
   }
 
-  // 生成个性特质描述
-  generatePersonalityFromDayMaster(dayMaster, gender, elements) {
-    const dayMasterTraits = {
-      '甲': '如参天大树般正直挺拔，具有开拓进取的精神和天然的领导气质',
-      '乙': '如花草般柔韧而富有生命力，具有很强的适应能力和艺术天赋',
-      '丙': '如太阳般光明磊落，性格开朗热情，具有很强的感染力和表现欲',
-      '丁': '如星火般温暖细腻，思维敏锐，具有细致的观察力和创意能力',
-      '戊': '如高山般稳重厚实，具有很强的责任心和包容心，值得信赖',
-      '己': '如沃土般温和包容，具有很好的亲和力和协调能力，善于照顾他人',
-      '庚': '如利剑般刚毅果断，具有很强的原则性和执行力，做事雷厉风行',
-      '辛': '如珠宝般精致优雅，注重品质和细节，具有很好的审美能力',
-      '壬': '如江河般胸怀宽广，具有很强的包容性和变通能力，智慧深邃',
-      '癸': '如露水般纯净灵性，直觉敏锐，具有很强的感知能力和同情心'
+  // 高级个性特质分析 - 基于旺衰和用神
+  generateAdvancedPersonalityTraits(dayMaster, strengthLevel, useGodAnalysis, gender) {
+    const baseDayMasterTraits = {
+      '甲': {
+        base: '如参天大树般正直挺拔，具有开拓进取的精神和天然的领导气质',
+        strong: '性格刚强果断，具有很强的主导欲和控制欲，不轻易妥协',
+        weak: '性格相对温和，善于合作，但有时缺乏决断力和主见'
+      },
+      '乙': {
+        base: '如花草般柔韧而富有生命力，具有很强的适应能力和艺术天赋',
+        strong: '个性坚韧不拔，善于在逆境中成长，具有很强的生命力',
+        weak: '性格温柔细腻，但有时过于敏感，容易受外界影响'
+      },
+      '丙': {
+        base: '如太阳般光明磊落，性格开朗热情，具有很强的感染力和表现欲',
+        strong: '性格热情奔放，具有很强的表现欲和领导才能，但有时过于张扬',
+        weak: '性格温和亲切，但有时缺乏自信，需要他人的认可和支持'
+      },
+      '丁': {
+        base: '如星火般温暖细腻，思维敏锐，具有细致的观察力和创意能力',
+        strong: '思维敏锐，洞察力强，具有很好的直觉和判断力',
+        weak: '性格内向细腻，但有时过于敏感，容易多愁善感'
+      },
+      '戊': {
+        base: '如高山般稳重厚实，具有很强的责任心和包容心，值得信赖',
+        strong: '性格稳重可靠，具有很强的责任感，但有时过于固执',
+        weak: '性格温和包容，但有时缺乏主见，容易被他人影响'
+      },
+      '己': {
+        base: '如沃土般温和包容，具有很好的亲和力和协调能力，善于照顾他人',
+        strong: '具有很强的包容心和协调能力，善于处理人际关系',
+        weak: '性格温和谦逊，但有时过于迁就他人，缺乏自我主张'
+      },
+      '庚': {
+        base: '如利剑般刚毅果断，具有很强的原则性和执行力，做事雷厉风行',
+        strong: '性格刚毅果断，具有很强的原则性，但有时过于严厉',
+        weak: '性格相对温和，但仍保持一定的原则性，善于变通'
+      },
+      '辛': {
+        base: '如珠宝般精致优雅，注重品质和细节，具有很好的审美能力',
+        strong: '追求完美，注重品质，具有很好的审美能力和品味',
+        weak: '性格温和优雅，但有时过于追求完美，容易钻牛角尖'
+      },
+      '壬': {
+        base: '如江河般胸怀宽广，具有很强的包容性和变通能力，智慧深邃',
+        strong: '智慧深邃，变通能力强，具有很好的适应性',
+        weak: '性格温和包容，但有时缺乏坚持，容易随波逐流'
+      },
+      '癸': {
+        base: '如露水般纯净灵性，直觉敏锐，具有很强的感知能力和同情心',
+        strong: '直觉敏锐，感知能力强，具有很好的洞察力',
+        weak: '性格温柔敏感，但有时过于情绪化，容易受情感影响'
+      }
     };
 
-    const baseTraits = dayMasterTraits[dayMaster] || '性格温和平衡，具有良好的适应能力';
-    const genderModification = gender === 'male' || gender === '男' 
-      ? '，在男性特质上表现为坚毅和担当' 
-      : '，在女性特质上表现为温柔和包容';
+    const traits = baseDayMasterTraits[dayMaster] || {
+      base: '性格温和平衡，具有良好的适应能力',
+      strong: '性格相对稳定',
+      weak: '性格相对温和'
+    };
+
+    let personalityDescription = traits.base;
     
-    return baseTraits + genderModification;
+    // 根据旺衰调整性格描述
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      personalityDescription += `。由于日主${strengthLevel}，${traits.strong}。`;
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      personalityDescription += `。由于日主${strengthLevel}，${traits.weak}。`;
+    } else {
+      personalityDescription += '。日主中和，性格相对平衡稳定。';
+    }
+    
+    // 根据用神添加建议
+    personalityDescription += `建议在生活中多接触${useGodAnalysis.use_god.split('（')[0]}相关的事物，有助于性格的完善和运势的提升。`;
+    
+    const genderModification = gender === 'male' || gender === '男' 
+      ? '作为男性，建议发挥阳刚之气，承担更多责任' 
+      : '作为女性，建议发挥阴柔之美，注重内在修养';
+    
+    return personalityDescription + genderModification + '。';
+  }
+  
+  // 高级平衡分析 - 基于旺衰理论
+  generateAdvancedBalanceAnalysis(elements, dayElement, strengthAnalysis, name) {
+    const strengthLevel = strengthAnalysis.strength_level;
+    const monthStrength = strengthAnalysis.month_strength;
+    const useGodAnalysis = strengthAnalysis.use_god_analysis;
+    
+    let analysis = `月令${monthStrength}，`;
+    
+    if (strengthLevel === '太旺') {
+      analysis += `日主过于强旺，需要克泄耗来平衡。命局中最需要${useGodAnalysis.use_god}来调节，避免${useGodAnalysis.avoid_god}进一步增强日主力量。`;
+    } else if (strengthLevel === '偏旺') {
+      analysis += `日主偏强，适度的克泄耗有利于发挥才能。建议重点关注${useGodAnalysis.use_god}相关的发展方向。`;
+    } else if (strengthLevel === '中和') {
+      analysis += `日主中和，五行相对平衡，是比较理想的命格。宜顺其自然发展，避免大的起伏变化。`;
+    } else if (strengthLevel === '偏弱') {
+      analysis += `日主偏弱，需要适当的生扶来增强力量。建议多接触${useGodAnalysis.use_god}相关的环境和事物。`;
+    } else {
+      analysis += `日主过弱，急需生扶来增强根基。必须重点加强${useGodAnalysis.use_god}方面的修养和环境。`;
+    }
+    
+    return analysis;
+  }
+  
+  // 高级改进建议 - 基于用神理论
+  generateAdvancedImprovementSuggestions(useGodAnalysis, strengthLevel, name, gender) {
+    const suggestions = [];
+    
+    // 基于用神的具体建议
+    if (useGodAnalysis.use_god.includes('木')) {
+      suggestions.push('五行补木：多接触大自然，居住环境宜有绿植，适合向东方发展，可多穿绿色衣物');
+    }
+    if (useGodAnalysis.use_god.includes('火')) {
+      suggestions.push('五行补火：多晒太阳，居住环境宜光线充足，适合向南方发展，可多穿红色衣物');
+    }
+    if (useGodAnalysis.use_god.includes('土')) {
+      suggestions.push('五行补土：多接触土地，居住环境宜稳定，适合本地发展，可多穿黄色衣物');
+    }
+    if (useGodAnalysis.use_god.includes('金')) {
+      suggestions.push('五行补金：多接触金属制品，居住环境宜整洁，适合向西方发展，可多穿白色衣物');
+    }
+    if (useGodAnalysis.use_god.includes('水')) {
+      suggestions.push('五行补水：多亲近水源，居住环境宜临水，适合向北方发展，可多穿黑色衣物');
+    }
+    
+    // 基于旺衰的生活建议
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      suggestions.push('日主偏强，宜多参与团队合作，发挥领导才能，但要注意不可过于强势');
+      suggestions.push('适合从事需要决断力和执行力的工作，但要学会倾听他人意见');
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      suggestions.push('日主偏弱，宜多寻求贵人帮助，加强自身修养，提升内在实力');
+      suggestions.push('适合从事需要细心和耐心的工作，要学会坚持和自信');
+    }
+    
+    // 性别化建议
+    const genderAdvice = gender === 'male' || gender === '男' 
+      ? '作为男性，建议在事业上积极进取，同时注重家庭责任的承担，培养阳刚正气' 
+      : '作为女性，建议在温柔的同时保持独立，事业与家庭并重，培养内在美德';
+    suggestions.push(genderAdvice);
+    
+    return suggestions.join('；') + '。';
   }
 
   // 生成平衡分析
@@ -234,6 +826,26 @@ class BaziAnalyzer {
       '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水'
     };
     return branchElements[branch] || '土';
+  }
+  
+  // 五行关系判断
+  getElementRelation(element1, element2) {
+    if (element1 === element2) return 'same';
+    
+    const generateCycle = {
+      '木': '火', '火': '土', '土': '金', '金': '水', '水': '木'
+    };
+    
+    const overcomeCycle = {
+      '木': '土', '火': '金', '土': '水', '金': '木', '水': '火'
+    };
+    
+    if (generateCycle[element1] === element2) return 'generate';
+    if (overcomeCycle[element1] === element2) return 'overcome';
+    if (generateCycle[element2] === element1) return 'beGenerated';
+    if (overcomeCycle[element2] === element1) return 'beOvercome';
+    
+    return 'neutral';
   }
 
   getElementNatureDescription(element) {
@@ -292,30 +904,566 @@ class BaziAnalyzer {
     return suggestions.join('；');
   }
 
-  // 其他分析方法的简化实现
+  // 动态格局判定系统 - 基于十神和月令
   determineAccuratePattern(baziChart, gender, name) {
+    const dayMaster = baziChart.day_master;
+    const monthBranch = baziChart.month_order;
+    const monthStem = baziChart.month_pillar.stem;
+    const strengthAnalysis = baziChart.element_strength;
+    
+    // 1. 判断月令十神
+    const monthTenGod = baziChart.month_pillar.ten_god;
+    
+    // 2. 分析月令藏干
+    const monthHiddenStems = baziChart.month_pillar.hidden_stems;
+    const monthMainGod = this.calculateTenGod(dayMaster, monthHiddenStems[0]);
+    
+    // 3. 格局判定
+    let patternName = '';
+    let patternType = '';
+    let patternStrength = '';
+    
+    // 正格判定（以月令为准）
+    if (['正官', '正财', '正印', '食神'].includes(monthMainGod)) {
+      patternName = monthMainGod + '格';
+      patternType = '正格';
+    } else if (['七杀', '偏财', '偏印', '伤官'].includes(monthMainGod)) {
+      patternName = monthMainGod + '格';
+      patternType = '正格';
+    } else if (['比肩', '劫财'].includes(monthMainGod)) {
+      patternName = '建禄格';
+      patternType = '正格';
+    } else {
+      // 特殊格局判定
+      const specialPattern = this.analyzeSpecialPattern(baziChart);
+      if (specialPattern) {
+        patternName = specialPattern.name;
+        patternType = specialPattern.type;
+      } else {
+        patternName = '杂气格';
+        patternType = '正格';
+      }
+    }
+    
+    // 4. 格局强度评估
+    patternStrength = this.evaluatePatternStrength(baziChart, patternName, strengthAnalysis);
+    
+    // 5. 生成详细特征
+    const detailedTraits = this.generatePatternTraits(patternName, patternType, strengthAnalysis, gender, name);
+    
+    // 6. 适合职业分析
+    const suitableCareers = this.generatePatternCareers(patternName, strengthAnalysis, gender);
+    
+    // 7. 人生哲学
+    const philosophicalMeaning = this.generatePatternPhilosophy(patternName, patternType, strengthAnalysis);
+    
+    // 8. 行动计划
+    const actionPlan = this.generatePatternActionPlan(patternName, strengthAnalysis, gender);
+    
     return {
-      pattern_name: '正格',
-      strength: '中等',
-      detailed_traits: `${name}具有正格命理特征，性格正直，做事有原则`,
-      suitable_careers: '适合从事管理、教育、咨询等需要责任心的工作',
-      philosophical_meaning: '人生以正道为本，稳步发展',
-      action_plan: '建议踏实做事，积累经验，逐步提升'
+      pattern_name: patternName,
+      pattern_type: patternType,
+      strength: patternStrength,
+      month_ten_god: monthMainGod,
+      detailed_traits: detailedTraits,
+      suitable_careers: suitableCareers,
+      philosophical_meaning: philosophicalMeaning,
+      action_plan: actionPlan,
+      pattern_analysis: this.generatePatternAnalysis(patternName, baziChart, strengthAnalysis)
     };
   }
+  
+  // 特殊格局分析
+  analyzeSpecialPattern(baziChart) {
+    const dayMaster = baziChart.day_master;
+    const strengthLevel = baziChart.element_strength.strength_level;
+    
+    // 从强格判定
+    if (strengthLevel === '太旺') {
+      const supportCount = this.countSameElementSupport(baziChart);
+      if (supportCount >= 3) {
+        return { name: '从强格', type: '特殊格局' };
+      }
+    }
+    
+    // 从弱格判定
+    if (strengthLevel === '太弱') {
+      const restrainCount = this.countRestrainElements(baziChart);
+      if (restrainCount >= 3) {
+        return { name: '从弱格', type: '特殊格局' };
+      }
+    }
+    
+    return null;
+  }
+  
+  // 计算同类五行支持数量
+  countSameElementSupport(baziChart) {
+    const dayElement = baziChart.day_master_element;
+    let count = 0;
+    
+    ['year_pillar', 'month_pillar', 'hour_pillar'].forEach(pillar => {
+      if (baziChart[pillar].element === dayElement) count++;
+      baziChart[pillar].hidden_stems.forEach(hiddenStem => {
+        if (this.getElementFromStem(hiddenStem) === dayElement) count++;
+      });
+    });
+    
+    return count;
+  }
+  
+  // 计算克制元素数量
+  countRestrainElements(baziChart) {
+    const dayElement = baziChart.day_master_element;
+    const restrainElements = this.getRestrainElements(dayElement);
+    let count = 0;
+    
+    ['year_pillar', 'month_pillar', 'hour_pillar'].forEach(pillar => {
+      if (restrainElements.includes(baziChart[pillar].element)) count++;
+      baziChart[pillar].hidden_stems.forEach(hiddenStem => {
+        if (restrainElements.includes(this.getElementFromStem(hiddenStem))) count++;
+      });
+    });
+    
+    return count;
+  }
+  
+  // 格局强度评估
+  evaluatePatternStrength(baziChart, patternName, strengthAnalysis) {
+    const strengthLevel = strengthAnalysis.strength_level;
+    const monthStrength = strengthAnalysis.month_strength;
+    
+    if (patternName.includes('从')) {
+      // 特殊格局强度
+      return strengthLevel === '太旺' || strengthLevel === '太弱' ? '上等' : '中等';
+    } else {
+      // 正格强度
+      if (monthStrength === '旺' && (strengthLevel === '中和' || strengthLevel === '偏旺')) {
+        return '上等';
+      } else if (monthStrength === '相' || monthStrength === '生') {
+        return '中上';
+      } else if (monthStrength === '休' || monthStrength === '余气') {
+        return '中等';
+      } else {
+        return '偏弱';
+      }
+    }
+  }
+  
+  // 生成格局特征
+  generatePatternTraits(patternName, patternType, strengthAnalysis, gender, name) {
+    const patternTraits = {
+      '正官格': `${name}具有正官格特征，性格正直有原则，具有很强的责任感和正义感，适合在正统行业发展`,
+      '七杀格': `${name}具有七杀格特征，性格刚毅果断，具有很强的开拓精神和竞争意识，适合在竞争激烈的环境中发展`,
+      '正财格': `${name}具有正财格特征，性格务实稳重，具有很好的理财能力和商业头脑，适合从事财务相关工作`,
+      '偏财格': `${name}具有偏财格特征，性格灵活变通，具有很好的投资眼光和商业敏感度，适合从事投资贸易`,
+      '正印格': `${name}具有正印格特征，性格温和慈祥，具有很强的学习能力和文化修养，适合从事教育文化工作`,
+      '偏印格': `${name}具有偏印格特征，性格独特敏锐，具有很强的直觉和创新能力，适合从事技术研发工作`,
+      '食神格': `${name}具有食神格特征，性格温和乐观，具有很好的表达能力和艺术天赋，适合从事文艺创作`,
+      '伤官格': `${name}具有伤官格特征，性格聪明机敏，具有很强的表现欲和创新精神，适合从事创意设计`,
+      '建禄格': `${name}具有建禄格特征，性格自立自强，具有很强的独立能力和进取精神，适合自主创业`,
+      '从强格': `${name}具有从强格特征，性格强势主导，具有很强的领导能力，但需要学会适度收敛`,
+      '从弱格': `${name}具有从弱格特征，性格随和适应，具有很好的协调能力，适合在团队中发挥作用`
+    };
+    
+    const baseTraits = patternTraits[patternName] || `${name}具有${patternName}特征，性格相对平衡`;
+    const strengthModification = strengthAnalysis.strength_level === '中和' 
+      ? '，命格平衡，发展稳定' 
+      : `，日主${strengthAnalysis.strength_level}，${strengthAnalysis.use_god_analysis.analysis}`;
+    
+    return baseTraits + strengthModification;
+  }
+  
+  // 生成格局适合职业
+  generatePatternCareers(patternName, strengthAnalysis, gender) {
+    const careerMap = {
+      '正官格': '公务员、法官、律师、管理人员、教师、医生等正统职业',
+      '七杀格': '军人、警察、企业家、销售经理、竞技体育、外科医生等需要果断的职业',
+      '正财格': '会计师、银行家、理财顾问、商人、房地产经纪等财务相关职业',
+      '偏财格': '投资顾问、贸易商、股票经纪、风险投资、国际贸易等灵活性强的职业',
+      '正印格': '教师、学者、作家、编辑、图书管理员、文化工作者等文教职业',
+      '偏印格': '研究员、工程师、设计师、心理咨询师、占卜师等技术性职业',
+      '食神格': '厨师、艺术家、演员、主持人、美食评论家、娱乐业等表现性职业',
+      '伤官格': '设计师、广告创意、发明家、自媒体、艺术创作等创新性职业',
+      '建禄格': '企业家、个体经营、自由职业、项目经理等独立性强的职业',
+      '从强格': '企业高管、政治家、军事将领等需要强势领导的职业',
+      '从弱格': '助理、秘书、服务业、协调员等需要配合他人的职业'
+    };
+    
+    const baseCareers = careerMap[patternName] || '根据个人兴趣和能力选择合适的职业';
+    const genderModification = gender === 'male' || gender === '男' 
+      ? '，作为男性宜选择更具挑战性和领导性的岗位' 
+      : '，作为女性宜选择更注重细致和协调的岗位';
+    
+    return baseCareers + genderModification;
+  }
+  
+  // 生成格局哲学意义
+  generatePatternPhilosophy(patternName, patternType, strengthAnalysis) {
+    const philosophyMap = {
+      '正官格': '人生以正道为本，遵纪守法，稳步发展，追求社会认可和地位',
+      '七杀格': '人生充满挑战，需要勇敢面对，在竞争中成长，追求突破和成就',
+      '正财格': '人生以务实为本，脚踏实地，积累财富，追求物质安全和稳定',
+      '偏财格': '人生机遇多变，需要把握时机，灵活应变，追求财富和自由',
+      '正印格': '人生以学习为本，注重修养，传承文化，追求智慧和品德',
+      '偏印格': '人生独特多彩，需要创新思维，另辟蹊径，追求个性和突破',
+      '食神格': '人生以快乐为本，享受生活，表达自我，追求艺术和美好',
+      '伤官格': '人生以创新为本，挑战传统，表现才华，追求个性和成就',
+      '建禄格': '人生以自立为本，依靠自己，独立奋斗，追求自主和成功',
+      '从强格': '人生以强势为本，发挥优势，主导局面，但需要学会包容',
+      '从弱格': '人生以顺应为本，适应环境，借力发展，追求和谐共赢'
+    };
+    
+    return philosophyMap[patternName] || '人生需要平衡发展，顺应自然规律';
+  }
+  
+  // 生成格局行动计划
+  generatePatternActionPlan(patternName, strengthAnalysis, gender) {
+    const useGodAnalysis = strengthAnalysis.use_god_analysis;
+    const strengthLevel = strengthAnalysis.strength_level;
+    
+    let actionPlan = '';
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      actionPlan = '建议多参与团队合作，发挥领导才能，同时要学会倾听他人意见，避免过于强势';
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      actionPlan = '建议多寻求贵人帮助，加强自身修养，提升内在实力，逐步建立自信';
+    } else {
+      actionPlan = '建议保持现有的平衡状态，稳步发展，避免大的变动';
+    }
+    
+    actionPlan += `。在五行调理方面，${useGodAnalysis.analysis.replace('日主', '').replace('，', '，建议')}`;
+    
+    const genderPlan = gender === 'male' || gender === '男' 
+      ? '作为男性，要承担更多责任，发挥阳刚之气' 
+      : '作为女性，要注重内在修养，发挥阴柔之美';
+    
+    return actionPlan + '。' + genderPlan + '。';
+  }
+  
+  // 生成格局分析
+  generatePatternAnalysis(patternName, baziChart, strengthAnalysis) {
+    const monthTenGod = baziChart.month_pillar.ten_god;
+    const monthStrength = strengthAnalysis.month_strength;
+    const strengthLevel = strengthAnalysis.strength_level;
+    
+    return `格局分析：月令${baziChart.month_order}，藏干主气为${baziChart.month_pillar.hidden_stems[0]}，与日主${baziChart.day_master}形成${monthTenGod}关系，故为${patternName}。月令${monthStrength}，日主${strengthLevel}，${strengthAnalysis.use_god_analysis.analysis}`;
+  }
 
+  // 精确大运流年分析 - 基于传统起运法
   calculatePreciseFortune(baziChart, birth_date, gender, name) {
+    const birthDate = new Date(birth_date);
     const currentYear = new Date().getFullYear();
-    const birthYear = new Date(birth_date).getFullYear();
-    const currentAge = currentYear - birthYear;
-
+    const currentAge = currentYear - birthDate.getFullYear();
+    
+    // 1. 计算起运时间
+    const startLuckAge = this.calculateStartLuckAge(baziChart, birthDate, gender);
+    
+    // 2. 推算大运干支
+    const dayunSequence = this.calculateDayunSequence(baziChart, gender, startLuckAge);
+    
+    // 3. 确定当前大运
+    const currentDayun = this.getCurrentDayun(dayunSequence, currentAge);
+    
+    // 4. 分析当前流年
+    const currentYearAnalysis = this.analyzeCurrentYear(baziChart, currentYear, currentDayun);
+    
+    // 5. 未来十年预测
+    const nextDecadeForecast = this.generateDecadeForecast(baziChart, dayunSequence, currentAge);
+    
+    // 6. 详细流年分析
+    const detailedYearlyAnalysis = this.generateDetailedYearlyAnalysis(baziChart, currentDayun, currentYear, currentAge);
+    
     return {
       current_age: currentAge,
-      current_period: `${currentAge}岁大运期`,
-      life_periods: [`青年期(20-30岁)`, `中年期(30-50岁)`, `成熟期(50-70岁)`],
-      current_year_analysis: `${currentYear}年运势平稳，适合稳步发展`,
-      next_decade_forecast: '未来十年整体运势向好，事业有成'
+      start_luck_age: startLuckAge,
+      current_period: currentDayun ? `${currentDayun.start_age}-${currentDayun.end_age}岁 ${currentDayun.stem}${currentDayun.branch}大运` : '未起运',
+      current_dayun: currentDayun,
+      life_periods: dayunSequence,
+      current_year_analysis: currentYearAnalysis,
+      next_decade_forecast: nextDecadeForecast,
+      dayun_analysis: this.analyzeDayunInfluence(baziChart, currentDayun),
+      detailed_yearly_analysis: detailedYearlyAnalysis
     };
+  }
+  
+  // 计算起运年龄
+  calculateStartLuckAge(baziChart, birthDate, gender) {
+    const birthYear = birthDate.getFullYear();
+    const birthMonth = birthDate.getMonth() + 1;
+    const birthDay = birthDate.getDate();
+    
+    // 判断阳年阴年
+    const yearStemIndex = this.heavenlyStems.indexOf(baziChart.year_pillar.stem);
+    const isYangYear = yearStemIndex % 2 === 0;
+    
+    // 男命阳年、女命阴年顺行，男命阴年、女命阳年逆行
+    const isMale = gender === 'male' || gender === '男';
+    const isForward = (isMale && isYangYear) || (!isMale && !isYangYear);
+    
+    // 计算到下一个节气的天数（简化计算）
+    let daysToNextTerm = 0;
+    if (isForward) {
+      // 顺行：计算到下一个节气的天数
+      daysToNextTerm = this.calculateDaysToNextTerm(birthMonth, birthDay);
+    } else {
+      // 逆行：计算到上一个节气的天数
+      daysToNextTerm = this.calculateDaysToPrevTerm(birthMonth, birthDay);
+    }
+    
+    // 三天折一年
+    const startAge = Math.floor(daysToNextTerm / 3);
+    return Math.max(1, startAge); // 最少1岁起运
+  }
+  
+  // 计算到下一个节气的天数（简化）
+  calculateDaysToNextTerm(month, day) {
+    const termDays = {
+      1: 4, 2: 19, 3: 6, 4: 21, 5: 5, 6: 21,
+      7: 6, 8: 21, 9: 6, 10: 22, 11: 7, 12: 23
+    };
+    
+    const nextTermDay = termDays[month] || 15;
+    if (day < nextTermDay) {
+      return nextTermDay - day;
+    } else {
+      const nextMonth = month === 12 ? 1 : month + 1;
+      const nextMonthTermDay = termDays[nextMonth] || 15;
+      const daysInMonth = new Date(2024, month, 0).getDate();
+      return (daysInMonth - day) + nextMonthTermDay;
+    }
+  }
+  
+  // 计算到上一个节气的天数（简化）
+  calculateDaysToPrevTerm(month, day) {
+    const termDays = {
+      1: 4, 2: 19, 3: 6, 4: 21, 5: 5, 6: 21,
+      7: 6, 8: 21, 9: 6, 10: 22, 11: 7, 12: 23
+    };
+    
+    const currentTermDay = termDays[month] || 15;
+    if (day > currentTermDay) {
+      return day - currentTermDay;
+    } else {
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevTermDay = termDays[prevMonth] || 15;
+      return day + (30 - prevTermDay); // 简化计算
+    }
+  }
+  
+  // 推算大运干支序列
+  calculateDayunSequence(baziChart, gender, startAge) {
+    const monthStemIndex = this.heavenlyStems.indexOf(baziChart.month_pillar.stem);
+    const monthBranchIndex = this.earthlyBranches.indexOf(baziChart.month_pillar.branch);
+    
+    // 判断顺逆
+    const yearStemIndex = this.heavenlyStems.indexOf(baziChart.year_pillar.stem);
+    const isYangYear = yearStemIndex % 2 === 0;
+    const isMale = gender === 'male' || gender === '男';
+    const isForward = (isMale && isYangYear) || (!isMale && !isYangYear);
+    
+    const dayunSequence = [];
+    
+    for (let i = 0; i < 8; i++) { // 计算8步大运
+      let stemIndex, branchIndex;
+      
+      if (isForward) {
+        stemIndex = (monthStemIndex + i + 1) % 10;
+        branchIndex = (monthBranchIndex + i + 1) % 12;
+      } else {
+        stemIndex = (monthStemIndex - i - 1 + 10) % 10;
+        branchIndex = (monthBranchIndex - i - 1 + 12) % 12;
+      }
+      
+      const startAgeForThisDayun = startAge + i * 10;
+      const endAgeForThisDayun = startAgeForThisDayun + 9;
+      
+      const dayunStem = this.heavenlyStems[stemIndex];
+      const dayunBranch = this.earthlyBranches[branchIndex];
+      const dayunElement = this.getElementFromStem(dayunStem);
+      const dayunTenGod = this.calculateTenGod(baziChart.day_master, dayunStem);
+      
+      dayunSequence.push({
+        period: i + 1,
+        start_age: startAgeForThisDayun,
+        end_age: endAgeForThisDayun,
+        stem: dayunStem,
+        branch: dayunBranch,
+        element: dayunElement,
+        ten_god: dayunTenGod,
+        ganzhi: `${dayunStem}${dayunBranch}`,
+        analysis: this.analyzeDayunPeriod(baziChart, dayunStem, dayunBranch, dayunTenGod)
+      });
+    }
+    
+    return dayunSequence;
+  }
+  
+  // 确定当前大运
+  getCurrentDayun(dayunSequence, currentAge) {
+    return dayunSequence.find(dayun => 
+      currentAge >= dayun.start_age && currentAge <= dayun.end_age
+    ) || null;
+  }
+  
+  // 分析大运时期特征
+  analyzeDayunPeriod(baziChart, dayunStem, dayunBranch, dayunTenGod) {
+    const dayElement = baziChart.day_master_element;
+    const dayunElement = this.getElementFromStem(dayunStem);
+    const relation = this.getElementRelation(dayunElement, dayElement);
+    const strengthAnalysis = baziChart.element_strength;
+    
+    let analysis = '';
+    
+    // 基于十神分析大运特征
+    const tenGodAnalysis = {
+      '比肩': '此运期适合合作发展，朋友助力较多，但要注意财务管理',
+      '劫财': '此运期竞争激烈，需要谨慎理财，避免因朋友破财',
+      '食神': '此运期创意丰富，适合艺术创作，身体健康，子女运佳',
+      '伤官': '此运期才华横溢，适合创新突破，但要注意言行谨慎',
+      '正财': '此运期财运稳定，适合投资理财，感情婚姻顺利',
+      '偏财': '此运期财运机会多，适合投机投资，但要控制风险',
+      '正官': '此运期事业发展，适合求职升迁，社会地位提升',
+      '七杀': '此运期挑战较多，需要勇敢面对，适合开拓新领域',
+      '正印': '此运期学习运佳，适合进修深造，贵人相助较多',
+      '偏印': '此运期思维敏锐，适合技术研发，但要注意健康'
+    };
+    
+    analysis = tenGodAnalysis[dayunTenGod] || '此运期需要根据具体情况灵活应对';
+    
+    // 结合日主旺衰调整分析
+    const strengthLevel = strengthAnalysis.strength_level;
+    if (strengthLevel === '偏弱' || strengthLevel === '太弱') {
+      if (['比肩', '劫财', '正印', '偏印'].includes(dayunTenGod)) {
+        analysis += '，此运对您特别有利，能够增强个人实力';
+      } else if (['正官', '七杀', '食神', '伤官'].includes(dayunTenGod)) {
+        analysis += '，此运压力较大，需要谨慎应对，多寻求帮助';
+      }
+    } else if (strengthLevel === '偏旺' || strengthLevel === '太旺') {
+      if (['正官', '七杀', '食神', '伤官', '正财', '偏财'].includes(dayunTenGod)) {
+        analysis += '，此运能够很好地发挥您的才能，适合积极进取';
+      } else if (['比肩', '劫财', '正印', '偏印'].includes(dayunTenGod)) {
+        analysis += '，此运可能过于强势，需要学会收敛和包容';
+      }
+    }
+    
+    return analysis;
+  }
+  
+  // 分析当前流年
+  analyzeCurrentYear(baziChart, currentYear, currentDayun) {
+    const yearStemIndex = (currentYear - 4) % 10;
+    const yearBranchIndex = (currentYear - 4) % 12;
+    const yearStem = this.heavenlyStems[yearStemIndex];
+    const yearBranch = this.earthlyBranches[yearBranchIndex];
+    const yearTenGod = this.calculateTenGod(baziChart.day_master, yearStem);
+    
+    let analysis = `${currentYear}年${yearStem}${yearBranch}，流年十神为${yearTenGod}。`;
+    
+    // 流年与大运的关系
+    if (currentDayun) {
+      const dayunYearRelation = this.getElementRelation(
+        this.getElementFromStem(yearStem),
+        this.getElementFromStem(currentDayun.stem)
+      );
+      
+      if (dayunYearRelation === 'same') {
+        analysis += '流年与大运同气，运势较为稳定。';
+      } else if (dayunYearRelation === 'generate') {
+        analysis += '流年生大运，有贵人相助，运势向好。';
+      } else if (dayunYearRelation === 'overcome') {
+        analysis += '流年克大运，需要谨慎应对，避免冲动。';
+      } else if (dayunYearRelation === 'beGenerated') {
+        analysis += '大运生流年，付出较多，但有收获。';
+      } else if (dayunYearRelation === 'beOvercome') {
+        analysis += '大运克流年，压力较大，需要坚持。';
+      }
+    }
+    
+    // 基于流年十神的具体建议
+    const yearAdvice = {
+      '比肩': '适合合作发展，朋友运佳，但要注意理财',
+      '劫财': '竞争激烈，需要谨慎投资，避免借贷',
+      '食神': '创意丰富，身体健康，适合艺术创作',
+      '伤官': '才华横溢，但要注意言行，避免口舌是非',
+      '正财': '财运稳定，适合投资，感情顺利',
+      '偏财': '财运机会多，但要控制风险，避免投机',
+      '正官': '事业运佳，适合求职升迁，社会地位提升',
+      '七杀': '挑战较多，需要勇敢面对，适合开拓',
+      '正印': '学习运佳，贵人相助，适合进修',
+      '偏印': '思维敏锐，适合研发，但要注意健康'
+    };
+    
+    analysis += yearAdvice[yearTenGod] || '需要根据具体情况灵活应对';
+    
+    return analysis;
+  }
+  
+  // 生成未来十年预测
+  generateDecadeForecast(baziChart, dayunSequence, currentAge) {
+    const nextDecade = dayunSequence.filter(dayun => 
+      dayun.start_age > currentAge && dayun.start_age <= currentAge + 10
+    );
+    
+    if (nextDecade.length === 0) {
+      return '未来十年继续当前大运的影响，建议保持稳定发展。';
+    }
+    
+    let forecast = '未来十年运势展望：';
+    
+    nextDecade.forEach(dayun => {
+      forecast += `${dayun.start_age}-${dayun.end_age}岁${dayun.ganzhi}运，${dayun.analysis}。`;
+    });
+    
+    return forecast;
+  }
+  
+  // 分析大运对命局的影响
+  analyzeDayunInfluence(baziChart, currentDayun) {
+    if (!currentDayun) {
+      return '尚未起运，以原局为主。';
+    }
+    
+    const dayElement = baziChart.day_master_element;
+    const dayunElement = this.getElementFromStem(currentDayun.stem);
+    const dayunBranchElement = this.getBranchElement(currentDayun.branch);
+    const strengthAnalysis = baziChart.element_strength;
+    
+    let influence = `当前${currentDayun.ganzhi}大运，天干${currentDayun.stem}为${currentDayun.ten_god}，`;
+    
+    // 分析大运对日主的影响
+    const stemRelation = this.getElementRelation(dayunElement, dayElement);
+    const branchRelation = this.getElementRelation(dayunBranchElement, dayElement);
+    
+    if (stemRelation === 'same' || stemRelation === 'beGenerated') {
+      influence += '天干有利于日主，';
+    } else if (stemRelation === 'overcome' || stemRelation === 'beOvercome') {
+      influence += '天干对日主有制约，';
+    }
+    
+    if (branchRelation === 'same' || branchRelation === 'beGenerated') {
+      influence += '地支有利于日主。';
+    } else if (branchRelation === 'overcome' || branchRelation === 'beOvercome') {
+      influence += '地支对日主有制约。';
+    }
+    
+    // 结合原局旺衰给出建议
+    const strengthLevel = strengthAnalysis.strength_level;
+    if (strengthLevel === '偏弱' || strengthLevel === '太弱') {
+      if (stemRelation === 'same' || stemRelation === 'beGenerated') {
+        influence += '此运有助于增强实力，宜积极进取。';
+      } else {
+        influence += '此运压力较大，宜谨慎保守，寻求帮助。';
+      }
+    } else if (strengthLevel === '偏旺' || strengthLevel === '太旺') {
+      if (stemRelation === 'overcome' || stemRelation === 'generate') {
+        influence += '此运有助于发挥才能，宜主动出击。';
+      } else {
+        influence += '此运可能过于强势，宜学会收敛。';
+      }
+    }
+    
+    return influence;
   }
 
   generateComprehensiveLifeGuidance(baziChart, patternAnalysis, wuxingAnalysis, gender, name) {
@@ -338,6 +1486,233 @@ class BaziAnalyzer {
     };
   }
 
+  // 生成四柱详细解释
+  generatePillarInterpretations(baziChart, gender, name) {
+    const interpretations = {
+      year_pillar: this.interpretYearPillar(baziChart.year_pillar, baziChart.day_master, gender, name),
+      month_pillar: this.interpretMonthPillar(baziChart.month_pillar, baziChart.day_master, baziChart.element_strength, gender, name),
+      day_pillar: this.interpretDayPillar(baziChart.day_pillar, baziChart.element_strength, gender, name),
+      hour_pillar: this.interpretHourPillar(baziChart.hour_pillar, baziChart.day_master, gender, name)
+    };
+    
+    return interpretations;
+  }
+  
+  // 年柱解释
+  interpretYearPillar(yearPillar, dayMaster, gender, name) {
+    const tenGod = yearPillar.ten_god;
+    const stemElement = yearPillar.element;
+    const branchElement = this.getBranchElement(yearPillar.branch);
+    const hiddenStems = yearPillar.hidden_stems;
+    
+    let interpretation = `${name}的年柱${yearPillar.stem}${yearPillar.branch}，天干${yearPillar.stem}为${stemElement}，与日主${dayMaster}形成${tenGod}关系。`;
+    
+    // 基于十神关系的年柱含义
+    const yearMeanings = {
+      '正官': '祖上有官贵之气，家族重视名誉和地位，早年受到良好的道德教育，具有正统的价值观念',
+      '七杀': '祖上性格刚强，家族具有开拓精神，早年环境较为严格，培养了坚韧不拔的性格',
+      '正财': '祖上勤俭持家，家族注重实际和稳定，早年生活环境务实，培养了良好的理财观念',
+      '偏财': '祖上善于经营，家族具有商业头脑，早年接触多元化环境，培养了灵活的思维方式',
+      '正印': '祖上重视文化教育，家族书香门第，早年受到良好的文化熏陶，具有深厚的学习基础',
+      '偏印': '祖上思维独特，家族具有创新精神，早年环境多变，培养了独立思考的能力',
+      '食神': '祖上性格温和，家族和睦融洽，早年生活环境宽松，培养了乐观开朗的性格',
+      '伤官': '祖上才华横溢，家族重视才能表现，早年环境活跃，培养了强烈的表现欲望',
+      '比肩': '祖上自立自强，家族注重独立精神，早年学会自力更生，培养了坚强的意志力',
+      '劫财': '祖上竞争意识强，家族环境较为复杂，早年经历一些波折，培养了应变能力'
+    };
+    
+    interpretation += yearMeanings[tenGod] || '年柱体现了祖辈的影响和早年的成长环境';
+    
+    // 地支藏干的影响
+    if (hiddenStems.length > 1) {
+      interpretation += `。地支${yearPillar.branch}藏干${hiddenStems.join('、')}，表明祖辈影响具有多重层面，`;
+      interpretation += `主要体现在${this.getHiddenStemInfluence(hiddenStems[0], dayMaster)}方面。`;
+    }
+    
+    return interpretation;
+  }
+  
+  // 月柱解释
+  interpretMonthPillar(monthPillar, dayMaster, strengthAnalysis, gender, name) {
+    const tenGod = monthPillar.ten_god;
+    const monthStrength = strengthAnalysis.month_strength;
+    const strengthLevel = strengthAnalysis.strength_level;
+    
+    let interpretation = `${name}的月柱${monthPillar.stem}${monthPillar.branch}，为月令提纲，天干${monthPillar.stem}与日主${dayMaster}形成${tenGod}关系，月令${monthStrength}。`;
+    
+    // 基于月令十神的详细解释
+    const monthMeanings = {
+      '正官': `月令正官${monthStrength}，表明${name}具有正统的价值观念和强烈的责任感。青年时期适合在正规机构发展，重视社会地位和名誉。${gender === '男性' ? '男命月令正官，事业心强，适合从政或管理工作' : '女命月令正官，夫星得力，婚姻美满，配偶有能力'}`,
+      '七杀': `月令七杀${monthStrength}，表明${name}性格刚毅果断，具有很强的开拓精神和竞争意识。青年时期充满挑战，需要勇敢面对困难。${gender === '男性' ? '男命月令七杀，适合军警或竞争激烈的行业' : '女命月令七杀，个性较强，需要找到能够理解和包容的伴侣'}`,
+      '正财': `月令正财${monthStrength}，表明${name}具有很好的理财能力和商业头脑。青年时期财运稳定，适合从事实业或金融相关工作。${gender === '男性' ? '男命月令正财，妻财并美，婚姻幸福' : '女命月令正财，理财有道，家庭经济稳定'}`,
+      '偏财': `月令偏财${monthStrength}，表明${name}具有敏锐的商业嗅觉和投资眼光。青年时期财运机会多，但需要控制风险。${gender === '男性' ? '男命月令偏财，异性缘佳，但需要专一' : '女命月令偏财，善于理财，但要避免投机'}`,
+      '正印': `月令正印${monthStrength}，表明${name}具有很强的学习能力和文化修养。青年时期学业有成，适合从事教育或文化工作。${gender === '男性' ? '男命月令正印，母亲贤能，得到很好的教育' : '女命月令正印，知书达理，是贤妻良母的典型'}`,
+      '偏印': `月令偏印${monthStrength}，表明${name}思维敏锐独特，具有很强的直觉和创新能力。青年时期适合从事技术或研发工作。${gender === '男性' ? '男命月令偏印，思维独特，适合技术创新' : '女命月令偏印，聪明机智，但要注意与长辈的关系'}`,
+      '食神': `月令食神${monthStrength}，表明${name}性格温和乐观，具有很好的表达能力和艺术天赋。青年时期生活愉快，适合从事文艺或服务行业。${gender === '男性' ? '男命月令食神，子女缘佳，晚年享福' : '女命月令食神，温柔贤淑，子女有出息'}`,
+      '伤官': `月令伤官${monthStrength}，表明${name}聪明机敏，具有很强的表现欲和创新精神。青年时期才华横溢，但要注意言行谨慎。${gender === '男性' ? '男命月令伤官，才华出众，但要注意克制' : '女命月令伤官，聪明美丽，但要注意感情问题'}`,
+      '比肩': `月令比肩${monthStrength}，表明${name}性格自立自强，具有很强的独立能力。青年时期适合与朋友合作，但要注意理财。${gender === '男性' ? '男命月令比肩，朋友多助，但要防破财' : '女命月令比肩，独立性强，但要注意夫妻关系'}`,
+      '劫财': `月令劫财${monthStrength}，表明${name}竞争意识强，具有很好的应变能力。青年时期竞争激烈，需要谨慎理财。${gender === '男性' ? '男命月令劫财，兄弟朋友多，但要防小人' : '女命月令劫财，性格较强，要注意与配偶的关系'}`
+    };
+    
+    interpretation += monthMeanings[tenGod] || '月柱体现了青年时期的发展特点和人生方向';
+    
+    // 结合日主旺衰的分析
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      interpretation += `。由于日主${strengthLevel}，月令的影响更加明显，建议适度收敛，发挥正面作用。`;
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      interpretation += `。由于日主${strengthLevel}，需要月令的生扶，建议充分发挥月令的积极作用。`;
+    }
+    
+    return interpretation;
+  }
+  
+  // 日柱解释
+  interpretDayPillar(dayPillar, strengthAnalysis, gender, name) {
+    const dayStem = dayPillar.stem;
+    const dayBranch = dayPillar.branch;
+    const dayElement = dayPillar.element;
+    const strengthLevel = strengthAnalysis.strength_level;
+    const useGodAnalysis = strengthAnalysis.use_god_analysis;
+    
+    let interpretation = `${name}的日柱${dayStem}${dayBranch}，日主${dayStem}为${dayElement}命，${strengthLevel}。`;
+    
+    // 日主特性分析
+    const dayMasterTraits = {
+      '甲': `甲木日主，如参天大树，性格正直挺拔，具有开拓进取的精神。${gender === '男性' ? '男命甲木，天生具有领导气质，适合开创性事业' : '女命甲木，性格独立坚强，是现代女性的典型'}`,
+      '乙': `乙木日主，如花草藤蔓，性格柔韧灵活，具有很强的适应能力。${gender === '男性' ? '男命乙木，温文尔雅，善于协调人际关系' : '女命乙木，温柔美丽，具有很好的艺术天赋'}`,
+      '丙': `丙火日主，如太阳之火，性格光明磊落，具有很强的感染力。${gender === '男性' ? '男命丙火，热情开朗，天生的领导者' : '女命丙火，活泼大方，人缘极佳'}`,
+      '丁': `丁火日主，如星火烛光，性格温暖细腻，具有敏锐的洞察力。${gender === '男性' ? '男命丁火，思维敏锐，适合文化创意工作' : '女命丁火，温柔体贴，是理想的贤内助'}`,
+      '戊': `戊土日主，如高山大地，性格稳重厚实，具有很强的包容心。${gender === '男性' ? '男命戊土，稳重可靠，是值得信赖的伙伴' : '女命戊土，贤惠持家，家庭和睦'}`,
+      '己': `己土日主，如田园沃土，性格温和包容，具有很好的亲和力。${gender === '男性' ? '男命己土，温和谦逊，善于照顾他人' : '女命己土，温柔贤淑，是标准的贤妻良母'}`,
+      '庚': `庚金日主，如刀剑钢铁，性格刚毅果断，具有很强的原则性。${gender === '男性' ? '男命庚金，刚毅果断，适合需要决断力的工作' : '女命庚金，性格较强，需要找到能够欣赏的伴侣'}`,
+      '辛': `辛金日主，如珠宝首饰，性格精致优雅，具有很好的审美能力。${gender === '男性' ? '男命辛金，注重品质，追求完美' : '女命辛金，美丽优雅，具有很好的品味'}`,
+      '壬': `壬水日主，如江河大海，性格胸怀宽广，具有很强的包容性。${gender === '男性' ? '男命壬水，智慧深邃，适合需要智慧的工作' : '女命壬水，温柔如水，善解人意'}`,
+      '癸': `癸水日主，如雨露甘霖，性格纯净灵性，具有很强的感知能力。${gender === '男性' ? '男命癸水，直觉敏锐，具有很好的洞察力' : '女命癸水，温柔敏感，需要细心呵护'}`
+    };
+    
+    interpretation += dayMasterTraits[dayStem] || '日主体现了个人的核心性格特征';
+    
+    // 日支配偶宫分析
+    const spouseAnalysis = this.analyzeSpousePalace(dayBranch, dayStem, gender);
+    interpretation += `。日支${dayBranch}为配偶宫，${spouseAnalysis}`;
+    
+    // 结合用神分析
+    interpretation += `。${useGodAnalysis.analysis}`;
+    
+    return interpretation;
+  }
+  
+  // 时柱解释
+  interpretHourPillar(hourPillar, dayMaster, gender, name) {
+    const tenGod = hourPillar.ten_god;
+    const hourStem = hourPillar.stem;
+    const hourBranch = hourPillar.branch;
+    
+    let interpretation = `${name}的时柱${hourStem}${hourBranch}，天干${hourStem}与日主${dayMaster}形成${tenGod}关系。`;
+    
+    // 基于十神关系的时柱含义
+    const hourMeanings = {
+      '正官': `时柱正官，表明${name}晚年享有很好的社会地位和名誉，子女有出息，能够光宗耀祖。${gender === '男性' ? '男命时柱正官，晚年事业有成，受人尊敬' : '女命时柱正官，子女贵气，晚年享福'}`,
+      '七杀': `时柱七杀，表明${name}晚年仍然保持进取精神，子女性格刚强，具有开拓能力。${gender === '男性' ? '男命时柱七杀，晚年仍有作为，子女能干' : '女命时柱七杀，子女个性强，需要正确引导'}`,
+      '正财': `时柱正财，表明${name}晚年财运稳定，子女孝顺，能够享受天伦之乐。${gender === '男性' ? '男命时柱正财，晚年财运佳，子女孝顺' : '女命时柱正财，子女有财运，晚年不愁吃穿'}`,
+      '偏财': `时柱偏财，表明${name}晚年财运机会多，子女善于经营，具有商业头脑。${gender === '男性' ? '男命时柱偏财，晚年财源广进，子女有商业天赋' : '女命时柱偏财，子女理财有道，晚年富足'}`,
+      '正印': `时柱正印，表明${name}晚年受到很好的照顾，子女孝顺有文化，重视教育。${gender === '男性' ? '男命时柱正印，晚年享清福，子女有文化' : '女命时柱正印，子女孝顺，晚年安详'}`,
+      '偏印': `时柱偏印，表明${name}晚年思维仍然敏锐，子女聪明独特，具有创新能力。${gender === '男性' ? '男命时柱偏印，晚年仍有创新，子女聪明' : '女命时柱偏印，子女有特殊才能，但要注意沟通'}`,
+      '食神': `时柱食神，表明${name}晚年生活愉快，子女温和孝顺，家庭和睦。${gender === '男性' ? '男命时柱食神，晚年享福，子女孝顺' : '女命时柱食神，子女温顺，晚年幸福'}`,
+      '伤官': `时柱伤官，表明${name}晚年仍然才华横溢，子女聪明有才，但要注意引导。${gender === '男性' ? '男命时柱伤官，晚年仍有才华，子女聪明' : '女命时柱伤官，子女有才华，但要注意教育方式'}`,
+      '比肩': `时柱比肩，表明${name}晚年朋友多助，子女独立自强，具有很好的自立能力。${gender === '男性' ? '男命时柱比肩，晚年朋友多，子女自立' : '女命时柱比肩，子女独立，晚年有依靠'}`,
+      '劫财': `时柱劫财，表明${name}晚年需要注意理财，子女竞争意识强，要正确引导。${gender === '男性' ? '男命时柱劫财，晚年要防破财，子女要正确引导' : '女命时柱劫财，子女个性强，要注意教育'}`
+    };
+    
+    interpretation += hourMeanings[tenGod] || '时柱体现了晚年运势和子女关系';
+    
+    // 时支子女宫分析
+    const childrenAnalysis = this.analyzeChildrenPalace(hourBranch, gender);
+    interpretation += `时支${hourBranch}为子女宫，${childrenAnalysis}。`;
+    
+    return interpretation;
+  }
+  
+  // 配偶宫分析
+  analyzeSpousePalace(dayBranch, dayStem, gender) {
+    const branchElement = this.getBranchElement(dayBranch);
+    const dayElement = this.getElementFromStem(dayStem);
+    const relation = this.getElementRelation(branchElement, dayElement);
+    
+    let analysis = '';
+    
+    if (relation === 'same') {
+      analysis = `配偶与您五行相同，性格相似，容易产生共鸣，但也要注意避免过于相似而缺乏互补`;
+    } else if (relation === 'generate') {
+      analysis = `配偶能够帮助您，是您的贵人，婚姻关系和谐，配偶对您的事业发展有积极作用`;
+    } else if (relation === 'beGenerated') {
+      analysis = `您对配偶付出较多，配偶依赖性较强，需要您的照顾和支持`;
+    } else if (relation === 'overcome') {
+      analysis = `您在婚姻中较为主导，配偶性格相对温和，但要注意不要过于强势`;
+    } else if (relation === 'beOvercome') {
+      analysis = `配偶性格较强，在婚姻中有一定的主导权，您需要学会适当的包容和理解`;
+    }
+    
+    // 地支特性分析
+    const branchTraits = {
+      '子': '配偶聪明机智，善于变通，但有时较为感性',
+      '丑': '配偶稳重踏实，勤劳持家，是可靠的伴侣',
+      '寅': '配偶性格开朗，有进取心，喜欢新鲜事物',
+      '卯': '配偶温和善良，有艺术气质，注重生活品质',
+      '辰': '配偶包容性强，有领导能力，事业心较重',
+      '巳': '配偶聪明美丽，有魅力，但有时较为敏感',
+      '午': '配偶热情开朗，有活力，社交能力强',
+      '未': '配偶温柔体贴，顾家，有很好的亲和力',
+      '申': '配偶机智灵活，有商业头脑，适应能力强',
+      '酉': '配偶注重外表，有品味，追求完美',
+      '戌': '配偶忠诚可靠，有责任心，是值得信赖的伴侣',
+      '亥': '配偶善良纯真，有同情心，但有时较为理想化'
+    };
+    
+    analysis += `。${branchTraits[dayBranch] || '配偶具有独特的性格特征'}`;
+    
+    return analysis;
+  }
+  
+  // 子女宫分析
+  analyzeChildrenPalace(hourBranch, gender) {
+    const branchTraits = {
+      '子': '子女聪明活泼，学习能力强，但需要正确引导',
+      '丑': '子女稳重踏实，做事认真，是可靠的孩子',
+      '寅': '子女性格开朗，有领导才能，适合培养其独立性',
+      '卯': '子女温和善良，有艺术天赋，适合文艺方面的培养',
+      '辰': '子女有组织能力，适合培养其管理才能',
+      '巳': '子女聪明机智，反应敏锐，但要注意其情绪管理',
+      '午': '子女热情活泼，有表现欲，适合培养其特长',
+      '未': '子女温顺听话，有同情心，是贴心的孩子',
+      '申': '子女机智灵活，适应能力强，有商业天赋',
+      '酉': '子女注重细节，追求完美，适合精细化培养',
+      '戌': '子女忠诚可靠，有责任心，是值得骄傲的孩子',
+      '亥': '子女善良纯真，有想象力，需要保护其天真本性'
+    };
+    
+    return branchTraits[hourBranch] || '子女具有独特的性格特征，需要因材施教';
+  }
+  
+  // 地支藏干影响分析
+  getHiddenStemInfluence(hiddenStem, dayMaster) {
+    const tenGod = this.calculateTenGod(dayMaster, hiddenStem);
+    const influences = {
+      '正官': '正统教育和道德品格',
+      '七杀': '严格管教和竞争意识',
+      '正财': '实用主义和理财观念',
+      '偏财': '商业思维和灵活应变',
+      '正印': '文化教育和学术修养',
+      '偏印': '独特思维和创新能力',
+      '食神': '乐观心态和艺术天赋',
+      '伤官': '表现欲望和创新精神',
+      '比肩': '独立精神和自立能力',
+      '劫财': '竞争意识和应变能力'
+    };
+    
+    return influences[tenGod] || '综合素质的培养';
+  }
+  
   calculateLunarInfo(birth_date) {
     // 简化的农历信息计算
     return {
@@ -518,6 +1893,225 @@ class BaziAnalyzer {
       '水': '夏季火旺时期'
     };
     return unfavorable[dayElement] || '不利时期';
+  }
+  
+  // 生成详细流年分析
+  generateDetailedYearlyAnalysis(baziChart, currentDayun, currentYear, currentAge) {
+    const yearlyAnalysis = [];
+    
+    // 分析当前年及未来5年
+    for (let i = 0; i < 6; i++) {
+      const analysisYear = currentYear + i;
+      const analysisAge = currentAge + i;
+      
+      // 计算流年干支
+      const yearStemIndex = (analysisYear - 4) % 10;
+      const yearBranchIndex = (analysisYear - 4) % 12;
+      const yearStem = this.heavenlyStems[yearStemIndex];
+      const yearBranch = this.earthlyBranches[yearBranchIndex];
+      const yearTenGod = this.calculateTenGod(baziChart.day_master, yearStem);
+      
+      // 确定该年的大运
+      const yearDayun = this.getDayunForAge(baziChart, analysisAge, currentDayun);
+      
+      // 生成详细分析
+      const yearAnalysis = {
+        year: analysisYear,
+        age: analysisAge,
+        year_ganzhi: `${yearStem}${yearBranch}`,
+        year_stem: yearStem,
+        year_branch: yearBranch,
+        year_ten_god: yearTenGod,
+        dayun_period: yearDayun ? `${yearDayun.ganzhi}大运` : '未起运',
+        overall_fortune: this.analyzeYearlyOverallFortune(baziChart, yearStem, yearBranch, yearTenGod, yearDayun),
+        career_fortune: this.analyzeYearlyCareerFortune(yearTenGod, yearDayun, baziChart.element_strength),
+        wealth_fortune: this.analyzeYearlyWealthFortune(yearTenGod, yearStem, baziChart),
+        relationship_fortune: this.analyzeYearlyRelationshipFortune(yearTenGod, yearBranch, baziChart, analysisAge),
+        health_fortune: this.analyzeYearlyHealthFortune(yearBranch, baziChart.day_master_element),
+        monthly_highlights: this.generateMonthlyHighlights(analysisYear, yearTenGod, baziChart),
+        key_advice: this.generateYearlyKeyAdvice(yearTenGod, yearDayun, baziChart.element_strength)
+      };
+      
+      yearlyAnalysis.push(yearAnalysis);
+    }
+    
+    return yearlyAnalysis;
+  }
+  
+  // 获取指定年龄的大运
+  getDayunForAge(baziChart, age, currentDayun) {
+    // 如果有当前大运且年龄在范围内，返回当前大运
+    if (currentDayun && age >= currentDayun.start_age && age <= currentDayun.end_age) {
+      return currentDayun;
+    }
+    
+    // 否则需要重新计算（简化处理）
+    return currentDayun;
+  }
+  
+  // 分析年度整体运势
+  analyzeYearlyOverallFortune(baziChart, yearStem, yearBranch, yearTenGod, yearDayun) {
+    const dayElement = baziChart.day_master_element;
+    const yearElement = this.getElementFromStem(yearStem);
+    const yearBranchElement = this.getBranchElement(yearBranch);
+    const strengthLevel = baziChart.element_strength.strength_level;
+    
+    let fortune = '';
+    
+    // 基于流年十神的整体运势
+    const fortuneByTenGod = {
+      '正官': '整体运势稳定向上，适合求职升迁，社会地位有所提升，但要注意遵守规则',
+      '七杀': '整体运势充满挑战，压力较大，但也是突破的好时机，需要勇敢面对困难',
+      '正财': '整体运势平稳，财运稳定，适合投资理财，感情生活和谐',
+      '偏财': '整体运势机会较多，财运有起伏，适合把握机会，但要控制风险',
+      '正印': '整体运势有贵人相助，学习运佳，适合进修提升，身体健康',
+      '偏印': '整体运势变化较多，思维活跃，适合创新研发，但要注意健康',
+      '食神': '整体运势轻松愉快，创意丰富，适合艺术创作，身心愉悦',
+      '伤官': '整体运势才华横溢，表现机会多，但要注意言行谨慎，避免冲突',
+      '比肩': '整体运势朋友助力多，适合合作发展，但要注意理财，防止破财',
+      '劫财': '整体运势竞争激烈，需要谨慎理财，防范小人，但也有突破机会'
+    };
+    
+    fortune = fortuneByTenGod[yearTenGod] || '整体运势需要根据具体情况灵活应对';
+    
+    // 结合日主旺衰调整
+    if (strengthLevel === '偏弱' || strengthLevel === '太弱') {
+      if (['比肩', '劫财', '正印', '偏印'].includes(yearTenGod)) {
+        fortune += '，此年对您特别有利，能够增强实力';
+      } else {
+        fortune += '，此年压力较大，需要寻求帮助和支持';
+      }
+    } else if (strengthLevel === '偏旺' || strengthLevel === '太旺') {
+      if (['正官', '七杀', '食神', '伤官', '正财', '偏财'].includes(yearTenGod)) {
+        fortune += '，此年能够很好地发挥才能，适合积极进取';
+      } else {
+        fortune += '，此年可能过于强势，需要学会收敛';
+      }
+    }
+    
+    return fortune;
+  }
+  
+  // 分析年度事业运势
+  analyzeYearlyCareerFortune(yearTenGod, yearDayun, strengthAnalysis) {
+    const careerFortunes = {
+      '正官': '事业运势极佳，适合求职、升迁或转换到更正规的机构，领导认可度高',
+      '七杀': '事业运势充满挑战，适合开拓新领域或接受有挑战性的工作，需要勇气和决心',
+      '正财': '事业运势稳定，适合从事实业或与金融相关的工作，收入稳定增长',
+      '偏财': '事业运势机会多变，适合从事销售、投资或多元化经营，但要控制风险',
+      '正印': '事业运势有贵人相助，适合从事教育、文化或需要专业知识的工作',
+      '偏印': '事业运势适合技术创新，从事研发或需要独特思维的工作，但要注意与同事关系',
+      '食神': '事业运势轻松愉快，适合从事文艺、餐饮或服务行业，工作环境和谐',
+      '伤官': '事业运势才华得以发挥，适合从事创意、媒体或表演相关工作，但要注意人际关系',
+      '比肩': '事业运势适合合作发展，与同事关系良好，但要注意避免合作中的利益冲突',
+      '劫财': '事业运势竞争激烈，需要防范同事竞争，但也有机会在竞争中脱颖而出'
+    };
+    
+    return careerFortunes[yearTenGod] || '事业运势需要根据具体情况把握机会';
+  }
+  
+  // 分析年度财运
+  analyzeYearlyWealthFortune(yearTenGod, yearStem, baziChart) {
+    const wealthFortunes = {
+      '正官': '财运稳定，主要来源于正当收入，适合稳健投资，避免投机',
+      '七杀': '财运有波动，需要通过努力获得，适合高风险高回报的投资，但要谨慎',
+      '正财': '财运极佳，收入稳定增长，适合各种投资理财，是积累财富的好时机',
+      '偏财': '财运机会多，有意外之财的可能，适合投机投资，但要控制贪心',
+      '正印': '财运平稳，主要通过知识技能获得收入，不适合大额投资',
+      '偏印': '财运变化较大，收入来源多样化，适合技术投资，但要防范风险',
+      '食神': '财运轻松获得，通过才艺或服务获得收入，适合小额稳健投资',
+      '伤官': '财运通过才华获得，收入可能不稳定，需要合理规划财务',
+      '比肩': '财运需要与人合作获得，但要防范合作中的财务纠纷',
+      '劫财': '财运容易破财，需要谨慎理财，避免借贷和担保'
+    };
+    
+    return wealthFortunes[yearTenGod] || '财运需要根据具体情况合理规划';
+  }
+  
+  // 分析年度感情运势
+  analyzeYearlyRelationshipFortune(yearTenGod, yearBranch, baziChart, age) {
+    const relationshipFortunes = {
+      '正官': '感情运势稳定，适合结婚或确定关系，对方条件较好，关系正式',
+      '七杀': '感情运势有挑战，可能遇到性格强势的对象，需要磨合和理解',
+      '正财': '感情运势和谐，适合谈婚论嫁，经济条件对感情有积极影响',
+      '偏财': '感情运势机会多，异性缘佳，但要注意专一，避免多角关系',
+      '正印': '感情运势有长辈介入，适合通过正当途径认识对象，关系稳定',
+      '偏印': '感情运势较为复杂，可能遇到年龄差距较大或特殊背景的对象',
+      '食神': '感情运势轻松愉快，适合自然发展的恋情，关系和谐甜蜜',
+      '伤官': '感情运势多姿多彩，魅力增强，但要注意避免感情纠纷',
+      '比肩': '感情运势需要主动争取，可能遇到竞争对手，要展现自己的优势',
+      '劫财': '感情运势容易有第三者介入，需要维护现有关系，避免感情破财'
+    };
+    
+    let fortune = relationshipFortunes[yearTenGod] || '感情运势需要根据具体情况把握';
+    
+    // 根据年龄调整建议
+    if (age < 25) {
+      fortune += '。年轻时期，建议以学业和事业为重，感情顺其自然';
+    } else if (age >= 25 && age < 35) {
+      fortune += '。正值适婚年龄，可以积极寻找合适的伴侣';
+    } else {
+      fortune += '。成熟阶段，重视感情质量和稳定性';
+    }
+    
+    return fortune;
+  }
+  
+  // 分析年度健康运势
+  analyzeYearlyHealthFortune(yearBranch, dayMasterElement) {
+    const healthByBranch = {
+      '子': '注意肾脏和泌尿系统健康，避免过度劳累，多休息',
+      '丑': '注意脾胃消化系统，饮食要规律，避免暴饮暴食',
+      '寅': '注意肝胆健康，保持心情愉快，避免熬夜',
+      '卯': '注意肝脏和神经系统，保持作息规律，适度运动',
+      '辰': '注意脾胃和皮肤健康，饮食清淡，保持环境整洁',
+      '巳': '注意心脏和血液循环，避免过度兴奋，保持平和心态',
+      '午': '注意心脏和小肠健康，避免上火，多喝水',
+      '未': '注意脾胃和消化系统，饮食要有节制，避免过甜过腻',
+      '申': '注意肺部和呼吸系统，避免感冒，保持空气流通',
+      '酉': '注意肺部和大肠健康，避免辛辣食物，保持排便通畅',
+      '戌': '注意脾胃和关节健康，避免湿气，保持干燥环境',
+      '亥': '注意肾脏和生殖系统，避免寒凉，保持温暖'
+    };
+    
+    return healthByBranch[yearBranch] || '注意身体健康，保持良好的生活习惯';
+  }
+  
+  // 生成月度重点
+  generateMonthlyHighlights(year, yearTenGod, baziChart) {
+    const highlights = [];
+    
+    // 根据流年十神生成关键月份的提醒
+    if (['正官', '七杀'].includes(yearTenGod)) {
+      highlights.push('3月、9月：事业发展的关键月份，适合求职或升迁');
+      highlights.push('6月、12月：需要注意工作压力，适当调节');
+    } else if (['正财', '偏财'].includes(yearTenGod)) {
+      highlights.push('2月、8月：财运较佳的月份，适合投资理财');
+      highlights.push('5月、11月：需要谨慎理财，避免大额支出');
+    } else if (['正印', '偏印'].includes(yearTenGod)) {
+      highlights.push('4月、10月：学习运佳，适合进修提升');
+      highlights.push('7月、1月：贵人运旺，适合寻求帮助');
+    }
+    
+    return highlights;
+  }
+  
+  // 生成年度关键建议
+  generateYearlyKeyAdvice(yearTenGod, yearDayun, strengthAnalysis) {
+    const adviceByTenGod = {
+      '正官': '把握升迁机会，遵守规则制度，建立良好的社会形象',
+      '七杀': '勇敢面对挑战，化压力为动力，但要注意方式方法',
+      '正财': '稳健投资理财，积累财富，维护良好的人际关系',
+      '偏财': '把握投资机会，但要控制风险，避免贪心',
+      '正印': '重视学习提升，寻求贵人帮助，保持谦逊态度',
+      '偏印': '发挥创新能力，但要注意与人沟通，避免孤立',
+      '食神': '发挥才艺特长，享受生活乐趣，保持乐观心态',
+      '伤官': '展现个人才华，但要注意言行谨慎，避免冲突',
+      '比肩': '加强合作交流，但要注意利益分配，防范纠纷',
+      '劫财': '谨慎理财投资，防范小人，但也要把握突破机会'
+    };
+    
+    return adviceByTenGod[yearTenGod] || '根据具体情况灵活应对，保持积极心态';
   }
 }
 
