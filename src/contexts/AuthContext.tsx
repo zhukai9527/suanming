@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User } from '../lib/localApi';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -25,19 +25,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async function loadUser() {
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
+        const response = await supabase.auth.getUser();
+        if (response.data?.user) {
+          setUser(response.data.user);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('加载用户信息失败:', error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     }
     loadUser();
 
-    // Set up auth listener - KEEP SIMPLE, avoid any async operations in callback
+    // Set up auth listener - 本地API版本
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        // NEVER use any async operations in callback
         setUser(session?.user || null);
+        setLoading(false);
       }
     );
 
@@ -46,18 +53,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Auth methods
   async function signIn(email: string, password: string) {
-    return await supabase.auth.signInWithPassword({ email, password });
+    const response = await supabase.auth.signInWithPassword({ email, password });
+    if (response.data?.user) {
+      setUser(response.data.user);
+    }
+    return response;
   }
 
   async function signUp(email: string, password: string) {
-    return await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const response = await supabase.auth.signUp({ email, password });
+    if (response.data?.user) {
+      setUser(response.data.user);
+    }
+    return response;
   }
 
   async function signOut() {
-    return await supabase.auth.signOut();
+    const response = await supabase.auth.signOut();
+    setUser(null);
+    return response;
   }
 
   return (
