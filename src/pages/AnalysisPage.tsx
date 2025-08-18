@@ -35,17 +35,20 @@ const AnalysisPage: React.FC = () => {
     if (!user) return;
     
     try {
-      const response = await supabase.auth.getUser();
-      
-      if (response.data?.user) {
-        const userData = response.data.user;
-        setProfile(userData);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data) {
+        setProfile(data);
         setFormData({
-          name: userData.fullName || '',
-          birth_date: userData.birthDate || '',
-          birth_time: userData.birthTime || '',
-          gender: userData.gender || 'male',
-          birth_place: userData.birthPlace || '',
+          name: data.full_name || '',
+          birth_date: data.birth_date || '',
+          birth_time: data.birth_time || '',
+          gender: data.gender || 'male',
+          birth_place: data.birth_location || '',
           question: ''
         });
       }

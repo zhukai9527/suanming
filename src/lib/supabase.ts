@@ -1,8 +1,10 @@
-// 本地化改造：使用本地API替代Supabase
-import { localApi } from './localApi';
+import { createClient } from '@supabase/supabase-js'
 
-// 导出本地API客户端，保持与原Supabase客户端相同的接口
-export const supabase = localApi;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// 为了向后兼容，也可以导出为默认
-export default localApi;
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
