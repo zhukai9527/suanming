@@ -233,20 +233,21 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
     if (!analysisData.wuxing_analysis?.element_distribution) return null;
 
     const elements = analysisData.wuxing_analysis.element_distribution;
-    const total = Object.values(elements).reduce((sum: number, count: any) => sum + (typeof count === 'number' ? count : 0), 0);
+    const total = Object.values(elements).reduce((sum: number, count: any) => sum + (typeof count === 'number' ? count : 0), 0) as number;
 
     return (
       <div className="grid grid-cols-5 gap-4">
         {Object.entries(elements).map(([element, count]) => {
-          const percentage = total > 0 ? Math.round(((count as number) / total) * 100) : 0;
-          const strength = (count as number) >= 3 ? '旺' : (count as number) >= 2 ? '中' : '弱';
+          const numCount = typeof count === 'number' ? count : 0;
+          const percentage = total > 0 ? Math.round((numCount / total) * 100) : 0;
+          const strength = numCount >= 3 ? '旺' : numCount >= 2 ? '中' : '弱';
           
           return (
             <Card key={element} className="text-center hover:shadow-xl transition-all duration-300 chinese-card-decoration border-2 border-yellow-400">
               <CardContent className="p-4">
                 <div className="text-3xl mb-2">{elementSymbols[element]}</div>
                 <h3 className="font-bold text-red-800 text-lg mb-2 chinese-text-shadow">{element}</h3>
-                <div className="text-2xl font-bold text-yellow-600 mb-1">{count}</div>
+                <div className="text-2xl font-bold text-yellow-600 mb-1">{numCount}</div>
                 <div className="text-sm text-gray-600 mb-2">{percentage}%</div>
                 <div className={`text-sm font-medium mb-2 ${
                   strength === '旺' ? 'text-green-600' : 

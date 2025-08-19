@@ -10,6 +10,8 @@ interface AnalysisResultDisplayProps {
   birthDate?: {
     date: string;
     time: string;
+    name?: string;
+    gender?: string;
   };
   question?: string;
   userId?: string;

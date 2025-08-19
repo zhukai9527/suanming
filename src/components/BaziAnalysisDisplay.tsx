@@ -188,28 +188,34 @@ const BaziAnalysisDisplay: React.FC<BaziAnalysisDisplayProps> = ({ birthDate }) 
         if (wuxingAnalysis) {
           // 构造五行分析数据
           const elements = wuxingAnalysis.distribution || {};
-          const total = Object.values(elements).reduce((sum: number, count: any) => sum + (typeof count === 'number' ? count : 0), 0);
+          const total = Object.values(elements).reduce((sum: number, count: any) => sum + (typeof count === 'number' ? count : 0), 0) as number;
           
           const wuxingData = {
             bazi: baziChart,
             wuxingCount: elements,
             wuxingPercentage: Object.fromEntries(
-              Object.entries(elements).map(([key, value]) => [
-                key, 
-                total > 0 ? Math.round(((value as number) / total) * 100) : 0
-              ])
+              Object.entries(elements).map(([key, value]) => {
+                const numValue = typeof value === 'number' ? value : 0;
+                return [key, total > 0 ? Math.round((numValue / total) * 100) : 0];
+              })
             ),
-            wuxingWithStrength: Object.entries(elements).map(([element, count]) => ({
-              element,
-              count: count as number,
-              percentage: total > 0 ? Math.round(((count as number) / total) * 100) : 0,
-              strength: (count as number) >= 3 ? '旺' : (count as number) >= 2 ? '中' : '弱'
-            })),
-            radarData: Object.entries(elements).map(([element, count]) => ({
-              element,
-              value: count as number,
-              fullMark: 5
-            })),
+            wuxingWithStrength: Object.entries(elements).map(([element, count]) => {
+              const numCount = typeof count === 'number' ? count : 0;
+              return {
+                element,
+                count: numCount,
+                percentage: total > 0 ? Math.round((numCount / total) * 100) : 0,
+                strength: numCount >= 3 ? '旺' : numCount >= 2 ? '中' : '弱'
+              };
+            }),
+            radarData: Object.entries(elements).map(([element, count]) => {
+              const numCount = typeof count === 'number' ? count : 0;
+              return {
+                element,
+                value: numCount,
+                fullMark: 5
+              };
+            }),
             balanceAnalysis: wuxingAnalysis.detailed_analysis || '五行分析',
             suggestions: [wuxingAnalysis.improvement_suggestions || '建议保持平衡'],
             dominantElement: Object.entries(elements).reduce((a, b) => (elements[a[0]] as number) > (elements[b[0]] as number) ? a : b)[0],

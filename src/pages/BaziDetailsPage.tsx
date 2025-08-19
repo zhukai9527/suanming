@@ -21,7 +21,7 @@ const BaziDetailsPage: React.FC = () => {
   const [birthData, setBirthData] = useState<BirthData>({
     date: '',
     time: '12:00',
-    name: user?.name || '',
+    name: '',
     gender: 'male'
   });
 
@@ -59,7 +59,7 @@ const BaziDetailsPage: React.FC = () => {
     setBirthData({
       date: '',
       time: '12:00',
-      name: user?.name || '',
+      name: '',
       gender: 'male'
     });
     setShowAnalysis(false);

@@ -358,7 +358,7 @@ const AnalysisPage: React.FC = () => {
           analysisType={analysisType}
           birthDate={memoizedBirthDate}
           question={analysisType === 'yijing' ? formData.question : undefined}
-          userId={user?.id}
+          userId={user?.id?.toString()}
           divinationMethod="time"
         />
       )}
