@@ -1,11 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* 导入字体规范系统 */
+@import './styles/typography.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* 导入字体规范系统 */
-@import './styles/typography.css';
 
 @layer base {
   :root {
