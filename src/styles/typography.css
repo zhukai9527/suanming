@@ -1,0 +1,274 @@
+/* 神机阁字体规范系统 */
+
+/* ===== 字体族定义 ===== */
+:root {
+  /* 中文字体栈 - 优先级从高到低 */
+  --font-chinese: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', 'Noto Sans SC', 'STHeiti', 'WenQuanYi Micro Hei', sans-serif;
+  
+  /* 中文衬线字体 - 用于特殊标题 */
+  --font-chinese-serif: 'Noto Serif SC', 'STSong', 'SimSun', '宋体', serif;
+  
+  /* 英文字体 - 用于数字和英文内容 */
+  --font-english: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
+}
+
+/* ===== 字体大小规范 ===== */
+/* 基于 16px 基准，使用 rem 单位确保可访问性 */
+
+/* 超大标题 - 用于首页主标题 */
+.text-display-xl {
+  font-size: 3.5rem;    /* 56px */
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.text-display-lg {
+  font-size: 3rem;      /* 48px */
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.text-display-md {
+  font-size: 2.5rem;    /* 40px */
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* 标题系列 */
+.text-heading-xl {
+  font-size: 2rem;      /* 32px */
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.text-heading-lg {
+  font-size: 1.75rem;   /* 28px */
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.text-heading-md {
+  font-size: 1.5rem;    /* 24px */
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.text-heading-sm {
+  font-size: 1.25rem;   /* 20px */
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.text-heading-xs {
+  font-size: 1.125rem;  /* 18px */
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+/* 正文系列 */
+.text-body-xl {
+  font-size: 1.125rem;  /* 18px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.text-body-lg {
+  font-size: 1rem;      /* 16px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.text-body-md {
+  font-size: 0.875rem;  /* 14px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.text-body-sm {
+  font-size: 0.75rem;   /* 12px */
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* 标签和辅助文字 */
+.text-label-lg {
+  font-size: 0.875rem;  /* 14px */
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.text-label-md {
+  font-size: 0.75rem;   /* 12px */
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.text-label-sm {
+  font-size: 0.6875rem; /* 11px */
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+/* 按钮文字 */
+.text-button-lg {
+  font-size: 1rem;      /* 16px */
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.text-button-md {
+  font-size: 0.875rem;  /* 14px */
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.text-button-sm {
+  font-size: 0.75rem;   /* 12px */
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ===== 响应式字体规范 ===== */
+/* 移动端优化 - 在小屏幕上适当缩小字体 */
+@media (max-width: 768px) {
+  .text-display-xl {
+    font-size: 2.5rem;    /* 40px */
+  }
+  
+  .text-display-lg {
+    font-size: 2.25rem;   /* 36px */
+  }
+  
+  .text-display-md {
+    font-size: 2rem;      /* 32px */
+  }
+  
+  .text-heading-xl {
+    font-size: 1.75rem;   /* 28px */
+  }
+  
+  .text-heading-lg {
+    font-size: 1.5rem;    /* 24px */
+  }
+  
+  .text-heading-md {
+    font-size: 1.25rem;   /* 20px */
+  }
+  
+  .text-body-xl {
+    font-size: 1rem;      /* 16px */
+  }
+}
+
+/* 超小屏幕进一步优化 */
+@media (max-width: 480px) {
+  .text-display-xl {
+    font-size: 2rem;      /* 32px */
+  }
+  
+  .text-display-lg {
+    font-size: 1.875rem;  /* 30px */
+  }
+  
+  .text-display-md {
+    font-size: 1.75rem;   /* 28px */
+  }
+}
+
+/* ===== 字体族应用类 ===== */
+.font-chinese {
+  font-family: var(--font-chinese);
+}
+
+.font-chinese-serif {
+  font-family: var(--font-chinese-serif);
+}
+
+.font-english {
+  font-family: var(--font-english);
+}
+
+/* ===== 特殊用途字体类 ===== */
+/* 数字专用 - 确保数字对齐 */
+.font-numeric {
+  font-family: var(--font-english);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 代码字体 */
+.font-mono {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace;
+}
+
+/* ===== 字重规范 ===== */
+.font-thin { font-weight: 100; }
+.font-extralight { font-weight: 200; }
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
+
+/* ===== 行高规范 ===== */
+.leading-none { line-height: 1; }
+.leading-tight { line-height: 1.25; }
+.leading-snug { line-height: 1.375; }
+.leading-normal { line-height: 1.5; }
+.leading-relaxed { line-height: 1.625; }
+.leading-loose { line-height: 2; }
+
+/* ===== 字间距规范 ===== */
+.tracking-tighter { letter-spacing: -0.05em; }
+.tracking-tight { letter-spacing: -0.025em; }
+.tracking-normal { letter-spacing: 0em; }
+.tracking-wide { letter-spacing: 0.025em; }
+.tracking-wider { letter-spacing: 0.05em; }
+.tracking-widest { letter-spacing: 0.1em; }
+
+/* ===== 使用指南注释 ===== */
+/*
+字体使用指南：
+
+1. 显示级标题 (Display):
+   - text-display-xl: 首页主标题
+   - text-display-lg: 重要页面标题
+   - text-display-md: 次要页面标题
+
+2. 标题 (Heading):
+   - text-heading-xl: H1 标题
+   - text-heading-lg: H2 标题
+   - text-heading-md: H3 标题
+   - text-heading-sm: H4 标题
+   - text-heading-xs: H5 标题
+
+3. 正文 (Body):
+   - text-body-xl: 重要描述文字
+   - text-body-lg: 标准正文 (默认)
+   - text-body-md: 次要正文
+   - text-body-sm: 辅助信息
+
+4. 标签 (Label):
+   - text-label-lg: 表单标签
+   - text-label-md: 小标签
+   - text-label-sm: 微小标签
+
+5. 按钮 (Button):
+   - text-button-lg: 大按钮
+   - text-button-md: 标准按钮
+   - text-button-sm: 小按钮
+
+字体族使用：
+- font-chinese: 中文内容 (默认)
+- font-chinese-serif: 特殊标题
+- font-english: 英文和数字
+- font-numeric: 数字对齐
+- font-mono: 代码
+*/

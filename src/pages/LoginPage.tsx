@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { ChineseButton } from '../components/ui/ChineseButton';
+import { ChineseInput } from '../components/ui/ChineseInput';
+import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from '../components/ui/ChineseCard';
 import { toast } from 'sonner';
 import { Mail, Lock, LogIn } from 'lucide-react';
 
@@ -34,62 +34,71 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <LogIn className="h-6 w-6 text-purple-600" />
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+      {/* 背景装饰 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-to-r from-red-500/10 to-yellow-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-gradient-to-r from-yellow-500/10 to-red-500/10 rounded-full blur-3xl"></div>
+      </div>
+      
+      <ChineseCard variant="elevated" className="w-full max-w-md relative z-10">
+        <ChineseCardHeader className="text-center">
+          <div className="w-14 h-14 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg border-2 border-yellow-500">
+            <LogIn className="h-7 w-7 text-yellow-400" />
           </div>
-          <CardTitle className="text-2xl">登录账户</CardTitle>
-          <p className="text-gray-600">欢迎回到神机阁</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="email"
-              label="邮箱地址"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="请输入您的邮箱"
-              className="pl-10"
-            />
+          <ChineseCardTitle className="text-2xl md:text-3xl text-red-600 font-chinese">登录账户</ChineseCardTitle>
+          <p className="text-gray-600 font-chinese mt-2">欢迎回到神机阁</p>
+        </ChineseCardHeader>
+        <ChineseCardContent>
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative">
-              <Mail className="absolute left-3 top-8 h-4 w-4 text-gray-400" />
+              <ChineseInput
+                type="email"
+                label="邮箱地址"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="请输入您的邮箱"
+                variant="bordered"
+                className="pl-10"
+              />
+              <Mail className="absolute left-3 top-9 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
             
-            <Input
-              type="password"
-              label="密码"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="请输入您的密码"
-              className="pl-10"
-            />
             <div className="relative">
-              <Lock className="absolute left-3 top-8 h-4 w-4 text-gray-400" />
+              <ChineseInput
+                type="password"
+                label="密码"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="请输入您的密码"
+                variant="bordered"
+                className="pl-10"
+              />
+              <Lock className="absolute left-3 top-9 h-4 w-4 text-gray-400 pointer-events-none" />
             </div>
             
-            <Button
+            <ChineseButton
               type="submit"
-              className="w-full"
+              size="lg"
+              className="w-full mt-6"
               disabled={loading}
             >
               {loading ? '登录中...' : '登录'}
-            </Button>
+            </ChineseButton>
           </form>
           
           <div className="mt-6 text-center">
-            <p className="text-gray-600">
+            <p className="text-gray-600 font-chinese">
               还没有账户？
-              <Link to="/register" className="text-purple-600 hover:text-purple-700 font-medium ml-1">
+              <Link to="/register" className="text-red-600 hover:text-red-700 font-medium ml-1 transition-colors duration-200">
                 立即注册
               </Link>
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </ChineseCardContent>
+      </ChineseCard>
     </div>
   );
 };

@@ -236,7 +236,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
     const total = Object.values(elements).reduce((sum: number, count: any) => sum + (typeof count === 'number' ? count : 0), 0) as number;
 
     return (
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
         {Object.entries(elements).map(([element, count]) => {
           const numCount = typeof count === 'number' ? count : 0;
           const percentage = total > 0 ? Math.round((numCount / total) * 100) : 0;

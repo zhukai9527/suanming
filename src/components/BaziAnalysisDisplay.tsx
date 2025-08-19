@@ -395,7 +395,7 @@ const BaziAnalysisDisplay: React.FC<BaziAnalysisDisplayProps> = ({ birthDate }) 
           {/* 天干信息 */}
           <div className="bg-gradient-to-r from-red-50 to-yellow-50 rounded-lg p-3">
             <h4 className="font-bold text-red-700 mb-2">天干：{pillar.tiangan}</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               <div className={`px-2 py-1 rounded border ${wuxingColors[pillar.tianganWuxing]}`}>
                 五行：{pillar.tianganWuxing}
               </div>
@@ -408,7 +408,7 @@ const BaziAnalysisDisplay: React.FC<BaziAnalysisDisplayProps> = ({ birthDate }) 
           {/* 地支信息 */}
           <div className="bg-gradient-to-r from-yellow-50 to-red-50 rounded-lg p-3">
             <h4 className="font-bold text-red-700 mb-2">地支：{pillar.dizhi}</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               <div className={`px-2 py-1 rounded border ${wuxingColors[pillar.dizhiWuxing]}`}>
                 五行：{pillar.dizhiWuxing}
               </div>

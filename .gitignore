@@ -48,3 +48,5 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+numerology.db-shm
+numerology.db-wal

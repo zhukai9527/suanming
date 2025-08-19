@@ -1,11 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 导入字体规范系统 */
+@import './styles/typography.css';
+
 @layer base {
   :root {
     --radius: 0.5rem;
+    
+    /* 中式设计系统颜色变量 */
+    --cinnabar-50: #fef2f2;
+    --cinnabar-500: #DC143C;
+    --cinnabar-900: #7c1420;
+    --gold-50: #fffbeb;
+    --gold-500: #FFD700;
+    --gold-900: #78350f;
+    --ink-50: #f8fafc;
+    --ink-500: #64748b;
+    --ink-900: #2C2C2C;
+    --paper-50: #fefefe;
+    --paper-500: #F5F5DC;
+    --paper-900: #a8a88a;
+    
+    /* 传统组件颜色 */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -14,11 +34,27 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    /* 传统中式颜色 */
-    --chinese-red: #dc2626;
-    --chinese-gold: #facc15;
-    --chinese-dark-red: #991b1b;
-    --chinese-deep-gold: #d97706;
+    
+    /* 兼容性颜色变量 */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 346 77% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 346 77% 49.8%;
   }
 
   .dark {
@@ -33,10 +69,56 @@
   }
   
   body {
-    font-family: 'Noto Serif SC', serif;
-    background: linear-gradient(135deg, #fef7cd 0%, #fed7aa 25%, #fecaca 50%, #fed7aa 75%, #fef7cd 100%);
+    font-family: var(--font-chinese);
+    background: linear-gradient(135deg, var(--paper-500) 0%, var(--gold-50) 100%);
     background-attachment: fixed;
     position: relative;
+    color: var(--ink-900);
+    /* 使用标准正文字体规范 */
+    @apply text-body-lg;
+  }
+  
+  /* 标题默认样式 - 使用新的字体规范 */
+  h1 {
+    @apply text-heading-xl font-chinese font-semibold;
+    color: var(--cinnabar-500);
+  }
+  
+  h2 {
+    @apply text-heading-lg font-chinese font-semibold;
+    color: var(--cinnabar-500);
+  }
+  
+  h3 {
+    @apply text-heading-md font-chinese font-semibold;
+    color: var(--ink-900);
+  }
+  
+  h4 {
+    @apply text-heading-sm font-chinese font-semibold;
+    color: var(--ink-900);
+  }
+  
+  h5 {
+    @apply text-heading-xs font-chinese font-semibold;
+    color: var(--ink-900);
+  }
+  
+  h6 {
+    @apply text-body-xl font-chinese font-semibold;
+    color: var(--ink-900);
+  }
+  
+  /* 按钮基础样式 */
+  button {
+    font-family: inherit;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* 输入框基础样式 */
+  input, textarea, select {
+    font-family: inherit;
+    transition: all 0.2s ease-in-out;
   }
   
   body::before {
@@ -204,6 +286,137 @@
 
 img {
   object-position: top;
+}
+
+/* 中式动画效果 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-slide-in-from-top {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+/* 页面切换动画 */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+/* 悬停效果增强 */
+.hover-lift {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 中式装饰动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 加载动画优化 */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
 }
 
 .fixed {

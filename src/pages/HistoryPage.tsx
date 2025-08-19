@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { ChineseButton } from '../components/ui/ChineseButton';
+import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from '../components/ui/ChineseCard';
+import { ChineseEmpty } from '../components/ui/ChineseEmpty';
+import { ChineseLoading } from '../components/ui/ChineseLoading';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
 import { toast } from 'sonner';
 import { History, Calendar, User, Sparkles, Star, Compass, Eye, Trash2 } from 'lucide-react';
 import { NumerologyReading } from '../types';
+import { cn } from '../lib/utils';
 
 const HistoryPage: React.FC = () => {
   const { user } = useAuth();
@@ -132,9 +135,9 @@ const HistoryPage: React.FC = () => {
 
   const getAnalysisTypeColor = (type: string) => {
     switch (type) {
-      case 'bazi': return 'text-purple-600 bg-purple-50';
-      case 'ziwei': return 'text-blue-600 bg-blue-50';
-      case 'yijing': return 'text-green-600 bg-green-50';
+      case 'bazi': return 'text-red-600 bg-red-50';
+      case 'ziwei': return 'text-yellow-600 bg-yellow-50';
+      case 'yijing': return 'text-orange-600 bg-orange-50';
       default: return 'text-gray-600 bg-gray-50';
     }
   };
@@ -152,15 +155,15 @@ const HistoryPage: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <Button
+          <ChineseButton
             variant="outline"
             onClick={() => setViewingResult(false)}
           >
             ← 返回列表
-          </Button>
+          </ChineseButton>
           <div className="text-right">
-            <h2 className="text-xl font-semibold">{selectedReading.name} 的{getAnalysisTypeName(selectedReading.reading_type)}</h2>
-            <p className="text-gray-600">{new Date(selectedReading.created_at).toLocaleString('zh-CN')}</p>
+            <h2 className="text-xl font-semibold font-chinese text-red-600">{selectedReading.name} 的{getAnalysisTypeName(selectedReading.reading_type)}</h2>
+            <p className="text-gray-600 font-chinese">{new Date(selectedReading.created_at).toLocaleString('zh-CN')}</p>
           </div>
         </div>
         
@@ -185,97 +188,104 @@ const HistoryPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
+    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <div className="text-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-red-600 font-chinese mb-2">历史记录</h1>
+        <p className="text-gray-600 font-chinese">查看您之前的所有命理分析记录</p>
+      </div>
+      
+      <ChineseCard variant="elevated">
+        <ChineseCardHeader>
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <History className="h-6 w-6 text-purple-600" />
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <History className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <CardTitle>历史记录</CardTitle>
-              <p className="text-gray-600">查看您之前的所有命理分析记录</p>
+              <ChineseCardTitle className="text-red-600 font-chinese">分析记录</ChineseCardTitle>
+              <p className="text-gray-600 font-chinese">您的命理分析历史</p>
             </div>
           </div>
-        </CardHeader>
-      </Card>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
-        </div>
-      ) : readings.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-16">
-            <History className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无分析记录</h3>
-            <p className="text-gray-600 mb-6">您还没有进行过任何命理分析</p>
-            <Button onClick={() => window.location.href = '/analysis'}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              立即开始分析
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {readings.map((reading) => {
-            const Icon = getAnalysisTypeIcon(reading.reading_type);
-            const colorClass = getAnalysisTypeColor(reading.reading_type);
-            
-            return (
-              <Card key={reading.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClass}`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {reading.name || '未知姓名'} - {getAnalysisTypeName(reading.reading_type)}
-                        </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span>{new Date(reading.created_at).toLocaleString('zh-CN')}</span>
+        </ChineseCardHeader>
+        <ChineseCardContent>
+          {loading ? (
+             <ChineseLoading
+               size="lg"
+               variant="chinese"
+               text="正在加载历史记录..."
+               className="py-16"
+             />
+          ) : readings.length === 0 ? (
+            <ChineseEmpty
+              type="data"
+              title="暂无分析记录"
+              description="您还没有进行过任何命理分析"
+              action={{
+                label: '立即开始分析',
+                onClick: () => window.location.href = '/analysis'
+              }}
+            />
+          ) : (
+            <div className="grid gap-4">
+              {readings.map((reading) => {
+                const Icon = getAnalysisTypeIcon(reading.reading_type);
+                const colorClass = getAnalysisTypeColor(reading.reading_type);
+                
+                return (
+                  <ChineseCard key={reading.id} variant="bordered" className="hover:shadow-lg transition-all duration-200">
+                    <ChineseCardContent className="p-4 md:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center space-x-4">
+                          <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', colorClass)}>
+                            <Icon className="h-5 w-5" />
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3" />
-                            <span>
-                              {reading.reading_type === 'yijing' 
-                                ? `问题：${getInputDataValue(reading.input_data, 'question', '综合运势').substring(0, 20)}${getInputDataValue(reading.input_data, 'question', '').length > 20 ? '...' : ''}` 
-                                : reading.birth_date}
-                            </span>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 font-chinese">
+                              {reading.name || '未知姓名'} - {getAnalysisTypeName(reading.reading_type)}
+                            </h3>
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-600 mt-1 space-y-1 sm:space-y-0">
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="h-3 w-3" />
+                                <span className="font-chinese">{new Date(reading.created_at).toLocaleString('zh-CN')}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <User className="h-3 w-3" />
+                                <span className="font-chinese">
+                                  {reading.reading_type === 'yijing' 
+                                    ? `问题：${getInputDataValue(reading.input_data, 'question', '综合运势').substring(0, 20)}${getInputDataValue(reading.input_data, 'question', '').length > 20 ? '...' : ''}` 
+                                    : reading.birth_date}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                        
+                        <div className="flex items-center space-x-2 self-end sm:self-center">
+                          <ChineseButton
+                            variant="outline"
+                            size="md"
+                            onClick={() => handleViewReading(reading)}
+                          >
+                            <Eye className="mr-1 h-4 w-4" />
+                            查看
+                          </ChineseButton>
+                          <ChineseButton
+                            variant="ghost"
+                            size="md"
+                            onClick={() => handleDeleteReading(reading.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </ChineseButton>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewReading(reading)}
-                      >
-                        <Eye className="mr-1 h-3 w-3" />
-                        查看
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteReading(reading.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    </ChineseCardContent>
+                  </ChineseCard>
+                );
+              })}
+            </div>
+          )}
+        </ChineseCardContent>
+      </ChineseCard>
     </div>
   );
 };

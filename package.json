@@ -12,7 +12,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node server/index.cjs",
-    "db:init": "node server/scripts/initDatabase.cjs"
+    "db:init": "node server/scripts/initDatabase.cjs",
+    "test": "node tests/integration.test.cjs",
+    "test:integration": "node tests/integration.test.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -58,7 +60,6 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.364.0",
     "next-themes": "^0.4.4",
-    "node-fetch": "^2.7.0",
     "nodemon": "^3.0.2",
     "react": "^18.3.1",
     "react-day-picker": "8.10.1",
@@ -89,6 +90,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
     "globals": "^15.12.0",
+    "node-fetch": "^2.7.0",
     "postcss": "8.4.49",
     "tailwindcss": "v3.4.16",
     "typescript": "~5.6.2",

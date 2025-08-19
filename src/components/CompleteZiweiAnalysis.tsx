@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity, Crown, Compass, Moon, Sun } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from './ui/ChineseCard';
+import { ChineseLoading } from './ui/ChineseLoading';
 import { localApi } from '../lib/localApi';
+import { cn } from '../lib/utils';
 
 interface CompleteZiweiAnalysisProps {
   birthDate: {
@@ -211,35 +214,35 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
     }
   };
 
-  // 星曜颜色配置
+  // 星曜颜色配置（中式配色）
   const starColors: { [key: string]: string } = {
-    '紫微': 'bg-purple-100 text-purple-800 border-purple-300',
+    '紫微': 'bg-red-100 text-red-800 border-red-300',
     '天机': 'bg-blue-100 text-blue-800 border-blue-300',
-    '太阳': 'bg-orange-100 text-orange-800 border-orange-300',
+    '太阳': 'bg-yellow-100 text-yellow-800 border-yellow-300',
     '武曲': 'bg-gray-100 text-gray-800 border-gray-300',
     '天同': 'bg-green-100 text-green-800 border-green-300',
     '廉贞': 'bg-red-100 text-red-800 border-red-300',
     '天府': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    '太阴': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-    '贪狼': 'bg-pink-100 text-pink-800 border-pink-300',
-    '巨门': 'bg-slate-100 text-slate-800 border-slate-300',
-    '天相': 'bg-cyan-100 text-cyan-800 border-cyan-300',
-    '天梁': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    '七杀': 'bg-rose-100 text-rose-800 border-rose-300',
-    '破军': 'bg-amber-100 text-amber-800 border-amber-300'
+    '太阴': 'bg-blue-100 text-blue-800 border-blue-300',
+    '贪狼': 'bg-orange-100 text-orange-800 border-orange-300',
+    '巨门': 'bg-gray-100 text-gray-800 border-gray-300',
+    '天相': 'bg-green-100 text-green-800 border-green-300',
+    '天梁': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    '七杀': 'bg-red-100 text-red-800 border-red-300',
+    '破军': 'bg-orange-100 text-orange-800 border-orange-300'
   };
 
-  // 吉星煞星颜色配置
-  const luckyStarColors = 'bg-green-50 text-green-700 border-green-200';
+  // 吉星煞星颜色配置（中式配色）
+  const luckyStarColors = 'bg-yellow-50 text-yellow-700 border-yellow-200';
   const unluckyStarColors = 'bg-red-50 text-red-700 border-red-200';
 
-  // 宫位强度颜色
+  // 宫位强度颜色（中式配色）
   const strengthColors: { [key: string]: string } = {
-    '旺': 'text-green-600 bg-green-50',
-    '得地': 'text-blue-600 bg-blue-50',
-    '平': 'text-yellow-600 bg-yellow-50',
+    '旺': 'text-red-600 bg-red-50',
+    '得地': 'text-yellow-600 bg-yellow-50',
+    '平': 'text-gray-600 bg-gray-50',
     '不得地': 'text-orange-600 bg-orange-50',
-    '陷': 'text-red-600 bg-red-50'
+    '陷': 'text-gray-500 bg-gray-100'
   };
 
   // 五行局颜色
@@ -299,14 +302,19 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
   // 渲染加载状态
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-50">
-        <Card className="chinese-card-decoration border-2 border-purple-400 p-8">
-          <CardContent className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-purple-800 mb-2">正在进行专业紫微斗数分析</h3>
-            <p className="text-purple-600">请稍候，正在排盘并生成您的详细命理报告...</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-yellow-50">
+        <ChineseCard variant="elevated" className="p-8">
+          <ChineseCardContent className="text-center">
+            <ChineseLoading
+              size="lg"
+              variant="chinese"
+              text="正在进行专业紫微斗数分析"
+              className="mb-4"
+            />
+            <h3 className="text-xl font-bold text-red-600 mb-2 font-chinese">排盘分析中</h3>
+            <p className="text-gray-600 font-chinese">请稍候，正在生成您的详细命理报告...</p>
+          </ChineseCardContent>
+        </ChineseCard>
       </div>
     );
   }
@@ -346,31 +354,63 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
     );
   }
 
-  // 渲染宫位卡片
+  // 渲染宫位卡片（中式设计）
   const renderPalaceCard = (palaceName: string, palace: any) => {
     if (!palace) return null;
 
+    // 宫位图标映射
+    const palaceIcons: { [key: string]: any } = {
+      '命宫': User,
+      '兄弟宫': Heart,
+      '夫妻宫': Heart,
+      '子女宫': Star,
+      '财帛宫': DollarSign,
+      '疾厄宫': Activity,
+      '迁移宫': Compass,
+      '交友宫': Heart,
+      '事业宫': Crown,
+      '田宅宫': Target,
+      '福德宫': Sun,
+      '父母宫': Moon
+    };
+
+    const PalaceIcon = palaceIcons[palaceName] || Star;
+
     return (
-      <Card key={palaceName} className="chinese-card-decoration hover:shadow-xl transition-all duration-300 border-2 border-purple-400 min-h-[280px] w-full">
-        <CardHeader className="text-center pb-2">
-          <CardTitle className="text-purple-800 text-lg font-bold chinese-text-shadow">
-            {palaceName}
-          </CardTitle>
-          <div className="flex justify-center items-center space-x-2">
-            <span className="text-purple-600 text-sm">{palace.position}</span>
-            <span className={`px-2 py-1 rounded text-xs font-medium ${strengthColors[palace.strength] || 'text-gray-600 bg-gray-50'}`}>
-              {palace.strength}
-            </span>
+      <ChineseCard key={palaceName} variant="bordered" className="hover:shadow-xl transition-all duration-300 min-h-[320px] w-full">
+        <ChineseCardHeader className="text-center pb-3">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg">
+              <PalaceIcon className="h-5 w-5 text-white" />
+            </div>
+            <ChineseCardTitle className="text-red-600 text-heading-lg font-bold font-chinese">
+              {palaceName}
+            </ChineseCardTitle>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-600 text-body-md font-chinese">{palace.position || palace.branch}</span>
+              <span className={cn(
+                'px-2 py-1 rounded-full text-label-md font-medium font-chinese',
+                strengthColors[palace.strength] || 'text-gray-600 bg-gray-50'
+              )}>
+                {palace.strength}
+              </span>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        </ChineseCardHeader>
+        <ChineseCardContent className="space-y-3">
           {/* 主星 */}
           {palace.main_stars && palace.main_stars.length > 0 && (
             <div>
-              <h5 className="text-xs font-semibold text-purple-800 mb-2">主星</h5>
+              <h5 className="text-label-lg font-semibold text-red-800 mb-2 font-chinese flex items-center">
+                <Star className="h-4 w-4 mr-1" />
+                主星
+              </h5>
               <div className="flex flex-wrap gap-1">
                 {palace.main_stars.map((star: string, index: number) => (
-                  <span key={index} className={`px-2 py-1 rounded text-xs font-medium border ${starColors[star] || 'bg-gray-100 text-gray-800 border-gray-300'}`}>
+                  <span key={index} className={cn(
+                    'px-2 py-1 rounded-full text-label-md font-medium border font-chinese',
+                    starColors[star] || 'bg-gray-100 text-gray-800 border-gray-300'
+                  )}>
                     {star}
                   </span>
                 ))}
@@ -381,10 +421,16 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
           {/* 吉星 */}
           {palace.lucky_stars && palace.lucky_stars.length > 0 && (
             <div>
-              <h5 className="text-xs font-semibold text-green-800 mb-2">吉星</h5>
+              <h5 className="text-label-lg font-semibold text-yellow-800 mb-2 font-chinese flex items-center">
+                <Sparkles className="h-4 w-4 mr-1" />
+                吉星
+              </h5>
               <div className="flex flex-wrap gap-1">
                 {palace.lucky_stars.map((star: string, index: number) => (
-                  <span key={index} className={`px-2 py-1 rounded text-xs font-medium border ${luckyStarColors}`}>
+                  <span key={index} className={cn(
+                    'px-2 py-1 rounded-full text-label-md font-medium border font-chinese',
+                    luckyStarColors
+                  )}>
                     {star}
                   </span>
                 ))}
@@ -395,10 +441,16 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
           {/* 煞星 */}
           {palace.unlucky_stars && palace.unlucky_stars.length > 0 && (
             <div>
-              <h5 className="text-xs font-semibold text-red-800 mb-2">煞星</h5>
+              <h5 className="text-label-lg font-semibold text-red-800 mb-2 font-chinese flex items-center">
+                <Zap className="h-4 w-4 mr-1" />
+                煞星
+              </h5>
               <div className="flex flex-wrap gap-1">
                 {palace.unlucky_stars.map((star: string, index: number) => (
-                  <span key={index} className={`px-2 py-1 rounded text-xs font-medium border ${unluckyStarColors}`}>
+                  <span key={index} className={cn(
+                    'px-2 py-1 rounded-full text-label-md font-medium border font-chinese',
+                    unluckyStarColors
+                  )}>
                     {star}
                   </span>
                 ))}
@@ -408,12 +460,16 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
           
           {/* 宫位解读 */}
           {palace.interpretation && (
-            <div className="border-t pt-2">
-              <p className="text-xs text-gray-700 leading-relaxed">{palace.interpretation}</p>
+            <div className="border-t border-red-100 pt-3 mt-3">
+              <h5 className="text-label-lg font-semibold text-gray-800 mb-2 font-chinese flex items-center">
+                <BookOpen className="h-4 w-4 mr-1" />
+                宫位解读
+              </h5>
+              <p className="text-body-md text-gray-700 leading-relaxed font-chinese">{palace.interpretation}</p>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </ChineseCardContent>
+      </ChineseCard>
     );
   };
 
@@ -601,22 +657,26 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
         )}
 
         {/* 十二宫位详解 */}
-        <Card className="chinese-card-decoration border-2 border-purple-400">
-          <CardHeader>
-            <CardTitle className="text-purple-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
-              <Compass className="h-6 w-6" />
-              <span>十二宫位详解</span>
-            </CardTitle>
-            <p className="text-purple-600 mt-2">紫微斗数将人生分为十二个宫位，每个宫位代表不同的人生领域</p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4">
+        <ChineseCard variant="elevated" className="bg-gradient-to-br from-red-50 to-yellow-50">
+          <ChineseCardHeader>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Compass className="h-6 w-6 text-white" />
+              </div>
+              <ChineseCardTitle className="text-red-600 text-2xl md:text-3xl font-bold font-chinese">
+                十二宫位详解
+              </ChineseCardTitle>
+              <p className="text-gray-600 mt-2 font-chinese">紫微斗数将人生分为十二个宫位，每个宫位代表不同的人生领域</p>
+            </div>
+          </ChineseCardHeader>
+          <ChineseCardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {analysisData.ziwei_analysis?.twelve_palaces && Object.entries(analysisData.ziwei_analysis.twelve_palaces).map(([palaceName, palace]) => 
                 renderPalaceCard(palaceName, palace)
               )}
             </div>
-          </CardContent>
-        </Card>
+          </ChineseCardContent>
+        </ChineseCard>
 
         {/* 四化飞星 */}
         {analysisData.ziwei_analysis?.si_hua && (
