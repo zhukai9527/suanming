@@ -48,3 +48,9 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Database files (SQLite)
+*.db
+*.db-shm
+*.db-wal
+numerology.db*
