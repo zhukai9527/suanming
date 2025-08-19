@@ -432,6 +432,22 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
     return renderBaziAnalysis();
   }
   
+  // 对于易经占卜，如果有 question 参数，直接返回 CompleteYijingAnalysis 组件（不添加额外容器）
+  if (analysisType === 'yijing' && question) {
+    return (
+      <CompleteYijingAnalysis 
+        question={question}
+        userId={userId}
+        divinationMethod={divinationMethod}
+      />
+    );
+  }
+  
+  // 对于紫微斗数，如果有 birthDate 参数，直接返回 CompleteZiweiAnalysis 组件（不添加额外容器）
+  if (analysisType === 'ziwei' && birthDate) {
+    return <CompleteZiweiAnalysis birthDate={birthDate} />;
+  }
+  
   // 如果没有分析结果数据
   if (!analysisResult) {
     return (

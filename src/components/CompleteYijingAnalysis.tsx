@@ -88,12 +88,12 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
   // 渲染加载状态
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
-        <Card className="chinese-card-decoration border-2 border-indigo-400 p-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-yellow-50">
+        <Card className="chinese-card-decoration border-2 border-yellow-400 p-8">
           <CardContent className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-indigo-800 mb-2">正在进行专业易经占卜</h3>
-            <p className="text-indigo-600">请稍候，正在为您起卦分析...</p>
+            <Loader2 className="h-12 w-12 animate-spin text-red-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-red-800 mb-2">正在进行专业易经占卜</h3>
+            <p className="text-red-600">请稍候，正在为您起卦分析...</p>
           </CardContent>
         </Card>
       </div>
@@ -103,7 +103,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
   // 渲染错误状态
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-yellow-50">
         <Card className="chinese-card-decoration border-2 border-red-400 p-8">
           <CardContent className="text-center">
             <div className="text-6xl mb-4">❌</div>
@@ -123,12 +123,12 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
   if (!analysisData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50">
-        <Card className="chinese-card-decoration border-2 border-indigo-400 p-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-yellow-50">
+        <Card className="chinese-card-decoration border-2 border-yellow-400 p-8">
           <CardContent className="text-center">
             <div className="text-6xl mb-4">⚠️</div>
-            <h3 className="text-xl font-bold text-indigo-800 mb-2">数据获取异常</h3>
-            <p className="text-indigo-600">未能获取到完整的分析数据，请重新提交占卜</p>
+            <h3 className="text-xl font-bold text-red-800 mb-2">数据获取异常</h3>
+            <p className="text-red-600">未能获取到完整的分析数据，请重新提交占卜</p>
           </CardContent>
         </Card>
       </div>
@@ -141,11 +141,11 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
     return (
       <Card className={`chinese-card-decoration hover:shadow-xl transition-all duration-300 border-2 ${
-        isMain ? 'border-indigo-400 bg-indigo-50' : 'border-purple-400'
+        isMain ? 'border-yellow-400 bg-yellow-50' : 'border-yellow-400'
       }`}>
         <CardHeader className="text-center pb-2">
           <CardTitle className={`text-lg font-bold chinese-text-shadow ${
-            isMain ? 'text-indigo-800' : 'text-purple-800'
+            isMain ? 'text-red-800' : 'text-red-800'
           }`}>
             {title}
           </CardTitle>
@@ -252,18 +252,18 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-yellow-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
         
         {/* 标题和基本信息 */}
-        <Card className="chinese-card-decoration dragon-corner border-2 border-indigo-400">
+        <Card className="chinese-card-decoration dragon-corner border-2 border-yellow-400">
           <CardHeader className="text-center">
-            <CardTitle className="text-indigo-800 text-3xl font-bold chinese-text-shadow flex items-center justify-center space-x-2">
+            <CardTitle className="text-red-800 text-3xl font-bold chinese-text-shadow flex items-center justify-center space-x-2">
               <Hexagon className="h-8 w-8" />
               <span>易经占卜分析报告</span>
               <Hexagon className="h-8 w-8" />
             </CardTitle>
-            <div className="flex justify-center space-x-6 mt-4 text-indigo-700">
+            <div className="flex justify-center space-x-6 mt-4 text-red-700">
               <div className="flex items-center space-x-2">
                 <Calendar className="h-5 w-5" />
                 <span>{analysisData.analysis_date}</span>
@@ -277,22 +277,22 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
           <CardContent>
             <div className="text-center space-y-4">
               {/* 占卜信息 */}
-              <div className="bg-white p-4 rounded-lg border-l-4 border-indigo-500">
-                <h4 className="font-bold text-indigo-800 mb-2">占卜信息</h4>
+              <div className="bg-white p-4 rounded-lg border-l-4 border-red-500">
+                <h4 className="font-bold text-red-800 mb-2">占卜信息</h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-indigo-700"><span className="font-medium">问题：</span>{analysisData.basic_info.divination_data.question}</p>
-                    <p className="text-indigo-700"><span className="font-medium">方法：</span>{analysisData.basic_info.divination_data.method}</p>
+                    <p className="text-red-700"><span className="font-medium">问题：</span>{analysisData.basic_info.divination_data.question}</p>
+                    <p className="text-red-700"><span className="font-medium">方法：</span>{analysisData.basic_info.divination_data.method}</p>
                   </div>
                   <div>
-                    <p className="text-indigo-700"><span className="font-medium">问题类型：</span>
+                    <p className="text-red-700"><span className="font-medium">问题类型：</span>
                       <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
                         questionTypeColors[analysisData.dynamic_guidance.question_analysis.type] || 'bg-gray-100 text-gray-800'
                       }`}>
                         {analysisData.dynamic_guidance.question_analysis.type}
                       </span>
                     </p>
-                    <p className="text-indigo-700"><span className="font-medium">关注重点：</span>{analysisData.dynamic_guidance.question_analysis.focus}</p>
+                    <p className="text-red-700"><span className="font-medium">关注重点：</span>{analysisData.dynamic_guidance.question_analysis.focus}</p>
                   </div>
                 </div>
               </div>
@@ -304,7 +304,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
         <div className="grid lg:grid-cols-2 gap-8">
           {/* 本卦 */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-indigo-800 chinese-text-shadow flex items-center space-x-2">
+            <h3 className="text-2xl font-bold text-red-800 chinese-text-shadow flex items-center space-x-2">
               <Star className="h-6 w-6" />
               <span>本卦</span>
             </h3>
@@ -316,9 +316,9 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             }, '本卦', true)}
             
             {/* 八卦结构 */}
-            <Card className="chinese-card-decoration border-2 border-indigo-400">
+            <Card className="chinese-card-decoration border-2 border-yellow-400">
               <CardHeader>
-                <CardTitle className="text-indigo-800 text-lg font-bold chinese-text-shadow flex items-center space-x-2">
+                <CardTitle className="text-red-800 text-lg font-bold chinese-text-shadow flex items-center space-x-2">
                   <Layers className="h-5 w-5" />
                   <span>八卦结构</span>
                 </CardTitle>
@@ -328,9 +328,9 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
                   {renderTrigramInfo(analysisData.basic_info.hexagram_info.hexagram_structure.upper_trigram, '上卦')}
                   {renderTrigramInfo(analysisData.basic_info.hexagram_info.hexagram_structure.lower_trigram, '下卦')}
                 </div>
-                <div className="mt-4 bg-indigo-50 p-3 rounded-lg">
-                  <h5 className="font-bold text-indigo-800 mb-2">八卦组合分析</h5>
-                  <p className="text-indigo-700 text-sm">{analysisData.detailed_analysis.hexagram_analysis.trigram_analysis}</p>
+                <div className="mt-4 bg-red-50 p-3 rounded-lg">
+                  <h5 className="font-bold text-red-800 mb-2">八卦组合分析</h5>
+                  <p className="text-red-700 text-sm">{analysisData.detailed_analysis.hexagram_analysis.trigram_analysis}</p>
                 </div>
               </CardContent>
             </Card>
@@ -338,7 +338,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
           {/* 变卦 */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-purple-800 chinese-text-shadow flex items-center space-x-2">
+            <h3 className="text-2xl font-bold text-red-800 chinese-text-shadow flex items-center space-x-2">
               <Shuffle className="h-6 w-6" />
               <span>变卦</span>
             </h3>
@@ -359,9 +359,9 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             )}
             
             {/* 变化分析 */}
-            <Card className="chinese-card-decoration border-2 border-purple-400">
+            <Card className="chinese-card-decoration border-2 border-yellow-400">
               <CardHeader>
-                <CardTitle className="text-purple-800 text-lg font-bold chinese-text-shadow flex items-center space-x-2">
+                <CardTitle className="text-red-800 text-lg font-bold chinese-text-shadow flex items-center space-x-2">
                   <TrendingUp className="h-5 w-5" />
                   <span>变化分析</span>
                 </CardTitle>
@@ -369,16 +369,16 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <h5 className="font-bold text-purple-800 mb-2">转化洞察</h5>
-                    <p className="text-purple-700 text-sm">{analysisData.detailed_analysis.changing_hexagram_analysis.transformation_insight}</p>
+                    <h5 className="font-bold text-red-800 mb-2">转化洞察</h5>
+                    <p className="text-red-700 text-sm">{analysisData.detailed_analysis.changing_hexagram_analysis.transformation_insight}</p>
                   </div>
                   <div>
-                    <h5 className="font-bold text-purple-800 mb-2">变化指导</h5>
-                    <p className="text-purple-700 text-sm">{analysisData.detailed_analysis.changing_hexagram_analysis.guidance}</p>
+                    <h5 className="font-bold text-red-800 mb-2">变化指导</h5>
+                    <p className="text-red-700 text-sm">{analysisData.detailed_analysis.changing_hexagram_analysis.guidance}</p>
                   </div>
                   <div>
-                    <h5 className="font-bold text-purple-800 mb-2">时机把握</h5>
-                    <p className="text-purple-700 text-sm">{analysisData.detailed_analysis.changing_hexagram_analysis.timing}</p>
+                    <h5 className="font-bold text-red-800 mb-2">时机把握</h5>
+                    <p className="text-red-700 text-sm">{analysisData.detailed_analysis.changing_hexagram_analysis.timing}</p>
                   </div>
                 </div>
               </CardContent>
@@ -387,9 +387,9 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
         </div>
 
         {/* 卦辞象传 */}
-        <Card className="chinese-card-decoration border-2 border-indigo-400">
+        <Card className="chinese-card-decoration border-2 border-yellow-400">
           <CardHeader>
-            <CardTitle className="text-indigo-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+            <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
               <BookOpen className="h-6 w-6" />
               <span>卦辞象传</span>
             </CardTitle>
@@ -397,12 +397,12 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <h4 className="font-bold text-yellow-800 mb-2">彖传（卦辞）</h4>
-                <p className="text-yellow-700 leading-relaxed">{analysisData.detailed_analysis.hexagram_analysis.judgment}</p>
+                <h4 className="font-bold text-red-800 mb-2">彖传（卦辞）</h4>
+                <p className="text-red-700 leading-relaxed">{analysisData.detailed_analysis.hexagram_analysis.judgment}</p>
               </div>
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h4 className="font-bold text-blue-800 mb-2">象传（卦象）</h4>
-                <p className="text-blue-700 leading-relaxed">{analysisData.detailed_analysis.hexagram_analysis.image}</p>
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <h4 className="font-bold text-red-800 mb-2">象传（卦象）</h4>
+                <p className="text-red-700 leading-relaxed">{analysisData.detailed_analysis.hexagram_analysis.image}</p>
               </div>
             </div>
           </CardContent>
@@ -410,13 +410,13 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
         {/* 动爻分析 */}
         {analysisData.detailed_analysis.changing_lines_analysis && (
-          <Card className="chinese-card-decoration border-2 border-orange-400">
+          <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-orange-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <Zap className="h-6 w-6" />
                 <span>动爻分析</span>
               </CardTitle>
-              <p className="text-orange-600 mt-2">动爻数量：{analysisData.detailed_analysis.changing_lines_analysis.changing_lines_count}爻</p>
+              <p className="text-red-600 mt-2">动爻数量：{analysisData.detailed_analysis.changing_lines_analysis.changing_lines_count}爻</p>
             </CardHeader>
             <CardContent>
               {renderChangingLinesAnalysis(analysisData.detailed_analysis.changing_lines_analysis)}
@@ -426,27 +426,27 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
         {/* 高级分析 */}
         {analysisData.detailed_analysis.advanced_analysis && (
-          <Card className="chinese-card-decoration border-2 border-green-400">
+          <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-green-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <Eye className="h-6 w-6" />
                 <span>高级分析</span>
               </CardTitle>
-              <p className="text-green-600 mt-2">互卦、错卦、综卦深度解析</p>
+              <p className="text-red-600 mt-2">互卦、错卦、综卦深度解析</p>
             </CardHeader>
             <CardContent>
               <div className="grid lg:grid-cols-3 gap-6">
                 {/* 互卦 */}
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h4 className="font-bold text-green-800 mb-2 flex items-center space-x-2">
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <h4 className="font-bold text-red-800 mb-2 flex items-center space-x-2">
                     <span>🔄</span>
                     <span>互卦 - {analysisData.detailed_analysis.advanced_analysis.inter_hexagram.name}</span>
                   </h4>
                   <div className="text-center mb-3">
                     <div className="text-3xl mb-1">{analysisData.detailed_analysis.advanced_analysis.inter_hexagram.symbol}</div>
-                    <div className="text-sm text-green-600">{analysisData.detailed_analysis.advanced_analysis.inter_hexagram.meaning}</div>
+                    <div className="text-sm text-red-600">{analysisData.detailed_analysis.advanced_analysis.inter_hexagram.meaning}</div>
                   </div>
-                  <p className="text-green-700 text-sm">{analysisData.detailed_analysis.advanced_analysis.inter_hexagram.analysis}</p>
+                  <p className="text-red-700 text-sm">{analysisData.detailed_analysis.advanced_analysis.inter_hexagram.analysis}</p>
                 </div>
                 
                 {/* 错卦 */}
@@ -463,23 +463,23 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
                 </div>
                 
                 {/* 综卦 */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-bold text-blue-800 mb-2 flex items-center space-x-2">
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <h4 className="font-bold text-red-800 mb-2 flex items-center space-x-2">
                     <span>🔀</span>
                     <span>综卦 - {analysisData.detailed_analysis.advanced_analysis.reverse_hexagram.name}</span>
                   </h4>
                   <div className="text-center mb-3">
                     <div className="text-3xl mb-1">{analysisData.detailed_analysis.advanced_analysis.reverse_hexagram.symbol}</div>
-                    <div className="text-sm text-blue-600">{analysisData.detailed_analysis.advanced_analysis.reverse_hexagram.meaning}</div>
+                    <div className="text-sm text-red-600">{analysisData.detailed_analysis.advanced_analysis.reverse_hexagram.meaning}</div>
                   </div>
-                  <p className="text-blue-700 text-sm">{analysisData.detailed_analysis.advanced_analysis.reverse_hexagram.analysis}</p>
+                  <p className="text-red-700 text-sm">{analysisData.detailed_analysis.advanced_analysis.reverse_hexagram.analysis}</p>
                 </div>
               </div>
               
               {/* 综合洞察 */}
-              <div className="mt-6 bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <h4 className="font-bold text-purple-800 mb-2">四卦综合洞察</h4>
-                <p className="text-purple-700 text-sm leading-relaxed">{analysisData.detailed_analysis.advanced_analysis.comprehensive_insight}</p>
+              <div className="mt-6 bg-red-50 p-4 rounded-lg border border-red-200">
+                <h4 className="font-bold text-red-800 mb-2">四卦综合洞察</h4>
+                <p className="text-red-700 text-sm leading-relaxed">{analysisData.detailed_analysis.advanced_analysis.comprehensive_insight}</p>
               </div>
             </CardContent>
           </Card>
@@ -489,40 +489,40 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
         {analysisData.detailed_analysis.numerology_analysis && (
           <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-yellow-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <BarChart3 className="h-6 w-6" />
                 <span>象数分析</span>
               </CardTitle>
-              <p className="text-yellow-600 mt-2">八卦数理与时间共振分析</p>
+              <p className="text-red-600 mt-2">八卦数理与时间共振分析</p>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <h4 className="font-bold text-yellow-800 mb-2">上卦数</h4>
-                  <div className="text-2xl font-bold text-yellow-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.number}</div>
-                  <div className="text-sm text-yellow-600">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.meaning}</div>
-                  <div className="text-xs text-yellow-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.influence}</div>
+                  <h4 className="font-bold text-red-800 mb-2">上卦数</h4>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.number}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.meaning}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.influence}</div>
                 </div>
                 
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h4 className="font-bold text-blue-800 mb-2">下卦数</h4>
-                  <div className="text-2xl font-bold text-blue-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.number}</div>
-                  <div className="text-sm text-blue-600">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.meaning}</div>
-                  <div className="text-xs text-blue-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.influence}</div>
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <h4 className="font-bold text-red-800 mb-2">下卦数</h4>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.number}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.meaning}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.influence}</div>
                 </div>
                 
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h4 className="font-bold text-green-800 mb-2">组合能量</h4>
-                  <div className="text-2xl font-bold text-green-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.combined_energy.total}</div>
-                  <div className="text-sm text-green-600">{analysisData.detailed_analysis.numerology_analysis.combined_energy.interpretation}</div>
-                  <div className="text-xs text-green-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.combined_energy.harmony}</div>
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                  <h4 className="font-bold text-red-800 mb-2">组合能量</h4>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.combined_energy.total}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.combined_energy.interpretation}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.combined_energy.harmony}</div>
                 </div>
                 
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <h4 className="font-bold text-purple-800 mb-2">时间共振</h4>
-                  <div className="text-2xl font-bold text-purple-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.time_resonance.resonance_number}</div>
-                  <div className="text-sm text-purple-600">{analysisData.detailed_analysis.numerology_analysis.time_resonance.meaning}</div>
-                  <div className="text-xs text-purple-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.time_resonance.interpretation}</div>
+                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                  <h4 className="font-bold text-red-800 mb-2">时间共振</h4>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.time_resonance.resonance_number}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.time_resonance.meaning}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.time_resonance.interpretation}</div>
                 </div>
               </div>
             </CardContent>
@@ -531,9 +531,9 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
         {/* 五行分析 */}
         {analysisData.detailed_analysis.hexagram_analysis.five_elements && (
-          <Card className="chinese-card-decoration border-2 border-gray-400">
+          <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-gray-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <Compass className="h-6 w-6" />
                 <span>五行分析</span>
               </CardTitle>
@@ -594,9 +594,9 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
         {/* 时间分析 */}
         {analysisData.dynamic_guidance.time_analysis && (
-          <Card className="chinese-card-decoration border-2 border-blue-400">
+          <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-blue-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <Clock className="h-6 w-6" />
                 <span>时间分析</span>
               </CardTitle>
@@ -650,48 +650,48 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
         {/* 专业指导 */}
         <div className="grid lg:grid-cols-2 gap-8">
           {/* 针对性指导 */}
-          <Card className="chinese-card-decoration border-2 border-indigo-400">
+          <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-indigo-800 text-xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <Target className="h-5 w-5" />
                 <span>针对性指导</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-indigo-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-indigo-800 mb-2">专业分析</h4>
-                  <p className="text-indigo-700 text-sm leading-relaxed">{analysisData.dynamic_guidance.targeted_guidance}</p>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h4 className="font-bold text-red-800 mb-2">专业分析</h4>
+                  <p className="text-red-700 text-sm leading-relaxed">{analysisData.dynamic_guidance.targeted_guidance}</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-blue-800 mb-2">实用建议</h4>
-                  <p className="text-blue-700 text-sm leading-relaxed">{analysisData.dynamic_guidance.practical_advice}</p>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h4 className="font-bold text-red-800 mb-2">实用建议</h4>
+                  <p className="text-red-700 text-sm leading-relaxed">{analysisData.dynamic_guidance.practical_advice}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* 易经智慧 */}
-          <Card className="chinese-card-decoration border-2 border-purple-400">
+          <Card className="chinese-card-decoration border-2 border-yellow-400">
             <CardHeader>
-              <CardTitle className="text-purple-800 text-xl font-bold chinese-text-shadow flex items-center space-x-2">
+              <CardTitle className="text-red-800 text-xl font-bold chinese-text-shadow flex items-center space-x-2">
                 <Sparkles className="h-5 w-5" />
                 <span>易经智慧</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-purple-800 mb-2">核心信息</h4>
-                  <p className="text-purple-700 font-medium">{analysisData.divination_wisdom.key_message}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-green-800 mb-2">行动建议</h4>
-                  <p className="text-green-700 text-sm leading-relaxed">{analysisData.divination_wisdom.action_advice}</p>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h4 className="font-bold text-red-800 mb-2">核心信息</h4>
+                  <p className="text-red-700 font-medium">{analysisData.divination_wisdom.key_message}</p>
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h4 className="font-bold text-yellow-800 mb-2">时机把握</h4>
-                  <p className="text-yellow-700 text-sm leading-relaxed">{analysisData.divination_wisdom.timing_guidance}</p>
+                  <h4 className="font-bold text-red-800 mb-2">行动建议</h4>
+                  <p className="text-red-700 text-sm leading-relaxed">{analysisData.divination_wisdom.action_advice}</p>
+                </div>
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <h4 className="font-bold text-red-800 mb-2">时机把握</h4>
+                  <p className="text-red-700 text-sm leading-relaxed">{analysisData.divination_wisdom.timing_guidance}</p>
                 </div>
               </div>
             </CardContent>
@@ -699,16 +699,16 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
         </div>
 
         {/* 哲学洞察 */}
-        <Card className="chinese-card-decoration border-2 border-gray-400">
+        <Card className="chinese-card-decoration border-2 border-yellow-400">
           <CardHeader>
-            <CardTitle className="text-gray-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
+            <CardTitle className="text-red-800 text-2xl font-bold chinese-text-shadow flex items-center space-x-2">
               <BookOpen className="h-6 w-6" />
               <span>哲学洞察</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-700 leading-relaxed text-center italic">
+            <div className="bg-red-50 p-6 rounded-lg">
+              <p className="text-red-700 leading-relaxed text-center italic">
                 {analysisData.divination_wisdom.philosophical_insight}
               </p>
             </div>

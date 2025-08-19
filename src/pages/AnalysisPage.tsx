@@ -158,7 +158,7 @@ const AnalysisPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-7xl mx-auto px-4 space-y-8">
       {/* 分析类型选择 */}
       <Card>
         <CardHeader>
