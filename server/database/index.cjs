@@ -15,6 +15,12 @@ class DatabaseManager {
   // 初始化数据库连接
   init() {
     try {
+      // 确保数据库目录存在
+      const dbDir = path.dirname(this.dbPath);
+      if (!fs.existsSync(dbDir)) {
+        fs.mkdirSync(dbDir, { recursive: true });
+      }
+      
       // 创建或连接到SQLite数据库
       this.db = new Database(this.dbPath);
       

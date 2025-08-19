@@ -43,7 +43,7 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? (origin, callback) => {
-        // 允许Koyeb域名、localhost和环境变量指定的域名
+        // 生产环境的严格检查
         const allowedOrigins = [
           'http://localhost:5173',
           'http://localhost:4173',

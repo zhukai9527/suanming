@@ -1,8 +1,14 @@
 // 本地API客户端
 // 替代Supabase客户端，提供相同的接口
 
+// 强制在开发环境使用正确的后端地址
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? 'https://your-app.koyeb.app/api' : 'http://localhost:3001/api');
+  (import.meta.env.DEV ? 'http://localhost:3001/api' : `${window.location.origin}/api`);
+
+// 调试信息
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('import.meta.env.DEV:', import.meta.env.DEV);
+console.log('import.meta.env.PROD:', import.meta.env.PROD);
 
 interface ApiResponse<T> {
   data?: T;
@@ -69,7 +75,32 @@ class LocalApiClient {
         },
       });
 
-      const data = await response.json();
+      // 检查响应是否为空或非JSON格式
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        if (!response.ok) {
+          return {
+            error: {
+              code: 'HTTP_ERROR',
+              message: `HTTP ${response.status}: ${response.statusText}`,
+            },
+          };
+        }
+        // 如果是成功响应但不是JSON，返回空数据
+        return { data: {} as T };
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        return {
+          error: {
+            code: 'JSON_PARSE_ERROR',
+            message: '服务器返回了无效的JSON格式',
+          },
+        };
+      }
 
       if (!response.ok) {
         return {
@@ -80,7 +111,7 @@ class LocalApiClient {
         };
       }
 
-      return { data: data.data };
+      return { data: data.data || data };
     } catch (error) {
       console.error('API请求错误:', error);
       return {
