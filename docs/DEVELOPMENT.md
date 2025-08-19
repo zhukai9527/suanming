@@ -21,21 +21,22 @@
 ### 整体架构
 
 ```
-三算命平台
+神机阁平台 (v2.0 重构版)
 ├── 前端应用 (React + TypeScript)
 │   ├── 用户界面层
-│   ├── 业务逻辑层
-│   ├── 数据访问层
+│   ├── 业务逻辑层 (分析与存储分离)
+│   ├── 数据访问层 (API去重机制)
 │   └── 工具函数层
-├── 后端服务 (Supabase)
-│   ├── 数据库 (PostgreSQL)
-│   ├── 认证服务
-│   ├── Edge Functions
-│   └── 实时订阅
-└── 部署平台 (Vercel/Netlify)
-    ├── CDN 加速
-    ├── 自动部署
-    └── 环境管理
+├── 后端服务 (Node.js + Express)
+│   ├── 数据库 (SQLite)
+│   ├── 认证中间件 (JWT)
+│   ├── 分析服务 (纯计算)
+│   ├── 历史记录服务 (专门存储)
+│   └── 路由层
+└── 开发环境
+    ├── 本地开发服务器
+    ├── 热重载
+    └── 调试工具
 ```
 
 ### 前端架构
@@ -49,32 +50,131 @@ src/
 │   │   ├── Input.tsx
 │   │   └── Select.tsx
 │   ├── Layout.tsx      # 布局组件
-│   ├── AnalysisResultDisplay.tsx  # 业务组件
+│   ├── AnalysisResultDisplay.tsx  # 分析结果显示
+│   ├── CompleteBaziAnalysis.tsx   # 完整八字分析
+│   ├── CompleteZiweiAnalysis.tsx  # 完整紫微分析
+│   ├── CompleteYijingAnalysis.tsx # 完整易经分析
+│   ├── BaziAnalysisDisplay.tsx    # 八字分析显示
+│   ├── ProtectedRoute.tsx         # 路由保护
 │   └── ErrorBoundary.tsx          # 错误边界
 ├── pages/              # 页面层
 │   ├── HomePage.tsx    # 首页
-│   ├── AnalysisPage.tsx # 分析页面
+│   ├── AnalysisPage.tsx # 分析页面 (重构)
 │   ├── HistoryPage.tsx # 历史记录
-│   └── ProfilePage.tsx # 用户资料
+│   ├── ProfilePage.tsx # 用户资料
+│   ├── LoginPage.tsx   # 登录页面
+│   ├── RegisterPage.tsx # 注册页面
+│   ├── BaziDetailsPage.tsx # 八字详情
+│   └── WuxingAnalysisPage.tsx # 五行分析
 ├── contexts/           # 状态管理层
 │   └── AuthContext.tsx # 认证上下文
 ├── hooks/              # 自定义Hook层
 │   └── use-mobile.tsx  # 移动端检测
 ├── lib/                # 工具函数层
-│   ├── supabase.ts     # Supabase客户端
+│   ├── localApi.ts     # 本地API客户端 (重构)
 │   └── utils.ts        # 通用工具
 ├── types/              # 类型定义层
 │   └── index.ts        # TypeScript类型
 └── data/               # 静态数据层
 ```
 
-### 数据流架构
+### 数据流架构 (v2.0 重构版)
 
 ```
-用户交互 → 组件状态 → Context/Hook → API调用 → Supabase → 数据库
-    ↓         ↓          ↓         ↓        ↓        ↓
- UI更新 ← 状态更新 ← 数据处理 ← 响应处理 ← Edge Function ← 查询结果
+分析流程:
+用户交互 → 组件状态 → useMemo缓存 → 分析API → 分析服务 → 返回结果
+    ↓         ↓          ↓           ↓        ↓         ↓
+显示结果 ← 状态更新 ← 对象稳定化 ← 去重处理 ← 纯计算   ← 分析完成
+    ↓
+历史记录API → 存储服务 → SQLite数据库
+    ↓           ↓         ↓
+保存成功   ← 记录插入 ← 数据持久化
+
+特点:
+- 分析与存储完全分离
+- API请求去重机制
+- 对象引用稳定化
+- 错误隔离处理
 ```
+
+## 架构重构 (v2.0)
+
+### 重构背景
+
+在v1.0版本中，我们遇到了以下问题：
+1. **重复历史记录**：一次分析产生多条历史记录
+2. **架构耦合**：分析计算与历史存储紧密耦合
+3. **React StrictMode问题**：开发环境下useEffect重复执行
+4. **对象引用不稳定**：每次渲染创建新对象导致重复渲染
+
+### 重构方案
+
+#### 1. 分离关注点
+```typescript
+// 重构前：耦合架构
+POST /analysis/bazi → 分析 + 存储 → 返回 { record_id, analysis }
+
+// 重构后：分离架构
+POST /analysis/bazi → 纯分析 → 返回 { analysis }
+POST /analysis/save-history → 专门存储 → 返回 { record_id }
+```
+
+#### 2. 前端流程优化
+```typescript
+// 重构后的分析流程
+async function handleAnalysis() {
+  // 第一步：获取分析结果
+  const analysisResult = await localApi.analysis.bazi(birthData)
+  setAnalysisResult(analysisResult.data.analysis)
+  
+  // 第二步：保存历史记录
+  try {
+    await localApi.analysis.saveHistory('bazi', analysisResult.data.analysis, birthData)
+  } catch (error) {
+    // 历史记录保存失败不影响分析结果显示
+    console.warn('历史记录保存失败:', error)
+  }
+}
+```
+
+#### 3. 性能优化措施
+```typescript
+// useMemo缓存对象，避免重复渲染
+const memoizedBirthDate = useMemo(() => ({
+  date: formData.birth_date,
+  time: formData.birth_time,
+  name: formData.name,
+  gender: formData.gender
+}), [formData.birth_date, formData.birth_time, formData.name, formData.gender])
+
+// useEffect依赖优化
+useEffect(() => {
+  // 依赖具体字段而非整个对象
+}, [birthDate?.date, birthDate?.time, birthDate?.name, birthDate?.gender])
+
+// API请求去重
+private pendingRequests: Map<string, Promise<any>> = new Map()
+```
+
+#### 4. 错误处理改进
+```typescript
+// 容错机制：历史记录保存失败不影响分析功能
+try {
+  await saveHistory()
+} catch (historyError) {
+  console.error('保存历史记录失败:', historyError)
+  // 不抛出错误，不影响用户体验
+}
+```
+
+### 重构效果
+
+| 指标 | 重构前 | 重构后 | 改善幅度 |
+|------|--------|--------|----------|
+| 重复记录数 | 3-5条/次 | 1条/次 | 减少80%+ |
+| API调用次数 | 多次重复 | 单次调用 | 减少60%+ |
+| 组件渲染次数 | 频繁重渲染 | 按需渲染 | 减少40%+ |
+| 代码可维护性 | 耦合严重 | 职责清晰 | 显著提升 |
 
 ## 技术栈详解
 

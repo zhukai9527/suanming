@@ -1,24 +1,34 @@
 # API 文档
 
-本文档描述了三算命平台的后端API接口，所有API都基于Supabase Edge Functions实现。
+本文档描述了三算命平台的后端API接口，基于Node.js Express框架实现。
 
 ## 基础信息
 
-- **Base URL**: `https://your-project.supabase.co/functions/v1`
-- **认证方式**: Bearer Token (Supabase JWT)
+- **Base URL**: `http://localhost:3001/api` (开发环境)
+- **认证方式**: Bearer Token (JWT)
 - **数据格式**: JSON
 - **字符编码**: UTF-8
+- **架构特点**: 分析计算与历史记录存储分离
 
 ## 通用响应格式
 
-### 成功响应
+### 分析接口成功响应
 ```json
 {
   "data": {
-    "record_id": "uuid",
     "analysis": {
       // 分析结果数据
     }
+  }
+}
+```
+
+### 历史记录存储成功响应
+```json
+{
+  "data": {
+    "record_id": "number",
+    "message": "历史记录保存成功"
   }
 }
 ```
@@ -46,12 +56,13 @@ Content-Type: application/json
 
 ### 1. 八字命理分析
 
-**接口地址**: `POST /bazi-analyzer`
+**接口地址**: `POST /analysis/bazi`
+
+**功能说明**: 纯分析接口，只返回分析结果，不存储历史记录
 
 **请求参数**:
 ```json
 {
-  "user_id": "string",
   "birth_data": {
     "name": "string",
     "birth_date": "YYYY-MM-DD",
@@ -66,28 +77,31 @@ Content-Type: application/json
 ```json
 {
   "data": {
-    "record_id": "123e4567-e89b-12d3-a456-426614174000",
     "analysis": {
-      "bazi": {
-        "year": "甲子",
-        "month": "丙寅",
-        "day": "戊辰",
-        "hour": "庚申"
+      "basic_info": {
+        "personal_data": {
+          "name": "张三",
+          "birth_date": "1990-01-01",
+          "birth_time": "12:00",
+          "gender": "男性"
+        },
+        "bazi_chart": {
+          "year_pillar": { "stem": "庚", "branch": "午" },
+          "month_pillar": { "stem": "戊", "branch": "寅" },
+          "day_pillar": { "stem": "甲", "branch": "子" },
+          "hour_pillar": { "stem": "丙", "branch": "寅" },
+          "day_master": "甲",
+          "day_master_element": "木"
+        }
       },
-      "wuxing": {
-        "wood": 2,
-        "fire": 1,
-        "earth": 2,
-        "metal": 2,
-        "water": 1
+      "detailed_analysis": {
+        "character_analysis": "性格分析内容",
+        "career_analysis": "事业分析内容",
+        "wealth_analysis": "财运分析内容",
+        "health_analysis": "健康分析内容",
+        "relationship_analysis": "感情分析内容"
       },
-      "analysis": {
-        "character": "性格分析内容",
-        "career": "事业分析内容",
-        "wealth": "财运分析内容",
-        "health": "健康分析内容",
-        "relationships": "感情分析内容"
-      }
+      "analysis_date": "2024-01-01T12:00:00.000Z"
     }
   }
 }
@@ -95,12 +109,13 @@ Content-Type: application/json
 
 ### 2. 紫微斗数分析
 
-**接口地址**: `POST /ziwei-analyzer`
+**接口地址**: `POST /analysis/ziwei`
+
+**功能说明**: 纯分析接口，只返回分析结果，不存储历史记录
 
 **请求参数**:
 ```json
 {
-  "user_id": "string",
   "birth_data": {
     "name": "string",
     "birth_date": "YYYY-MM-DD",
@@ -115,76 +130,134 @@ Content-Type: application/json
 ```json
 {
   "data": {
-    "record_id": "123e4567-e89b-12d3-a456-426614174000",
     "analysis": {
-      "ziwei": {
-        "ming_gong": "子",
-        "ming_gong_xing": ["紫微", "天机"],
-        "shi_er_gong": {
-          "命宫": {
-            "branch": "子",
-            "main_stars": ["紫微", "天机"],
-            "interpretation": "命宫解读内容"
-          }
-          // ... 其他宫位
+      "basic_info": {
+        "personal_data": {
+          "name": "张三",
+          "birth_date": "1990-01-01",
+          "birth_time": "12:00",
+          "gender": "男性"
         },
-        "si_hua": {
-          "hua_lu": {
-            "star": "廉贞",
-            "meaning": "财禄亨通，运势顺遂"
+        "ziwei_chart": {
+          "ming_gong": "子",
+          "ming_gong_stars": ["紫微", "天机"],
+          "twelve_palaces": {
+            "命宫": {
+              "branch": "子",
+              "main_stars": ["紫微", "天机"],
+              "interpretation": "命宫解读内容"
+            }
+            // ... 其他宫位
           },
-          "hua_quan": {
-            "star": "破军",
-            "meaning": "权力地位，事业有成"
-          },
-          "hua_ke": {
-            "star": "武曲",
-            "meaning": "贵人相助，学业有成"
-          },
-          "hua_ji": {
-            "star": "太阳",
-            "meaning": "需要谨慎，防范风险"
+          "four_transformations": {
+            "hua_lu": { "star": "廉贞", "meaning": "财禄亨通" },
+            "hua_quan": { "star": "破军", "meaning": "权力地位" },
+            "hua_ke": { "star": "武曲", "meaning": "贵人相助" },
+            "hua_ji": { "star": "太阳", "meaning": "需要谨慎" }
           }
         }
       },
-      "analysis": {
-        "character": {
-          "overview": "性格概述",
-          "personality_traits": "性格特质"
+      "detailed_analysis": {
+         "character_analysis": "性格分析内容",
+         "career_analysis": "事业分析内容",
+         "wealth_analysis": "财运分析内容",
+         "health_analysis": "健康分析内容",
+         "relationship_analysis": "感情分析内容"
+       },
+       "analysis_date": "2024-01-01T12:00:00.000Z"
+     }
+   }
+ }
+```
+
+### 3. 易经占卜分析
+
+**接口地址**: `POST /analysis/yijing`
+
+**功能说明**: 纯分析接口，只返回分析结果，不存储历史记录
+
+**请求参数**:
+```json
+{
+  "question": "string",
+  "user_id": "string",
+  "divination_method": "time"
+}
+```
+
+**响应示例**:
+```json
+{
+  "data": {
+    "analysis": {
+      "basic_info": {
+        "divination_data": {
+          "question": "事业发展如何？",
+          "method": "梅花易数时间起卦法",
+          "divination_time": "2024-01-01T12:00:00.000Z"
         },
-        "career": {
-          "suitable_industries": ["行业1", "行业2"],
-          "career_advice": "事业建议"
-        },
-        "wealth": {
-          "wealth_pattern": "财富模式"
-        },
-        "health": {
-          "constitution": "体质分析",
-          "wellness_advice": "健康建议"
-        },
-        "relationships": {
-          "marriage_fortune": "婚姻运势",
-          "spouse_characteristics": "伴侣特质"
+        "hexagram_info": {
+          "main_hexagram": {
+            "name": "乾为天",
+            "number": 1,
+            "description": "元亨利贞"
+          },
+          "changing_hexagram": {
+            "name": "天风姤",
+            "number": 44
+          }
         }
-      }
+      },
+      "detailed_analysis": {
+        "hexagram_analysis": {
+          "judgment": "大吉大利",
+          "image": "天行健，君子以自强不息",
+          "interpretation": "详细解释内容"
+        },
+        "changing_lines": [
+          {
+            "position": "初九",
+            "line_text": "潜龙勿用",
+            "meaning": "时机未到，需要等待"
+          }
+        ]
+      },
+      "dynamic_guidance": {
+        "overall_fortune": "整体运势良好",
+        "specific_advice": "具体建议内容",
+        "timing_analysis": "时机分析"
+      },
+      "divination_wisdom": {
+        "key_message": "核心启示",
+        "philosophical_insight": "哲学思考"
+      },
+      "analysis_date": "2024-01-01T12:00:00.000Z"
     }
   }
 }
 ```
 
-### 3. 易经占卜分析
+### 4. 历史记录存储
 
-**接口地址**: `POST /yijing-analyzer`
+**接口地址**: `POST /analysis/save-history`
+
+**功能说明**: 专门用于保存分析结果到历史记录
 
 **请求参数**:
 ```json
 {
-  "user_id": "string",
-  "divination_data": {
+  "analysis_type": "bazi|ziwei|yijing",
+  "analysis_data": {
+    // 完整的分析结果数据
+  },
+  "input_data": {
+    // 原始输入数据（可选）
+    "name": "string",
+    "birth_date": "YYYY-MM-DD",
+    "birth_time": "HH:MM",
+    "gender": "male|female",
     "question": "string",
-    "method": "梅花易数时间起卦法",
-    "divination_time": "YYYY-MM-DDTHH:MM:SSZ"
+    "divination_method": "string"
   }
 }
 ```
@@ -193,55 +266,13 @@ Content-Type: application/json
 ```json
 {
   "data": {
-    "record_id": "123e4567-e89b-12d3-a456-426614174000",
-    "analysis": {
-      "basic_info": {
-        "divination_data": {
-          "question": "占卜问题",
-          "method": "梅花易数时间起卦法",
-          "divination_time": "2024-01-01T12:00:00Z"
-        },
-        "hexagram_info": {
-          "main_hexagram": "乾为天",
-          "hexagram_description": "卦辞内容",
-          "upper_trigram": "乾",
-          "lower_trigram": "乾",
-          "detailed_interpretation": "详细解释"
-        }
-      },
-      "detailed_analysis": {
-        "hexagram_analysis": {
-          "primary_meaning": "主要含义",
-          "judgment": "吉凶断语",
-          "image": "象辞解释"
-        },
-        "changing_lines_analysis": {
-          "changing_line_position": "六二",
-          "line_meaning": "爻辞含义"
-        },
-        "changing_hexagram": {
-          "name": "变卦名称",
-          "meaning": "变卦含义",
-          "transformation_insight": "变化启示"
-        }
-      },
-      "life_guidance": {
-        "overall_fortune": "整体运势",
-        "career_guidance": "事业指导",
-        "relationship_guidance": "情感指导",
-        "wealth_guidance": "财运指导"
-      },
-      "divination_wisdom": {
-        "key_message": "核心信息",
-        "action_advice": "行动建议",
-        "philosophical_insight": "哲学启示"
-      }
-    }
+    "record_id": 123,
+    "message": "历史记录保存成功"
   }
 }
 ```
 
-### 4. 五行分析
+### 5. 五行分析
 
 **接口地址**: `POST /bazi-wuxing-analysis`
 
@@ -367,28 +398,48 @@ Content-Type: application/json
 ### JavaScript/TypeScript
 
 ```typescript
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  'https://your-project.supabase.co',
-  'your-anon-key'
-)
+// API客户端配置
+const API_BASE_URL = 'http://localhost:3001/api'
+const authToken = 'your-jwt-token'
 
 // 八字分析示例
 async function analyzeBazi(birthData: any) {
-  const { data, error } = await supabase.functions.invoke('bazi-analyzer', {
-    body: {
-      user_id: 'user-uuid',
-      birth_data: birthData
-    }
+  // 第一步：获取分析结果
+  const analysisResponse = await fetch(`${API_BASE_URL}/analysis/bazi`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${authToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ birth_data: birthData })
   })
   
-  if (error) {
-    console.error('分析失败:', error)
-    return null
+  if (!analysisResponse.ok) {
+    throw new Error('分析失败')
   }
   
-  return data
+  const analysisResult = await analysisResponse.json()
+  
+  // 第二步：保存历史记录
+  try {
+    await fetch(`${API_BASE_URL}/analysis/save-history`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        analysis_type: 'bazi',
+        analysis_data: analysisResult.data.analysis,
+        input_data: birthData
+      })
+    })
+  } catch (error) {
+    console.warn('历史记录保存失败:', error)
+    // 不影响分析结果的返回
+  }
+  
+  return analysisResult
 }
 
 // 使用示例
@@ -404,13 +455,30 @@ const result = await analyzeBazi({
 ### cURL
 
 ```bash
-# 八字分析
-curl -X POST 'https://your-project.supabase.co/functions/v1/bazi-analyzer' \
+# 第一步：八字分析
+curl -X POST 'http://localhost:3001/api/analysis/bazi' \
   -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
   -H 'Content-Type: application/json' \
   -d '{
-    "user_id": "user-uuid",
     "birth_data": {
+      "name": "张三",
+      "birth_date": "1990-01-01",
+      "birth_time": "12:00",
+      "gender": "male",
+      "birth_place": "北京市"
+    }
+  }'
+
+# 第二步：保存历史记录
+curl -X POST 'http://localhost:3001/api/analysis/save-history' \
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "analysis_type": "bazi",
+    "analysis_data": {
+      // 从第一步获取的完整分析结果
+    },
+    "input_data": {
       "name": "张三",
       "birth_date": "1990-01-01",
       "birth_time": "12:00",
@@ -422,14 +490,25 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/bazi-analyzer' \
 
 ## 注意事项
 
-1. **请求频率限制**: 每个用户每分钟最多50次请求
-2. **数据格式**: 所有日期使用ISO 8601格式 (YYYY-MM-DD)
-3. **时间格式**: 使用24小时制 (HH:MM)
-4. **字符编码**: 所有文本数据使用UTF-8编码
-5. **数据安全**: 敏感信息会被加密存储
-6. **缓存策略**: 相同参数的分析结果会被缓存24小时
+1. **架构设计**: 分析计算与历史记录存储完全分离
+2. **请求流程**: 先调用分析接口获取结果，再调用存储接口保存历史记录
+3. **数据格式**: 所有日期使用ISO 8601格式 (YYYY-MM-DD)
+4. **时间格式**: 使用24小时制 (HH:MM)
+5. **字符编码**: 所有文本数据使用UTF-8编码
+6. **错误处理**: 历史记录保存失败不影响分析结果的获取
+7. **请求去重**: 前端实现了API请求去重机制，防止重复调用
+8. **时间显示**: 统一使用本地化时间格式显示
 
 ## 更新日志
+
+### v2.0.0 (2024-01-19)
+- **重大架构重构**: 分离分析计算与历史记录存储
+- **新增接口**: `/analysis/save-history` 专门用于保存历史记录
+- **接口变更**: 所有分析接口不再返回 `record_id`，只返回分析结果
+- **重复记录修复**: 彻底解决了一次分析产生多条历史记录的问题
+- **时间显示优化**: 统一使用ISO时间戳和本地化显示
+- **前端优化**: 移除React StrictMode，优化组件渲染性能
+- **API去重**: 实现了请求去重机制，防止并发重复调用
 
 ### v1.0.0 (2024-01-01)
 - 初始版本发布
