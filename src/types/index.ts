@@ -38,7 +38,7 @@ export interface NumerologyReading {
   birth_time?: string;
   gender: string;
   birth_place?: string;
-  input_data: any;
+  input_data: string | any; // JSON字符串或已解析的对象
   analysis: {
     bazi?: { bazi_analysis: any };
     ziwei?: { ziwei_analysis: any };

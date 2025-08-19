@@ -67,7 +67,7 @@ class ZiweiAnalyzer {
     
     return {
       analysis_type: 'ziwei',
-      analysis_date: new Date().toISOString().split('T')[0],
+      analysis_date: new Date().toISOString(),
       basic_info: {
         personal_data: {
           name: personName,

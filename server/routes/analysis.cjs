@@ -39,34 +39,12 @@ router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
   }
   
   try {
-    // 执行八字分析
+    // 执行八字分析（纯分析，不存储历史记录）
     const analysisResult = await baziAnalyzer.performFullBaziAnalysis(birth_data);
     
-    // 保存到数据库
-    const db = getDB();
-    const insertReading = db.prepare(`
-      INSERT INTO numerology_readings (
-        user_id, reading_type, name, birth_date, birth_time, birth_place, gender,
-        input_data, analysis, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = insertReading.run(
-      req.user.id,
-      'bazi',
-      birth_data.name,
-      birth_data.birth_date,
-      birth_data.birth_time || null,
-      birth_data.birth_place || null,
-      birth_data.gender || null,
-      JSON.stringify(birth_data),
-      JSON.stringify(analysisResult),
-      'completed'
-    );
-    
+    // 只返回分析结果，不存储历史记录
     res.json({
       data: {
-        record_id: result.lastInsertRowid,
         analysis: analysisResult
       }
     });
@@ -86,38 +64,16 @@ router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
   }
   
   try {
-    // 执行易经分析
+    // 执行易经分析（纯分析，不存储历史记录）
     const analysisResult = yijingAnalyzer.performYijingAnalysis({
       question: question,
       user_id: user_id || req.user.id,
       divination_method: divination_method || 'time'
     });
     
-    // 保存到数据库
-    const db = getDB();
-    const insertReading = db.prepare(`
-      INSERT INTO numerology_readings (
-        user_id, reading_type, name, birth_date, birth_time, birth_place, gender,
-        input_data, analysis, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = insertReading.run(
-      req.user.id,
-      'yijing',
-      '易经占卜用户', // 易经占卜不需要真实姓名
-      null, // 不需要出生日期
-      null, // 不需要出生时间
-      null, // 不需要出生地点
-      null, // 不需要性别
-      JSON.stringify({ question, divination_method }),
-      JSON.stringify(analysisResult),
-      'completed'
-    );
-    
+    // 只返回分析结果，不存储历史记录
     res.json({
       data: {
-        record_id: result.lastInsertRowid,
         analysis: analysisResult
       }
     });
@@ -152,40 +108,91 @@ router.post('/ziwei', authenticate, asyncHandler(async (req, res) => {
   }
   
   try {
-    // 执行紫微斗数分析
+    // 执行紫微斗数分析（纯分析，不存储历史记录）
     const analysisResult = ziweiAnalyzer.performRealZiweiAnalysis(birth_data);
     
-    // 保存到数据库
-    const db = getDB();
-    const insertReading = db.prepare(`
-      INSERT INTO numerology_readings (
-        user_id, reading_type, name, birth_date, birth_time, birth_place, gender,
-        input_data, analysis, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = insertReading.run(
-      req.user.id,
-      'ziwei',
-      birth_data.name,
-      birth_data.birth_date,
-      birth_data.birth_time || null,
-      birth_data.birth_place || null,
-      birth_data.gender || null,
-      JSON.stringify(birth_data),
-      JSON.stringify(analysisResult),
-      'completed'
-    );
-    
+    // 只返回分析结果，不存储历史记录
     res.json({
       data: {
-        record_id: result.lastInsertRowid,
         analysis: analysisResult
       }
     });
   } catch (error) {
     console.error('紫微斗数分析错误:', error);
     throw new AppError('紫微斗数分析过程中发生错误', 500, 'ZIWEI_ANALYSIS_ERROR');
+  }
+}));
+
+// 历史记录存储接口
+router.post('/save-history', authenticate, asyncHandler(async (req, res) => {
+  const { analysis_type, analysis_data, input_data } = req.body;
+  
+  // 输入验证
+  if (!analysis_type || !analysis_data) {
+    throw new AppError('缺少必要参数：分析类型和分析数据', 400, 'MISSING_REQUIRED_DATA');
+  }
+  
+  // 验证分析类型
+  const validTypes = ['bazi', 'ziwei', 'yijing'];
+  if (!validTypes.includes(analysis_type)) {
+    throw new AppError('无效的分析类型', 400, 'INVALID_ANALYSIS_TYPE');
+  }
+  
+  try {
+    const db = getDB();
+    
+    // 根据分析类型准备不同的数据
+    let name, birth_date, birth_time, birth_place, gender;
+    
+    if (analysis_type === 'yijing') {
+      // 易经占卜：获取用户档案信息
+      const getUserProfile = db.prepare('SELECT full_name FROM user_profiles WHERE user_id = ?');
+      const userProfile = getUserProfile.get(req.user.id);
+      name = userProfile?.full_name || '易经占卜用户';
+      birth_date = null;
+      birth_time = null;
+      birth_place = null;
+      gender = null;
+    } else {
+      // 八字和紫微：从输入数据中获取
+      name = input_data?.name || '用户';
+      birth_date = input_data?.birth_date || null;
+      birth_time = input_data?.birth_time || null;
+      birth_place = input_data?.birth_place || null;
+      gender = input_data?.gender || null;
+    }
+    
+    // 插入历史记录
+    const insertReading = db.prepare(`
+      INSERT INTO numerology_readings (
+        user_id, reading_type, name, birth_date, birth_time, birth_place, gender,
+        input_data, analysis, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = insertReading.run(
+      req.user.id,
+      analysis_type,
+      name,
+      birth_date,
+      birth_time,
+      birth_place,
+      gender,
+      JSON.stringify(input_data || {}),
+      JSON.stringify(analysis_data),
+      'completed',
+      new Date().toISOString()
+    );
+    
+    res.json({
+      data: {
+        record_id: result.lastInsertRowid,
+        message: '历史记录保存成功'
+      }
+    });
+  } catch (error) {
+    console.error('保存历史记录错误:', error);
+    throw new AppError('保存历史记录失败', 500, 'SAVE_HISTORY_ERROR');
   }
 }));
 

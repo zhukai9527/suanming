@@ -23,6 +23,7 @@ interface AuthResponse {
 
 class LocalApiClient {
   private token: string | null = null;
+  private pendingRequests: Map<string, Promise<any>> = new Map();
 
   constructor() {
     // 从localStorage恢复token
@@ -176,30 +177,60 @@ class LocalApiClient {
     },
   };
 
+  // 生成请求唯一键
+  private generateRequestKey(endpoint: string, data: any): string {
+    return `${endpoint}:${JSON.stringify(data)}`;
+  }
+
+  // 带去重的请求方法
+  private async requestWithDeduplication<T>(
+    endpoint: string,
+    options: RequestInit,
+    data: any
+  ): Promise<ApiResponse<T>> {
+    const requestKey = this.generateRequestKey(endpoint, data);
+    
+    // 如果已有相同请求在进行中，返回该请求的Promise
+    if (this.pendingRequests.has(requestKey)) {
+      return this.pendingRequests.get(requestKey);
+    }
+    
+    // 创建新请求
+    const requestPromise = this.request<T>(endpoint, options).finally(() => {
+      // 请求完成后清除缓存
+      this.pendingRequests.delete(requestKey);
+    });
+    
+    // 缓存请求Promise
+    this.pendingRequests.set(requestKey, requestPromise);
+    
+    return requestPromise;
+  }
+
   // 分析相关方法
   analysis = {
     // 八字分析
     bazi: async (birthData: any): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
-      return this.request<{ record_id: number; analysis: any }>('/analysis/bazi', {
+      return this.requestWithDeduplication<{ record_id: number; analysis: any }>('/analysis/bazi', {
         method: 'POST',
         body: JSON.stringify({ birth_data: birthData }),
-      });
+      }, birthData);
     },
 
     // 紫微斗数分析
     ziwei: async (birthData: any): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
-      return this.request<{ record_id: number; analysis: any }>('/analysis/ziwei', {
+      return this.requestWithDeduplication<{ record_id: number; analysis: any }>('/analysis/ziwei', {
         method: 'POST',
         body: JSON.stringify({ birth_data: birthData }),
-      });
+      }, birthData);
     },
 
     // 易经分析
     yijing: async (yijingData: any): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
-      return this.request<{ record_id: number; analysis: any }>('/analysis/yijing', {
+      return this.requestWithDeduplication<{ record_id: number; analysis: any }>('/analysis/yijing', {
         method: 'POST',
         body: JSON.stringify(yijingData),
-      });
+      }, yijingData);
     },
 
     // 综合分析
@@ -220,6 +251,18 @@ class LocalApiClient {
       return this.request<{ valid: boolean; errors: string[] }>('/analysis/validate', {
         method: 'POST',
         body: JSON.stringify({ birth_data: birthData, analysis_type: analysisType }),
+      });
+    },
+
+    // 保存历史记录
+    saveHistory: async (analysisType: string, analysisData: any, inputData?: any): Promise<ApiResponse<{ record_id: number; message: string }>> => {
+      return this.request<{ record_id: number; message: string }>('/analysis/save-history', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          analysis_type: analysisType, 
+          analysis_data: analysisData, 
+          input_data: inputData 
+        }),
       });
     },
   };

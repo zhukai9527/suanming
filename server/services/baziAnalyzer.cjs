@@ -79,7 +79,7 @@ class BaziAnalyzer {
 
       return {
         analysis_type: 'bazi',
-        analysis_date: new Date().toISOString().split('T')[0],
+        analysis_date: new Date().toISOString(),
         basic_info: {
           personal_data: {
             name: personalizedName,

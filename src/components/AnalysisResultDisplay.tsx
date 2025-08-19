@@ -14,6 +14,7 @@ interface AnalysisResultDisplayProps {
   question?: string;
   userId?: string;
   divinationMethod?: string;
+  preAnalysisData?: any; // 预先分析的数据，用于历史记录
 }
 
 const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ 
@@ -22,7 +23,8 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   birthDate, 
   question, 
   userId, 
-  divinationMethod 
+  divinationMethod,
+  preAnalysisData 
 }) => {
   // 安全地获取数据的辅助函数
   const safeGet = (obj: any, path: string, defaultValue: any = '暂无数据') => {
@@ -58,7 +60,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   const renderBaziAnalysis = () => {
     // 如果有 birthDate，使用新的 CompleteBaziAnalysis 组件
     if (birthDate) {
-      return <CompleteBaziAnalysis birthDate={birthDate} />;
+      return <CompleteBaziAnalysis birthDate={birthDate} analysisData={preAnalysisData} />;
     }
     // 如果有分析结果但没有 birthDate，尝试从结果中提取出生信息
     if (analysisResult && analysisResult.data) {
@@ -70,21 +72,22 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
           name: basicInfo.personal_data.name || '',
           gender: basicInfo.personal_data.gender === '男性' ? 'male' : 'female'
         };
-        return <CompleteBaziAnalysis birthDate={extractedBirthDate} />;
+        return <CompleteBaziAnalysis birthDate={extractedBirthDate} analysisData={preAnalysisData} />;
       }
     }
-    // 回退到旧的组件（向后兼容）
-    if (birthDate) {
-      return <BaziAnalysisDisplay birthDate={birthDate} />;
-    }
-    return <div className="text-center text-red-600 p-8">请提供出生日期和时间进行八字分析</div>;
+    // 如果没有足够的数据，返回错误提示
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-lg">
+        <p className="text-gray-500 text-center">八字分析数据不完整，请重新提交分析</p>
+      </div>
+    );
   };
 
   // 渲染紫微斗数分析
   const renderZiweiAnalysis = () => {
     // 如果有 birthDate，使用新的 CompleteZiweiAnalysis 组件
     if (birthDate) {
-      return <CompleteZiweiAnalysis birthDate={birthDate} />;
+      return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} />;
     }
     // 如果有分析结果但没有 birthDate，尝试从结果中提取出生信息
     if (analysisResult && analysisResult.data) {
@@ -96,7 +99,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
           name: basicInfo.personal_data.name || '',
           gender: basicInfo.personal_data.gender === '男性' ? 'male' : 'female'
         };
-        return <CompleteZiweiAnalysis birthDate={extractedBirthDate} />;
+        return <CompleteZiweiAnalysis birthDate={extractedBirthDate} analysisData={preAnalysisData} />;
       }
     }
     
@@ -439,13 +442,14 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
         question={question}
         userId={userId}
         divinationMethod={divinationMethod}
+        analysisData={preAnalysisData}
       />
     );
   }
   
   // 对于紫微斗数，如果有 birthDate 参数，直接返回 CompleteZiweiAnalysis 组件（不添加额外容器）
   if (analysisType === 'ziwei' && birthDate) {
-    return <CompleteZiweiAnalysis birthDate={birthDate} />;
+    return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} />;
   }
   
   // 如果没有分析结果数据

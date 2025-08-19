@@ -11,12 +11,13 @@ interface CompleteZiweiAnalysisProps {
     name?: string;
     gender?: string;
   };
+  analysisData?: any; // 可选的预先分析的数据
 }
 
-const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate }) => {
-  const [isLoading, setIsLoading] = useState(true);
+const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate, analysisData: propAnalysisData }) => {
+  const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
 
   // 四化飞星详细解释
   const sihuaExplanations = {
@@ -251,6 +252,13 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
   };
 
   useEffect(() => {
+    // 如果已经有分析数据，直接使用
+    if (propAnalysisData) {
+      setAnalysisData(propAnalysisData);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchAnalysisData = async () => {
       try {
         setIsLoading(true);
@@ -283,10 +291,10 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
       }
     };
 
-    if (birthDate?.date) {
+    if (birthDate?.date && !propAnalysisData) {
       fetchAnalysisData();
     }
-  }, [birthDate]);
+  }, [birthDate?.date, birthDate?.time, birthDate?.name, birthDate?.gender, propAnalysisData]);
 
   // 渲染加载状态
   if (isLoading) {
@@ -467,7 +475,7 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
               </div>
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5" />
-                <span>{analysisData.basic_info?.personal_data?.gender}</span>
+                <span>{analysisData.basic_info?.personal_data?.gender === 'male' ? '男性' : analysisData.basic_info?.personal_data?.gender === 'female' ? '女性' : analysisData.basic_info?.personal_data?.gender}</span>
               </div>
             </div>
           </CardHeader>
@@ -1122,7 +1130,7 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
               人生的幸福需要通过自己的努力和智慧来创造。
             </p>
             <div className="mt-4 text-xs text-gray-500">
-              分析时间：{new Date().toLocaleString('zh-CN')}
+              分析时间：{analysisData.analysis_date ? new Date(analysisData.analysis_date).toLocaleString('zh-CN') : new Date().toLocaleString('zh-CN')}
             </div>
           </CardContent>
         </Card>

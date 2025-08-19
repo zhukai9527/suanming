@@ -11,12 +11,13 @@ interface CompleteBaziAnalysisProps {
     name?: string;
     gender?: string;
   };
+  analysisData?: any; // 可选的预先分析的数据
 }
 
-const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate }) => {
-  const [isLoading, setIsLoading] = useState(true);
+const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, analysisData: propAnalysisData }) => {
+  const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
 
   // 五行颜色配置
   const elementColors: { [key: string]: string } = {
@@ -52,6 +53,13 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate }
   };
 
   useEffect(() => {
+    // 如果已经有分析数据，直接使用
+    if (propAnalysisData) {
+      setAnalysisData(propAnalysisData);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchAnalysisData = async () => {
       try {
         setIsLoading(true);
@@ -84,10 +92,10 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate }
       }
     };
 
-    if (birthDate?.date) {
+    if (birthDate?.date && !propAnalysisData) {
       fetchAnalysisData();
     }
-  }, [birthDate]);
+  }, [birthDate?.date, birthDate?.time, birthDate?.name, birthDate?.gender, propAnalysisData]);
 
   // 渲染加载状态
   if (isLoading) {
@@ -284,7 +292,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate }
               </div>
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5" />
-                <span>{analysisData.basic_info?.personal_data?.gender}</span>
+                <span>{analysisData.basic_info?.personal_data?.gender === 'male' ? '男性' : analysisData.basic_info?.personal_data?.gender === 'female' ? '女性' : analysisData.basic_info?.personal_data?.gender}</span>
               </div>
             </div>
           </CardHeader>
@@ -759,7 +767,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate }
           <CardContent className="text-center py-8">
             <div className="text-red-800">
               <p className="text-lg font-bold mb-2">专业八字命理分析报告</p>
-              <p className="text-sm">分析日期：{analysisData.analysis_date}</p>
+              <p className="text-sm">分析日期：{analysisData.analysis_date ? new Date(analysisData.analysis_date).toLocaleString('zh-CN') : new Date().toLocaleString('zh-CN')}</p>
               <p className="text-xs mt-4 text-red-600">
                 本报告基于传统四柱八字理论，结合现代命理学研究成果，为您提供专业的命理分析和人生指导。
               </p>

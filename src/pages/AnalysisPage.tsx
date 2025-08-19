@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
 import { Button } from '../components/ui/Button';
@@ -22,14 +22,32 @@ const AnalysisPage: React.FC = () => {
     birth_time: '',
     gender: 'male' as 'male' | 'female',
     birth_place: '',
-    question: ''
+    question: '财运'
   });
   const [loading, setLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
+  // 使用useMemo缓存birthDate对象，避免重复渲染导致useEffect重复执行
+  const memoizedBirthDate = useMemo(() => {
+    if (analysisType === 'bazi' || analysisType === 'ziwei') {
+      return {
+        date: formData.birth_date,
+        time: formData.birth_time,
+        name: formData.name,
+        gender: formData.gender
+      };
+    }
+    return undefined;
+  }, [analysisType, formData.birth_date, formData.birth_time, formData.name, formData.gender]);
+
   useEffect(() => {
     loadProfile();
   }, [user]);
+
+  // 切换分析类型时清空分析结果
+  useEffect(() => {
+    setAnalysisResult(null);
+  }, [analysisType]);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -45,7 +63,7 @@ const AnalysisPage: React.FC = () => {
           birth_time: data.birth_time || '',
           gender: data.gender || 'male',
           birth_place: data.birth_location || '',
-          question: ''
+          question: '财运'
         });
       }
     } catch (error) {
@@ -113,11 +131,33 @@ const AnalysisPage: React.FC = () => {
         throw new Error(data.error.message);
       }
 
-      // 后端返回格式: { data: { record_id, analysis } }
+      // 后端返回格式: { data: { analysis } }
+      const analysisData = data.analysis;
+      
       setAnalysisResult({
         type: analysisType,
-        data: data.analysis
+        data: analysisData
       });
+      
+      // 分析完成后，保存历史记录
+      try {
+        const inputData = analysisType === 'yijing' ? 
+          { question: formData.question, divination_method: 'time' } :
+          {
+            name: formData.name,
+            birth_date: formData.birth_date,
+            birth_time: formData.birth_time,
+            birth_place: formData.birth_place,
+            gender: formData.gender
+          };
+        
+        await localApi.analysis.saveHistory(analysisType, analysisData, inputData);
+        console.log('历史记录保存成功');
+      } catch (historyError: any) {
+        console.error('保存历史记录失败:', historyError);
+        // 历史记录保存失败不影响分析结果显示
+      }
+      
       toast.success('分析完成！');
     } catch (error: any) {
       console.error('分析失败:', error);
@@ -250,7 +290,16 @@ const AnalysisPage: React.FC = () => {
                     type="date"
                     label="出生日期 *"
                     value={formData.birth_date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // 验证日期格式：YYYY-MM-DD，确保年份是4位数字
+                      if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                        return; // 不更新状态，保持原值
+                      }
+                      setFormData(prev => ({ ...prev, birth_date: value }));
+                    }}
+                    min="1900-01-01"
+                    max="2100-12-31"
                     required
                   />
                   <Calendar className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -307,10 +356,7 @@ const AnalysisPage: React.FC = () => {
         <AnalysisResultDisplay 
           analysisResult={analysisResult}
           analysisType={analysisType}
-          birthDate={(analysisType === 'bazi' || analysisType === 'ziwei') ? {
-            date: formData.birth_date,
-            time: formData.birth_time
-          } : undefined}
+          birthDate={memoizedBirthDate}
           question={analysisType === 'yijing' ? formData.question : undefined}
           userId={user?.id}
           divinationMethod="time"

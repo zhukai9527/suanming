@@ -15,6 +15,29 @@ const HistoryPage: React.FC = () => {
   const [selectedReading, setSelectedReading] = useState<NumerologyReading | null>(null);
   const [viewingResult, setViewingResult] = useState(false);
 
+  // 安全地从input_data中获取值的辅助函数
+  const getInputDataValue = (inputData: string | any, key: string, defaultValue: any = null) => {
+    try {
+      if (!inputData) return defaultValue;
+      
+      // 如果已经是对象，直接返回
+      if (typeof inputData === 'object') {
+        return inputData[key] || defaultValue;
+      }
+      
+      // 如果是字符串，尝试解析JSON
+      if (typeof inputData === 'string') {
+        const parsed = JSON.parse(inputData);
+        return parsed[key] || defaultValue;
+      }
+      
+      return defaultValue;
+    } catch (error) {
+      console.warn('解析input_data失败:', error);
+      return defaultValue;
+    }
+  };
+
   useEffect(() => {
     loadHistory();
   }, [user]);
@@ -144,6 +167,18 @@ const HistoryPage: React.FC = () => {
         <AnalysisResultDisplay 
           analysisResult={selectedReading.analysis}
           analysisType={selectedReading.reading_type as 'bazi' | 'ziwei' | 'yijing'}
+          birthDate={selectedReading.reading_type !== 'yijing' ? {
+            date: selectedReading.birth_date || '',
+            time: selectedReading.birth_time || '12:00',
+            name: selectedReading.name || '',
+            gender: selectedReading.gender || 'male'
+          } : undefined}
+          question={selectedReading.reading_type === 'yijing' ? 
+            getInputDataValue(selectedReading.input_data, 'question', '综合运势如何？') : undefined}
+          userId={selectedReading.user_id?.toString()}
+          divinationMethod={selectedReading.reading_type === 'yijing' ? 
+            getInputDataValue(selectedReading.input_data, 'divination_method', 'time') : undefined}
+          preAnalysisData={selectedReading.analysis}
         />
       </div>
     );
@@ -197,16 +232,20 @@ const HistoryPage: React.FC = () => {
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-900">
-                          {reading.name || '未知姓名'} 的{getAnalysisTypeName(reading.reading_type)}
+                          {reading.name || '未知姓名'} - {getAnalysisTypeName(reading.reading_type)}
                         </h3>
                         <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-3 w-3" />
-                            <span>{new Date(reading.created_at).toLocaleDateString('zh-CN')}</span>
+                            <span>{new Date(reading.created_at).toLocaleString('zh-CN')}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <User className="h-3 w-3" />
-                            <span>{reading.birth_date}</span>
+                            <span>
+                              {reading.reading_type === 'yijing' 
+                                ? `问题：${getInputDataValue(reading.input_data, 'question', '综合运势').substring(0, 20)}${getInputDataValue(reading.input_data, 'question', '').length > 20 ? '...' : ''}` 
+                                : reading.birth_date}
+                            </span>
                           </div>
                         </div>
                       </div>

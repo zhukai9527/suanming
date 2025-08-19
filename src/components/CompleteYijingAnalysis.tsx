@@ -4,19 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { localApi } from '../lib/localApi';
 
 interface CompleteYijingAnalysisProps {
-  question: string;
+  question?: string;
   userId?: string;
   divinationMethod?: string;
+  analysisData?: any; // 可选的预先分析的数据
 }
 
 const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({ 
   question, 
   userId = 'user123', 
-  divinationMethod = 'time' 
+  divinationMethod = 'time',
+  analysisData: propAnalysisData
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
 
   // 卦象颜色配置
   const hexagramColors: { [key: string]: string } = {
@@ -49,6 +51,13 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
   };
 
   useEffect(() => {
+    // 如果已经有分析数据，直接使用
+    if (propAnalysisData) {
+      setAnalysisData(propAnalysisData);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchAnalysisData = async () => {
       try {
         setIsLoading(true);
@@ -80,10 +89,10 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
       }
     };
 
-    if (question) {
+    if (question && !propAnalysisData) {
       fetchAnalysisData();
     }
-  }, [question, userId, divinationMethod]);
+  }, [question, userId, divinationMethod, propAnalysisData]);
 
   // 渲染加载状态
   if (isLoading) {
@@ -263,11 +272,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
               <span>易经占卜分析报告</span>
               <Hexagon className="h-8 w-8" />
             </CardTitle>
-            <div className="flex justify-center space-x-6 mt-4 text-red-700">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>{analysisData.analysis_date}</span>
-              </div>
+            <div className="flex justify-center mt-4 text-red-700">
               <div className="flex items-center space-x-2">
                 <Clock className="h-5 w-5" />
                 <span>{new Date(analysisData.basic_info.divination_data.divination_time).toLocaleString('zh-CN')}</span>

@@ -58,7 +58,7 @@ class YijingAnalyzer {
 
       return {
         analysis_type: 'yijing',
-        analysis_date: currentTime.toISOString().split('T')[0],
+        analysis_date: currentTime.toISOString(),
         basic_info: {
           divination_data: {
             question: question,
