@@ -42,7 +42,11 @@ app.use(helmet({
 // CORS配置
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['http://localhost:5173', 'http://localhost:4173'] // 生产环境允许的域名
+    ? [
+        'https://common-charyl-patdelphi-75adc386.koyeb.app',
+        'http://localhost:5173', 
+        'http://localhost:4173'
+      ] // 生产环境允许的域名
     : true, // 开发环境允许所有域名
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -103,10 +107,11 @@ app.use('*', (req, res) => {
 app.use(errorHandler);
 
 // 启动服务器
-const server = app.listen(PORT, () => {
-  console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 服务器运行在 http://0.0.0.0:${PORT}`);
   console.log(`📊 数据库文件: ${path.resolve('./numerology.db')}`);
   console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🏥 健康检查: http://0.0.0.0:${PORT}/api/health`);
 });
 
 // 优雅关闭

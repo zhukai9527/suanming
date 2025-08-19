@@ -1,14 +1,17 @@
 # 使用官方Node.js运行时作为基础镜像
 FROM node:18-alpine
 
+# 安装pnpm
+RUN npm install -g pnpm@9.0.0
+
 # 设置工作目录
 WORKDIR /app
 
-# 复制package.json和package-lock.json
-COPY package*.json ./
+# 复制package.json和pnpm-lock.yaml
+COPY package.json pnpm-lock.yaml ./
 
 # 安装依赖
-RUN npm ci --only=production
+RUN pnpm install --frozen-lockfile --prod
 
 # 复制应用代码
 COPY . .
@@ -24,4 +27,4 @@ ENV PORT=8000
 EXPOSE 8000
 
 # 初始化数据库并启动应用
-CMD ["sh", "-c", "npm run db:init && npm start"]
+CMD ["sh", "-c", "pnpm run db:init && pnpm start"]
