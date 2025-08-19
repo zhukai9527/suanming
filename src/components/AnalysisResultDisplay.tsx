@@ -1,6 +1,7 @@
 import React from 'react';
 import CompleteBaziAnalysis from './CompleteBaziAnalysis';
 import CompleteZiweiAnalysis from './CompleteZiweiAnalysis';
+import CompleteYijingAnalysis from './CompleteYijingAnalysis';
 import BaziAnalysisDisplay from './BaziAnalysisDisplay';
 
 interface AnalysisResultDisplayProps {
@@ -10,9 +11,19 @@ interface AnalysisResultDisplayProps {
     date: string;
     time: string;
   };
+  question?: string;
+  userId?: string;
+  divinationMethod?: string;
 }
 
-const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ analysisResult, analysisType, birthDate }) => {
+const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ 
+  analysisResult, 
+  analysisType, 
+  birthDate, 
+  question, 
+  userId, 
+  divinationMethod 
+}) => {
   // 安全地获取数据的辅助函数
   const safeGet = (obj: any, path: string, defaultValue: any = '暂无数据') => {
     const keys = path.split('.');
@@ -238,7 +249,32 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ analysisR
 
   // 渲染易经占卜分析
   const renderYijingAnalysis = () => {
-    // 处理新的数据结构: { type: 'yijing', data: analysisResult }
+    // 如果有问题参数，使用新的 CompleteYijingAnalysis 组件
+    if (question) {
+      return (
+        <CompleteYijingAnalysis 
+          question={question}
+          userId={userId}
+          divinationMethod={divinationMethod}
+        />
+      );
+    }
+    
+    // 如果有分析结果但没有问题参数，尝试从结果中提取问题信息
+    if (analysisResult && analysisResult.data) {
+      const basicInfo = analysisResult.data.basic_info;
+      if (basicInfo && basicInfo.divination_data) {
+        return (
+          <CompleteYijingAnalysis 
+            question={basicInfo.divination_data.question || '综合运势如何？'}
+            userId={userId || 'user123'}
+            divinationMethod={divinationMethod || 'time'}
+          />
+        );
+      }
+    }
+    
+    // 回退到旧的渲染方式（向后兼容）
     const data = analysisResult?.data || analysisResult;
     
     return (

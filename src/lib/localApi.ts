@@ -195,10 +195,10 @@ class LocalApiClient {
     },
 
     // 易经分析
-    yijing: async (birthData: any, question?: string): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
+    yijing: async (yijingData: any): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
       return this.request<{ record_id: number; analysis: any }>('/analysis/yijing', {
         method: 'POST',
-        body: JSON.stringify({ birth_data: birthData, question }),
+        body: JSON.stringify(yijingData),
       });
     },
 

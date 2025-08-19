@@ -1,20 +1,60 @@
-// 易经分析服务模块
-// 完全基于logic/yijing.txt的原始逻辑实现
+// 专业易经分析服务模块
+// 基于传统易学理论的完整实现
 
 class YijingAnalyzer {
   constructor() {
     this.initializeHexagrams();
+    this.initializeTrigramData();
+    this.initializeNumerology();
   }
 
-  // 易经分析主函数
+  // 初始化八卦基础数据
+  initializeTrigramData() {
+    this.TRIGRAMS = {
+      '乾': { binary: '111', nature: '天', attribute: '刚健', direction: '西北', season: '秋冬之交', family: '父', body: '头', animal: '马', element: '金' },
+      '坤': { binary: '000', nature: '地', attribute: '柔顺', direction: '西南', season: '夏秋之交', family: '母', body: '腹', animal: '牛', element: '土' },
+      '震': { binary: '001', nature: '雷', attribute: '动', direction: '东', season: '春', family: '长男', body: '足', animal: '龙', element: '木' },
+      '巽': { binary: '011', nature: '风', attribute: '入', direction: '东南', season: '春夏之交', family: '长女', body: '股', animal: '鸡', element: '木' },
+      '坎': { binary: '010', nature: '水', attribute: '陷', direction: '北', season: '冬', family: '中男', body: '耳', animal: '豕', element: '水' },
+      '离': { binary: '101', nature: '火', attribute: '丽', direction: '南', season: '夏', family: '中女', body: '目', animal: '雉', element: '火' },
+      '艮': { binary: '100', nature: '山', attribute: '止', direction: '东北', season: '冬春之交', family: '少男', body: '手', animal: '狗', element: '土' },
+      '兑': { binary: '110', nature: '泽', attribute: '悦', direction: '西', season: '秋', family: '少女', body: '口', animal: '羊', element: '金' }
+    };
+  }
+
+  // 初始化象数理论
+  initializeNumerology() {
+    this.NUMBERS = {
+      1: { trigram: '乾', meaning: '天，创始，领导' },
+      2: { trigram: '兑', meaning: '泽，喜悦，交流' },
+      3: { trigram: '离', meaning: '火，光明，智慧' },
+      4: { trigram: '震', meaning: '雷，震动，行动' },
+      5: { trigram: '巽', meaning: '风，渗透，顺从' },
+      6: { trigram: '坎', meaning: '水，险难，智慧' },
+      7: { trigram: '艮', meaning: '山，静止，稳定' },
+      8: { trigram: '坤', meaning: '地，承载，包容' }
+    };
+  }
+
+  // 专业易经分析主函数
   performYijingAnalysis(inputData) {
     try {
-      const { question, user_id, birth_data } = inputData;
+      const { question, user_id, birth_data, divination_method = 'time' } = inputData;
       const currentTime = new Date();
-      const hexagramData = this.generateHexagram(currentTime, user_id);
+      
+      // 根据不同方法起卦
+      const hexagramData = this.generateHexagramByMethod(divination_method, currentTime, user_id, question);
       const mainHexagramInfo = this.getHexagramInfo(hexagramData.mainHex);
       const changingHexagramInfo = this.getChangingHexagram(mainHexagramInfo, hexagramData.changingLines);
-      const changingLineAnalysis = this.analyzeChangingLines(mainHexagramInfo, hexagramData.changingLines);
+      
+      // 高级分析：互卦、错卦、综卦
+      const advancedAnalysis = this.performAdvancedAnalysis(mainHexagramInfo, changingHexagramInfo);
+      
+      // 动态分析：基于问题类型和时间因素
+      const dynamicAnalysis = this.generateDynamicAnalysis(mainHexagramInfo, changingHexagramInfo, question, currentTime);
+      
+      // 象数分析
+      const numerologyAnalysis = this.performNumerologyAnalysis(hexagramData, currentTime);
 
       return {
         analysis_type: 'yijing',
@@ -23,44 +63,40 @@ class YijingAnalyzer {
           divination_data: {
             question: question,
             divination_time: currentTime.toISOString(),
-            method: '梅花易数时间起卦法'
+            method: this.getMethodName(divination_method),
+            lunar_info: this.calculateLunarInfo(currentTime)
           },
           hexagram_info: {
             main_hexagram: mainHexagramInfo.name,
             main_hexagram_symbol: mainHexagramInfo.symbol,
+            main_hexagram_number: mainHexagramInfo.number,
+            upper_trigram: mainHexagramInfo.upperTrigram,
+            lower_trigram: mainHexagramInfo.lowerTrigram,
             changing_hexagram: changingHexagramInfo ? changingHexagramInfo.name : '无',
             changing_hexagram_symbol: changingHexagramInfo ? changingHexagramInfo.symbol : '无',
             changing_lines: hexagramData.changingLines,
-            detailed_interpretation: `您得到的本卦是【${mainHexagramInfo.name}】，${mainHexagramInfo.judgment}`
+            hexagram_structure: this.analyzeHexagramStructure(mainHexagramInfo)
           }
         },
         detailed_analysis: {
           hexagram_analysis: {
-            primary_meaning: `【${mainHexagramInfo.name}卦】 - ${mainHexagramInfo.meaning}`,
+            primary_meaning: `【${mainHexagramInfo.name}卦】第${mainHexagramInfo.number}卦 - ${mainHexagramInfo.meaning}`,
             judgment: `【彖传】曰：${mainHexagramInfo.judgment}`,
-            image: `【象传】曰：${mainHexagramInfo.image}`
+            image: `【象传】曰：${mainHexagramInfo.image}`,
+            trigram_analysis: this.analyzeTrigramCombination(mainHexagramInfo.upperTrigram, mainHexagramInfo.lowerTrigram),
+            five_elements: this.analyzeFiveElements(mainHexagramInfo)
           },
-          changing_lines_analysis: changingLineAnalysis,
-          changing_hexagram_analysis: changingHexagramInfo ? {
-            name: `变卦为【${changingHexagramInfo.name}】`,
-            meaning: changingHexagramInfo.meaning,
-            transformation_insight: `从【${mainHexagramInfo.name}】到【${changingHexagramInfo.name}】的变化，预示着：${changingHexagramInfo.transformation || '事态将发生转变'}`
-          } : {
-            name: '无变卦',
-            meaning: '事态稳定，应以本卦为主要参考。',
-            transformation_insight: '没有动爻，表示当前状况将持续一段时间，应专注于当下。'
-          }
+          changing_lines_analysis: this.analyzeChangingLines(mainHexagramInfo, hexagramData.changingLines),
+          changing_hexagram_analysis: this.analyzeChangingHexagram(mainHexagramInfo, changingHexagramInfo),
+          advanced_analysis: advancedAnalysis,
+          numerology_analysis: numerologyAnalysis
         },
-        life_guidance: {
-          overall_fortune: this.generateOverallFortune(mainHexagramInfo, changingHexagramInfo, question),
-          career_guidance: this.generateCareerAdvice(mainHexagramInfo, changingHexagramInfo),
-          relationship_guidance: this.generateRelationshipAdvice(mainHexagramInfo, changingHexagramInfo)
-        },
+        dynamic_guidance: dynamicAnalysis,
         divination_wisdom: {
-          key_message: mainHexagramInfo.keyMessage || '保持平常心，顺势而为',
-          action_advice: mainHexagramInfo.actionAdvice || '谨慎行事，稳步前进',
-          warning: mainHexagramInfo.warning || '无特别警示',
-          philosophical_insight: `《易经》${mainHexagramInfo.name}卦的核心智慧在于：${mainHexagramInfo.philosophy || '顺应自然，把握时机'}`
+          key_message: this.generateKeyMessage(mainHexagramInfo, changingHexagramInfo, question),
+          action_advice: this.generateActionAdvice(mainHexagramInfo, changingHexagramInfo, currentTime),
+          timing_guidance: this.generateTimingGuidance(mainHexagramInfo, currentTime),
+          philosophical_insight: this.generatePhilosophicalInsight(mainHexagramInfo, changingHexagramInfo)
         }
       };
     } catch (error) {
@@ -69,8 +105,24 @@ class YijingAnalyzer {
     }
   }
 
-  // 生成卦象
-  generateHexagram(currentTime, userId) {
+  // 根据不同方法生成卦象
+  generateHexagramByMethod(method, currentTime, userId, question) {
+    switch (method) {
+      case 'time':
+        return this.generateHexagramByTime(currentTime, userId);
+      case 'plum_blossom':
+        return this.generateHexagramByPlumBlossom(currentTime, question);
+      case 'coin':
+        return this.generateHexagramByCoin();
+      case 'number':
+        return this.generateHexagramByNumber(currentTime, userId);
+      default:
+        return this.generateHexagramByTime(currentTime, userId);
+    }
+  }
+
+  // 梅花易数时间起卦法
+  generateHexagramByTime(currentTime, userId) {
     const year = currentTime.getFullYear();
     const month = currentTime.getMonth() + 1;
     const day = currentTime.getDate();
@@ -87,8 +139,97 @@ class YijingAnalyzer {
     
     return {
       mainHex: mainHexNumber,
-      changingLines: [changingLinePos]
+      changingLines: [changingLinePos],
+      method: '梅花易数时间起卦法',
+      upperTrigram: upperTrigramNum,
+      lowerTrigram: lowerTrigramNum
     };
+  }
+
+  // 梅花易数外应起卦法
+  generateHexagramByPlumBlossom(currentTime, question) {
+    const questionLength = question ? question.length : 8;
+    const timeSum = currentTime.getHours() + currentTime.getMinutes();
+    
+    const upperTrigramNum = (questionLength + timeSum) % 8 || 8;
+    const lowerTrigramNum = (questionLength * 2 + timeSum) % 8 || 8;
+    const changingLinePos = (questionLength + timeSum) % 6 + 1;
+    
+    const mainHexNumber = this.getHexagramNumber(upperTrigramNum, lowerTrigramNum);
+    
+    return {
+      mainHex: mainHexNumber,
+      changingLines: [changingLinePos],
+      method: '梅花易数外应起卦法',
+      upperTrigram: upperTrigramNum,
+      lowerTrigram: lowerTrigramNum
+    };
+  }
+
+  // 金钱卦起卦法（模拟）
+  generateHexagramByCoin() {
+    const lines = [];
+    const changingLines = [];
+    
+    for (let i = 0; i < 6; i++) {
+      // 模拟投掷三枚硬币
+      const coin1 = Math.random() > 0.5 ? 3 : 2; // 正面3，反面2
+      const coin2 = Math.random() > 0.5 ? 3 : 2;
+      const coin3 = Math.random() > 0.5 ? 3 : 2;
+      const sum = coin1 + coin2 + coin3;
+      
+      if (sum === 6) { // 老阴，变阳
+        lines.push(0);
+        changingLines.push(i + 1);
+      } else if (sum === 7) { // 少阳
+        lines.push(1);
+      } else if (sum === 8) { // 少阴
+        lines.push(0);
+      } else if (sum === 9) { // 老阳，变阴
+        lines.push(1);
+        changingLines.push(i + 1);
+      }
+    }
+    
+    const binary = lines.join('');
+    const mainHexNumber = this.getHexagramByBinary(binary);
+    
+    return {
+      mainHex: mainHexNumber,
+      changingLines: changingLines,
+      method: '金钱卦起卦法',
+      binary: binary
+    };
+  }
+
+  // 数字起卦法
+  generateHexagramByNumber(currentTime, userId) {
+    const timeNum = currentTime.getTime();
+    const userNum = userId ? parseInt(String(userId).slice(-3)) || 123 : 123;
+    
+    const upperTrigramNum = (Math.floor(timeNum / 1000) + userNum) % 8 || 8;
+    const lowerTrigramNum = (Math.floor(timeNum / 100) + userNum * 2) % 8 || 8;
+    const changingLinePos = (timeNum + userNum) % 6 + 1;
+    
+    const mainHexNumber = this.getHexagramNumber(upperTrigramNum, lowerTrigramNum);
+    
+    return {
+      mainHex: mainHexNumber,
+      changingLines: [changingLinePos],
+      method: '数字起卦法',
+      upperTrigram: upperTrigramNum,
+      lowerTrigram: lowerTrigramNum
+    };
+  }
+
+  // 根据二进制获取卦象
+  getHexagramByBinary(binary) {
+    for (const hexNum in this.ALL_HEXAGRAMS) {
+      if (this.ALL_HEXAGRAMS[hexNum].binary === binary) {
+        return parseInt(hexNum);
+      }
+    }
+    return 1;
   }
 
   // 获取卦象编号
@@ -115,37 +256,84 @@ class YijingAnalyzer {
     return this.ALL_HEXAGRAMS[hexNumber] || this.ALL_HEXAGRAMS[1];
   }
 
-  // 分析动爻
+  // 专业动爻分析
   analyzeChangingLines(hexagramInfo, changingLines) {
     if (!changingLines || changingLines.length === 0) {
       return {
         method: '以本卦卦辞为断',
         analysis: `无动爻，应以【${hexagramInfo.name}】的整体卦辞为主要判断依据。`,
-        guidance: hexagramInfo.judgment
+        guidance: hexagramInfo.judgment,
+        interpretation: '静卦主静，事态稳定，当前状况将持续一段时间。应专注于当下，不宜有大的变动。'
       };
     }
     
-    const linePos = changingLines[0];
-    const lineIndex = linePos - 1;
-    const lineData = hexagramInfo.lines[lineIndex];
+    const analyses = [];
     
-    if (!lineData) {
-      return {
-        method: '动爻分析异常',
-        analysis: '无法找到对应的爻辞信息。',
-        guidance: ''
-      };
-    }
-    
-    const lineName = ['初', '二', '三', '四', '五', '上'][lineIndex] + (lineData.type === 'yang' ? '九' : '六');
+    changingLines.forEach(linePos => {
+      const lineIndex = linePos - 1;
+      const lineData = hexagramInfo.lines[lineIndex];
+      
+      if (lineData) {
+        const lineName = ['初', '二', '三', '四', '五', '上'][lineIndex] + (lineData.type === 'yang' ? '九' : '六');
+        const linePosition = this.getLinePosition(lineIndex);
+        
+        analyses.push({
+          line_position: `${lineName}（第${linePos}爻）`,
+          line_nature: lineData.type === 'yang' ? '阳爻' : '阴爻',
+          position_meaning: linePosition.meaning,
+          line_text: `【爻辞】曰：${lineData.text}`,
+          line_image: `【象传】曰：${lineData.image}`,
+          practical_guidance: this.generateLineGuidance(lineData, lineIndex, hexagramInfo)
+        });
+      }
+    });
     
     return {
-      method: '以动爻爻辞为断',
-      changing_line_position: `${lineName}（第${linePos}爻）`,
-      line_meaning: `【爻辞】曰：${lineData.text}`,
-      line_image_meaning: `【象传】对该爻的解释：${lineData.image}`,
-      guidance: `当前阶段的关键点在于理解和应对"${lineData.text}"所揭示的情况。`
+      method: changingLines.length === 1 ? '以动爻爻辞为断' : '以多爻变化综合判断',
+      changing_lines_count: changingLines.length,
+      detailed_analysis: analyses,
+      overall_guidance: this.generateChangingLinesGuidance(analyses, changingLines.length)
     };
+  }
+
+  // 获取爻位含义
+  getLinePosition(lineIndex) {
+    const positions = [
+      { name: '初爻', meaning: '事物的开始阶段，基础地位，需要谨慎起步' },
+      { name: '二爻', meaning: '臣位，中正之位，适合辅助和配合' },
+      { name: '三爻', meaning: '人位，多忧之位，需要特别小心' },
+      { name: '四爻', meaning: '近君之位，接近成功，但需谨慎' },
+      { name: '五爻', meaning: '君位，最尊贵的位置，主导地位' },
+      { name: '上爻', meaning: '事物的终结阶段，物极必反' }
+    ];
+    return positions[lineIndex] || { name: '未知', meaning: '位置不明' };
+  }
+
+  // 生成爻辞指导
+  generateLineGuidance(lineData, lineIndex, hexagramInfo) {
+    const position = this.getLinePosition(lineIndex);
+    const baseGuidance = `在${position.name}的位置上，${lineData.text}的含义是：`;
+    
+    // 根据爻的阴阳和位置生成具体指导
+    if (lineData.type === 'yang' && lineIndex % 2 === 0) {
+      return baseGuidance + '阳爻居阳位，得正，行动力强，但需要把握分寸。';
+    } else if (lineData.type === 'yin' && lineIndex % 2 === 1) {
+      return baseGuidance + '阴爻居阴位，得正，柔顺有利，适合守静待时。';
+    } else {
+      return baseGuidance + '爻位不正，需要调整策略，避免过于激进或消极。';
+    }
+  }
+
+  // 生成动爻综合指导
+  generateChangingLinesGuidance(analyses, count) {
+    if (count === 1) {
+      return '单爻发动，变化明确，应重点关注该爻的指示。';
+    } else if (count === 2) {
+      return '两爻发动，变化复杂，需要综合考虑两个方面的因素。';
+    } else if (count >= 3) {
+      return '多爻发动，变化剧烈，事态复杂多变，需要格外谨慎。';
+    }
+    return '变化情况需要仔细分析。';
   }
 
   // 获取变卦
@@ -172,17 +360,537 @@ class YijingAnalyzer {
     return null;
   }
 
-  // 生成整体运势分析
-  generateOverallFortune(mainHex, changeHex, question) {
-    let fortune = `针对您的问题"${question}"，本卦为【${mainHex.name}】，指示了当前的基本状况：${mainHex.guidance}。`;
+  // 高级分析：互卦、错卦、综卦
+  performAdvancedAnalysis(mainHex, changeHex) {
+    const interHex = this.getInterHexagram(mainHex);
+    const oppositeHex = this.getOppositeHexagram(mainHex);
+    const reverseHex = this.getReverseHexagram(mainHex);
     
-    if (changeHex) {
-      fortune += ` 动爻预示着变化，未来趋势可参考变卦【${changeHex.name}】：${changeHex.guidance}。`;
+    return {
+      inter_hexagram: {
+        name: interHex.name,
+        symbol: interHex.symbol,
+        meaning: interHex.meaning,
+        analysis: `互卦【${interHex.name}】揭示了事物的内在发展趋势和隐藏因素。${interHex.guidance}`
+      },
+      opposite_hexagram: {
+        name: oppositeHex.name,
+        symbol: oppositeHex.symbol,
+        meaning: oppositeHex.meaning,
+        analysis: `错卦【${oppositeHex.name}】代表了相对立的状态和需要避免的方向。${oppositeHex.guidance}`
+      },
+      reverse_hexagram: {
+        name: reverseHex.name,
+        symbol: reverseHex.symbol,
+        meaning: reverseHex.meaning,
+        analysis: `综卦【${reverseHex.name}】显示了事物的另一面和可能的转化方向。${reverseHex.guidance}`
+      },
+      comprehensive_insight: this.generateComprehensiveInsight(mainHex, interHex, oppositeHex, reverseHex)
+    };
+  }
+
+  // 获取互卦
+  getInterHexagram(hexInfo) {
+    const binary = hexInfo.binary;
+    // 互卦取2、3、4爻为下卦，3、4、5爻为上卦
+    const lowerInter = binary.substring(3, 6); // 2、3、4爻
+    const upperInter = binary.substring(2, 5); // 3、4、5爻
+    const interBinary = upperInter + lowerInter;
+    
+    for (const hexNum in this.ALL_HEXAGRAMS) {
+      if (this.ALL_HEXAGRAMS[hexNum].binary === interBinary) {
+        return this.ALL_HEXAGRAMS[hexNum];
+      }
+    }
+    return this.ALL_HEXAGRAMS[1]; // 默认返回乾卦
+  }
+
+  // 获取错卦（阴阳相反）
+  getOppositeHexagram(hexInfo) {
+    const binary = hexInfo.binary;
+    const oppositeBinary = binary.split('').map(bit => bit === '1' ? '0' : '1').join('');
+    
+    for (const hexNum in this.ALL_HEXAGRAMS) {
+      if (this.ALL_HEXAGRAMS[hexNum].binary === oppositeBinary) {
+        return this.ALL_HEXAGRAMS[hexNum];
+      }
+    }
+    return this.ALL_HEXAGRAMS[2]; // 默认返回坤卦
+  }
+
+  // 获取综卦（上下颠倒）
+  getReverseHexagram(hexInfo) {
+    const binary = hexInfo.binary;
+    const reverseBinary = binary.split('').reverse().join('');
+    
+    for (const hexNum in this.ALL_HEXAGRAMS) {
+      if (this.ALL_HEXAGRAMS[hexNum].binary === reverseBinary) {
+        return this.ALL_HEXAGRAMS[hexNum];
+      }
+    }
+    return hexInfo; // 如果没找到，返回原卦
+  }
+
+  // 生成综合洞察
+  generateComprehensiveInsight(mainHex, interHex, oppositeHex, reverseHex) {
+    return `通过四卦分析：本卦【${mainHex.name}】显示当前状态，互卦【${interHex.name}】揭示内在动力，错卦【${oppositeHex.name}】提醒对立面，综卦【${reverseHex.name}】指示转化方向。综合来看，需要在${mainHex.meaning}的基础上，注意${interHex.meaning}的内在发展，避免${oppositeHex.meaning}的极端，向${reverseHex.meaning}的方向转化。`;
+  }
+
+  // 动态分析：基于问题类型和时间因素
+  generateDynamicAnalysis(mainHex, changeHex, question, currentTime) {
+    const questionType = this.analyzeQuestionType(question);
+    const timeFactors = this.analyzeTimeFactors(currentTime);
+    
+    return {
+      question_analysis: {
+        type: questionType.type,
+        focus: questionType.focus,
+        approach: questionType.approach
+      },
+      time_analysis: timeFactors,
+      targeted_guidance: this.generateTargetedGuidance(mainHex, changeHex, questionType, timeFactors),
+      practical_advice: this.generatePracticalAdvice(mainHex, changeHex, questionType)
+    };
+  }
+
+  // 分析问题类型
+  analyzeQuestionType(question) {
+    const lowerQuestion = question.toLowerCase();
+    
+    if (lowerQuestion.includes('事业') || lowerQuestion.includes('工作') || lowerQuestion.includes('职业')) {
+      return {
+        type: '事业发展',
+        focus: '职场发展、事业规划、工作机会',
+        approach: '重点关注事业宫位和变化趋势'
+      };
+    } else if (lowerQuestion.includes('感情') || lowerQuestion.includes('爱情') || lowerQuestion.includes('婚姻')) {
+      return {
+        type: '感情婚姻',
+        focus: '情感关系、婚姻状况、人际和谐',
+        approach: '重点关注感情因素和人际关系'
+      };
+    } else if (lowerQuestion.includes('财运') || lowerQuestion.includes('投资') || lowerQuestion.includes('金钱')) {
+      return {
+        type: '财运投资',
+        focus: '财富积累、投资机会、经济状况',
+        approach: '重点关注财运变化和投资时机'
+      };
+    } else if (lowerQuestion.includes('健康') || lowerQuestion.includes('身体')) {
+      return {
+        type: '健康养生',
+        focus: '身体状况、健康维护、疾病预防',
+        approach: '重点关注身体状态和养生方法'
+      };
     } else {
-      fortune += ` 事态稳定，应专注于当前状况。`;
+      return {
+        type: '综合运势',
+        focus: '整体发展、综合状况、全面分析',
+        approach: '全面分析各个方面的发展趋势'
+      };
+    }
+  }
+
+  // 分析时间因素
+  analyzeTimeFactors(currentTime) {
+    const month = currentTime.getMonth() + 1;
+    const season = this.getSeason(month);
+    const hour = currentTime.getHours();
+    const timeOfDay = this.getTimeOfDay(hour);
+    
+    return {
+      season: season,
+      time_of_day: timeOfDay,
+      lunar_phase: this.getLunarPhase(currentTime),
+      energy_state: this.getEnergyState(season, timeOfDay)
+    };
+  }
+
+  // 获取季节
+  getSeason(month) {
+    if (month >= 3 && month <= 5) return { name: '春季', energy: '生发之气', advice: '适合开始新事物' };
+    if (month >= 6 && month <= 8) return { name: '夏季', energy: '旺盛之气', advice: '适合积极行动' };
+    if (month >= 9 && month <= 11) return { name: '秋季', energy: '收敛之气', advice: '适合收获总结' };
+    return { name: '冬季', energy: '潜藏之气', advice: '适合休养生息' };
+  }
+
+  // 获取时辰
+  getTimeOfDay(hour) {
+    if (hour >= 5 && hour < 7) return { name: '卯时', energy: '日出东方', advice: '新的开始' };
+    if (hour >= 7 && hour < 9) return { name: '辰时', energy: '朝阳初升', advice: '积极进取' };
+    if (hour >= 9 && hour < 11) return { name: '巳时', energy: '阳气渐盛', advice: '努力工作' };
+    if (hour >= 11 && hour < 13) return { name: '午时', energy: '阳气最盛', advice: '把握机会' };
+    if (hour >= 13 && hour < 15) return { name: '未时', energy: '阳气渐衰', advice: '稳步前进' };
+    if (hour >= 15 && hour < 17) return { name: '申时', energy: '阳气转阴', advice: '谨慎行事' };
+    if (hour >= 17 && hour < 19) return { name: '酉时', energy: '日落西山', advice: '收敛锋芒' };
+    if (hour >= 19 && hour < 21) return { name: '戌时', energy: '阴气渐盛', advice: '休息调整' };
+    if (hour >= 21 && hour < 23) return { name: '亥时', energy: '夜深人静', advice: '内省思考' };
+    if (hour >= 23 || hour < 1) return { name: '子时', energy: '阴极阳生', advice: '蓄势待发' };
+    if (hour >= 1 && hour < 3) return { name: '丑时', energy: '阴气深重', advice: '静心养神' };
+    return { name: '寅时', energy: '阳气初动', advice: '准备行动' };
+  }
+
+  // 象数分析
+  performNumerologyAnalysis(hexagramData, currentTime) {
+    const upperNum = hexagramData.upperTrigram || 1;
+    const lowerNum = hexagramData.lowerTrigram || 1;
+    const totalNum = upperNum + lowerNum;
+    
+    return {
+      upper_trigram_number: {
+        number: upperNum,
+        meaning: this.NUMBERS[upperNum]?.meaning || '未知',
+        influence: '代表外在环境和表面现象'
+      },
+      lower_trigram_number: {
+        number: lowerNum,
+        meaning: this.NUMBERS[lowerNum]?.meaning || '未知',
+        influence: '代表内在动机和根本原因'
+      },
+      combined_energy: {
+        total: totalNum,
+        interpretation: this.interpretCombinedNumber(totalNum),
+        harmony: this.analyzeNumberHarmony(upperNum, lowerNum)
+      },
+      time_resonance: this.analyzeTimeResonance(totalNum, currentTime)
+    };
+  }
+
+  // 解释组合数字
+  interpretCombinedNumber(num) {
+    const interpretations = {
+      2: '极简之数，需要积累',
+      3: '生发之数，开始行动',
+      4: '稳定之数，循序渐进',
+      5: '变化之数，灵活应对',
+      6: '和谐之数，平衡发展',
+      7: '完善之数，精益求精',
+      8: '丰盛之数，收获时机',
+      9: '圆满之数，功德圆满',
+      10: '完成之数，新的开始',
+      11: '突破之数，创新变革',
+      12: '循环之数，周而复始',
+      13: '转化之数，质的飞跃',
+      14: '调和之数，协调统一',
+      15: '圆融之数，和谐共生',
+      16: '极盛之数，物极必反'
+    };
+    return interpretations[num] || '特殊之数，需要特别关注';
+  }
+
+  // 分析数字和谐度
+  analyzeNumberHarmony(upper, lower) {
+    const diff = Math.abs(upper - lower);
+    if (diff === 0) return '完全和谐，内外一致';
+    if (diff === 1) return '基本和谐，略有差异';
+    if (diff === 2) return '适度张力，需要平衡';
+    if (diff >= 3) return '较大差异，需要调和';
+    return '需要进一步分析';
+  }
+
+  // 添加更多专业分析方法
+  
+  // 获取起卦方法名称
+  getMethodName(method) {
+    const methods = {
+      'time': '梅花易数时间起卦法',
+      'plum_blossom': '梅花易数外应起卦法',
+      'coin': '金钱卦起卦法',
+      'number': '数字起卦法'
+    };
+    return methods[method] || '传统起卦法';
+  }
+
+  // 计算农历信息
+  calculateLunarInfo(currentTime) {
+    // 简化的农历计算，实际应用中需要更精确的算法
+    const year = currentTime.getFullYear();
+    const month = currentTime.getMonth() + 1;
+    const day = currentTime.getDate();
+    
+    return {
+      year: `${year}年`,
+      month: `${month}月`,
+      day: `${day}日`,
+      note: '农历信息需要专业历法计算'
+    };
+  }
+
+  // 分析卦象结构
+  analyzeHexagramStructure(hexInfo) {
+    const upperTrigram = this.TRIGRAMS[hexInfo.upperTrigram];
+    const lowerTrigram = this.TRIGRAMS[hexInfo.lowerTrigram];
+    
+    return {
+      upper_trigram: {
+        name: hexInfo.upperTrigram,
+        nature: upperTrigram?.nature || '未知',
+        attribute: upperTrigram?.attribute || '未知',
+        element: upperTrigram?.element || '未知'
+      },
+      lower_trigram: {
+        name: hexInfo.lowerTrigram,
+        nature: lowerTrigram?.nature || '未知',
+        attribute: lowerTrigram?.attribute || '未知',
+        element: lowerTrigram?.element || '未知'
+      },
+      interaction: this.analyzeTrigramInteraction(upperTrigram, lowerTrigram)
+    };
+  }
+
+  // 分析八卦组合
+  analyzeTrigramCombination(upperName, lowerName) {
+    const upper = this.TRIGRAMS[upperName];
+    const lower = this.TRIGRAMS[lowerName];
+    
+    if (!upper || !lower) {
+      return '八卦信息不完整，无法分析';
     }
     
-    return fortune;
+    return `上卦${upperName}（${upper.nature}）代表${upper.attribute}，下卦${lowerName}（${lower.nature}）代表${lower.attribute}。${upper.nature}在上，${lower.nature}在下，形成${upperName}${lowerName}的组合，象征着${this.getTrigramCombinationMeaning(upperName, lowerName)}。`;
+  }
+
+  // 获取八卦组合含义
+  getTrigramCombinationMeaning(upper, lower) {
+    const combinations = {
+      '乾乾': '天行健，自强不息的力量',
+      '坤坤': '地势坤，厚德载物的包容',
+      '乾坤': '天地定位，阴阳和谐',
+      '坤乾': '地天泰，通达顺畅',
+      '震巽': '雷风相薄，变化迅速',
+      '巽震': '风雷益，增益发展',
+      '坎离': '水火既济，阴阳调和',
+      '离坎': '火水未济，尚需努力'
+    };
+    return combinations[upper + lower] || '特殊的能量组合，需要深入分析';
+  }
+
+  // 分析八卦相互作用
+  analyzeTrigramInteraction(upper, lower) {
+    if (!upper || !lower) return '无法分析八卦相互作用';
+    
+    const upperElement = upper.element;
+    const lowerElement = lower.element;
+    
+    return this.analyzeFiveElementsInteraction(upperElement, lowerElement);
+  }
+
+  // 分析五行关系
+  analyzeFiveElements(hexInfo) {
+    const upperTrigram = this.TRIGRAMS[hexInfo.upperTrigram];
+    const lowerTrigram = this.TRIGRAMS[hexInfo.lowerTrigram];
+    
+    if (!upperTrigram || !lowerTrigram) {
+      return '五行信息不完整';
+    }
+    
+    const upperElement = upperTrigram.element;
+    const lowerElement = lowerTrigram.element;
+    
+    return {
+      upper_element: upperElement,
+      lower_element: lowerElement,
+      relationship: this.analyzeFiveElementsInteraction(upperElement, lowerElement),
+      balance: this.analyzeFiveElementsBalance(upperElement, lowerElement)
+    };
+  }
+
+  // 分析五行相互作用
+  analyzeFiveElementsInteraction(element1, element2) {
+    const interactions = {
+      '金金': '同气相求，力量集中',
+      '金木': '金克木，需要调和',
+      '金水': '金生水，相生有利',
+      '金火': '火克金，存在冲突',
+      '金土': '土生金，得到支持',
+      '木木': '同气相求，生机勃勃',
+      '木水': '水生木，滋养成长',
+      '木火': '木生火，能量转化',
+      '木土': '木克土，需要平衡',
+      '水水': '同气相求，流动不息',
+      '水火': '水火不容，需要调和',
+      '水土': '土克水，存在阻碍',
+      '火火': '同气相求，热情高涨',
+      '火土': '火生土，稳固发展',
+      '土土': '同气相求，稳重厚实'
+    };
+    
+    return interactions[element1 + element2] || interactions[element2 + element1] || '五行关系复杂，需要综合分析';
+  }
+
+  // 分析五行平衡
+  analyzeFiveElementsBalance(element1, element2) {
+    if (element1 === element2) {
+      return '五行同类，力量集中，但可能缺乏变化';
+    }
+    
+    const generative = ['金水', '水木', '木火', '火土', '土金'];
+    const destructive = ['金木', '木土', '土水', '水火', '火金'];
+    
+    const combination = element1 + element2;
+    const reverseCombination = element2 + element1;
+    
+    if (generative.includes(combination) || generative.includes(reverseCombination)) {
+      return '五行相生，和谐发展，有利于事物的成长';
+    } else if (destructive.includes(combination) || destructive.includes(reverseCombination)) {
+      return '五行相克，存在冲突，需要化解或利用这种张力';
+    }
+    
+    return '五行关系中性，需要根据具体情况分析';
+  }
+
+  // 分析变卦
+  analyzeChangingHexagram(mainHex, changeHex) {
+    if (!changeHex) {
+      return {
+        name: '无变卦',
+        meaning: '事态稳定，应以本卦为主要参考',
+        transformation_insight: '没有动爻，表示当前状况将持续一段时间，应专注于当下，不宜有大的变动。',
+        guidance: '保持现状，稳步发展，等待时机成熟再做改变。'
+      };
+    }
+    
+    return {
+      name: `变卦为【${changeHex.name}】`,
+      meaning: changeHex.meaning,
+      transformation_insight: `从【${mainHex.name}】到【${changeHex.name}】的变化，预示着${this.generateTransformationInsight(mainHex, changeHex)}`,
+      guidance: `变卦指示：${changeHex.guidance}`,
+      timing: this.analyzeTransformationTiming(mainHex, changeHex)
+    };
+  }
+
+  // 生成转化洞察
+  generateTransformationInsight(mainHex, changeHex) {
+    const mainMeaning = mainHex.meaning;
+    const changeMeaning = changeHex.meaning;
+    
+    return `事态将从${mainMeaning}转向${changeMeaning}，这是一个重要的转折点。需要适应这种变化，调整策略和心态。`;
+  }
+
+  // 分析转化时机
+  analyzeTransformationTiming(mainHex, changeHex) {
+    // 根据卦象的性质分析转化的快慢
+    const fastChangingHexagrams = [1, 4, 16, 25, 34, 51]; // 乾、蒙、豫、无妄、大壮、震等
+    const slowChangingHexagrams = [2, 15, 23, 52]; // 坤、谦、剥、艮等
+    
+    if (fastChangingHexagrams.includes(changeHex.number)) {
+      return '变化将会比较迅速，需要及时应对';
+    } else if (slowChangingHexagrams.includes(changeHex.number)) {
+      return '变化将会比较缓慢，有充分的准备时间';
+    }
+    
+    return '变化的速度适中，需要保持关注';
+  }
+
+  // 生成关键信息
+  generateKeyMessage(mainHex, changeHex, question) {
+    const baseMessage = mainHex.keyMessage || '顺应自然，把握时机';
+    
+    if (changeHex) {
+      return `${baseMessage}。变化在即，${changeHex.keyMessage || '需要适应新的形势'}。`;
+    }
+    
+    return baseMessage;
+  }
+
+  // 生成行动建议
+  generateActionAdvice(mainHex, changeHex, currentTime) {
+    const season = this.getSeason(currentTime.getMonth() + 1);
+    const timeOfDay = this.getTimeOfDay(currentTime.getHours());
+    
+    let advice = mainHex.actionAdvice || '谨慎行事，稳步前进';
+    
+    // 结合时间因素
+    advice += ` 当前正值${season.name}，${season.advice}。`;
+    advice += ` 现在是${timeOfDay.name}，${timeOfDay.advice}。`;
+    
+    if (changeHex) {
+      advice += ` 考虑到即将到来的变化，建议：${changeHex.actionAdvice || '做好准备，迎接转变'}。`;
+    }
+    
+    return advice;
+  }
+
+  // 生成时机指导
+  generateTimingGuidance(mainHex, currentTime) {
+    const hour = currentTime.getHours();
+    const month = currentTime.getMonth() + 1;
+    
+    let guidance = '时机分析：';
+    
+    // 根据时辰分析
+    if (hour >= 5 && hour < 11) {
+      guidance += '上午时光，阳气上升，适合开始新的行动。';
+    } else if (hour >= 11 && hour < 17) {
+      guidance += '下午时光，阳气鼎盛，适合推进重要事务。';
+    } else {
+      guidance += '晚间时光，阴气渐盛，适合思考和规划。';
+    }
+    
+    // 根据季节分析
+    const season = this.getSeason(month);
+    guidance += ` ${season.name}${season.advice}。`;
+    
+    return guidance;
+  }
+
+  // 生成哲学洞察
+  generatePhilosophicalInsight(mainHex, changeHex) {
+    let insight = `《易经》${mainHex.name}卦的核心智慧在于：${mainHex.philosophy || '顺应自然规律，把握变化时机'}。`;
+    
+    if (changeHex) {
+      insight += ` 而变卦${changeHex.name}则提醒我们：${changeHex.philosophy || '变化是永恒的，适应是智慧的'}。`;
+    }
+    
+    insight += ' 《易经》告诉我们，万事万物都在变化之中，智者应该顺应这种变化，在变化中寻找机遇，在稳定中积蓄力量。';
+    
+    return insight;
+  }
+
+  // 获取月相（简化版）
+  getLunarPhase(currentTime) {
+    const day = currentTime.getDate();
+    if (day <= 7) return { name: '新月', energy: '新的开始', advice: '适合播种和规划' };
+    if (day <= 14) return { name: '上弦月', energy: '成长发展', advice: '适合努力和进取' };
+    if (day <= 21) return { name: '满月', energy: '圆满充实', advice: '适合收获和庆祝' };
+    return { name: '下弦月', energy: '反思总结', advice: '适合整理和准备' };
+  }
+
+  // 获取能量状态
+  getEnergyState(season, timeOfDay) {
+    const seasonEnergy = season.energy;
+    const timeEnergy = timeOfDay.energy;
+    
+    return {
+      overall: `${seasonEnergy}与${timeEnergy}相结合`,
+      recommendation: `在${season.name}的${timeOfDay.name}，${season.advice}，同时${timeOfDay.advice}`
+    };
+  }
+
+  // 生成针对性指导
+  generateTargetedGuidance(mainHex, changeHex, questionType, timeFactors) {
+    let guidance = `针对您关于${questionType.type}的问题，`;
+    guidance += `本卦【${mainHex.name}】在${questionType.focus}方面的指示是：${mainHex.guidance}。`;
+    
+    if (changeHex) {
+      guidance += ` 变卦【${changeHex.name}】预示着在${questionType.focus}方面将会有所转变。`;
+    }
+    
+    guidance += ` 结合当前的时间因素（${timeFactors.season.name}，${timeFactors.time_of_day.name}），建议您${timeFactors.season.advice}。`;
+    
+    return guidance;
+  }
+
+  // 生成实用建议
+  generatePracticalAdvice(mainHex, changeHex, questionType) {
+    const adviceMap = {
+      '事业发展': this.generateCareerAdvice(mainHex, changeHex),
+      '感情婚姻': this.generateRelationshipAdvice(mainHex, changeHex),
+      '财运投资': this.generateFinancialAdvice(mainHex, changeHex),
+      '健康养生': this.generateHealthAdvice(mainHex, changeHex),
+      '综合运势': this.generateGeneralAdvice(mainHex, changeHex)
+    };
+    
+    return adviceMap[questionType.type] || this.generateGeneralAdvice(mainHex, changeHex);
   }
 
   // 生成事业建议
@@ -205,6 +913,52 @@ class YijingAnalyzer {
     }
     
     return advice;
+  }
+
+  // 生成财运建议
+  generateFinancialAdvice(mainHex, changeHex) {
+    let advice = `财运方面，本卦【${mainHex.name}】显示："${mainHex.wealth || mainHex.guidance}"。`;
+    
+    if (changeHex) {
+      advice += ` 变卦【${changeHex.name}】预示财运可能向"${changeHex.wealth || changeHex.guidance}"的方向发展。`;
+    }
+    
+    return advice;
+  }
+
+  // 生成健康建议
+  generateHealthAdvice(mainHex, changeHex) {
+    let advice = `健康方面，本卦【${mainHex.name}】提醒："${mainHex.health || mainHex.guidance}"。`;
+    
+    if (changeHex) {
+      advice += ` 变卦【${changeHex.name}】暗示健康状况可能朝"${changeHex.health || changeHex.guidance}"的方向变化。`;
+    }
+    
+    return advice;
+  }
+
+  // 生成综合建议
+  generateGeneralAdvice(mainHex, changeHex) {
+    let advice = `综合来看，本卦【${mainHex.name}】的总体指导是："${mainHex.guidance}"。`;
+    
+    if (changeHex) {
+      advice += ` 变卦【${changeHex.name}】提示未来趋势："${changeHex.guidance}"。`;
+    }
+    
+    return advice;
+  }
+
+  // 分析时间共振
+  analyzeTimeResonance(totalNum, currentTime) {
+    const hour = currentTime.getHours();
+    const day = currentTime.getDate();
+    const resonance = (totalNum + hour + day) % 8 + 1;
+    
+    return {
+      resonance_number: resonance,
+      meaning: this.NUMBERS[resonance]?.meaning || '未知',
+      interpretation: `当前时间与卦象数字的共振显示：${this.NUMBERS[resonance]?.meaning || '特殊的能量状态'}`
+    };
   }
 
   // 初始化64卦数据

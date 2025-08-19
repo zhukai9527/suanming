@@ -78,21 +78,19 @@ router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
 
 // 易经分析接口
 router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
-  const { birth_data, question } = req.body;
+  const { question, user_id, divination_method } = req.body;
   
   // 输入验证
-  if (!birth_data || !birth_data.name) {
-    throw new AppError('缺少必要参数：姓名', 400, 'MISSING_BIRTH_DATA');
+  if (!question) {
+    throw new AppError('缺少必要参数：占卜问题', 400, 'MISSING_QUESTION');
   }
-  
-  const finalQuestion = question || '人生运势综合占卜';
   
   try {
     // 执行易经分析
     const analysisResult = yijingAnalyzer.performYijingAnalysis({
-      question: finalQuestion,
-      user_id: req.user.id,
-      birth_data: birth_data
+      question: question,
+      user_id: user_id || req.user.id,
+      divination_method: divination_method || 'time'
     });
     
     // 保存到数据库
@@ -107,12 +105,12 @@ router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
     const result = insertReading.run(
       req.user.id,
       'yijing',
-      birth_data.name,
-      birth_data.birth_date || null,
-      birth_data.birth_time || null,
-      birth_data.birth_place || null,
-      birth_data.gender || null,
-      JSON.stringify({ question: finalQuestion, birth_data }),
+      '易经占卜用户', // 易经占卜不需要真实姓名
+      null, // 不需要出生日期
+      null, // 不需要出生时间
+      null, // 不需要出生地点
+      null, // 不需要性别
+      JSON.stringify({ question, divination_method }),
       JSON.stringify(analysisResult),
       'completed'
     );

@@ -56,9 +56,17 @@ const AnalysisPage: React.FC = () => {
   const handleAnalysis = async () => {
     if (!user) return;
     
-    if (!formData.name || !formData.birth_date) {
-      toast.error('请填写姓名和出生日期');
-      return;
+    // 根据分析类型验证必要参数
+    if (analysisType === 'yijing') {
+      if (!formData.question) {
+        toast.error('请填写占卜问题');
+        return;
+      }
+    } else {
+      if (!formData.name || !formData.birth_date) {
+        toast.error('请填写姓名和出生日期');
+        return;
+      }
     }
 
     setLoading(true);
@@ -84,7 +92,12 @@ const AnalysisPage: React.FC = () => {
           response = await localApi.analysis.ziwei(birthData);
           break;
         case 'yijing':
-          response = await localApi.analysis.yijing(birthData, formData.question);
+          const yijingData = {
+            question: formData.question,
+            user_id: user.id,
+            divination_method: 'time'
+          };
+          response = await localApi.analysis.yijing(yijingData);
           break;
         default:
           throw new Error(`不支持的分析类型: ${analysisType}`);
@@ -190,79 +203,87 @@ const AnalysisPage: React.FC = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <div className="relative">
-              <Input
-                label="姓名 *"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-                placeholder="请输入真实姓名"
-              />
-              <User className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
-            </div>
-            
-            <Select
-              label="性别 *"
-              value={formData.gender}
-              onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as 'male' | 'female' }))}
-              options={[
-                { value: 'male', label: '男性' },
-                { value: 'female', label: '女性' }
-              ]}
-              required
-            />
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            <div className="relative">
-              <Input
-                type="date"
-                label="出生日期 *"
-                value={formData.birth_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
-                required
-              />
-              <Calendar className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
-            </div>
-            
-            <Input
-              type="time"
-              label="出生时间"
-              value={formData.birth_time}
-              onChange={(e) => setFormData(prev => ({ ...prev, birth_time: e.target.value }))}
-              placeholder="选填，但强烈建议填写"
-            />
-          </div>
-
-          {analysisType === 'yijing' && (
+          {analysisType === 'yijing' ? (
+            // 易经占卜表单
             <div className="mb-6">
               <Input
-                label="占卜问题"
+                label="占卜问题 *"
                 value={formData.question}
                 onChange={(e) => setFormData(prev => ({ ...prev, question: e.target.value }))}
-                placeholder="请输入您希望占卜的具体问题（可选）"
+                placeholder="请输入您希望占卜的具体问题，如：我的事业发展如何？"
+                required
               />
+              <p className="text-sm text-gray-500 mt-2">
+                💡 提示：问题越具体，占卜结果越准确。可以询问事业、感情、财运、健康等方面的问题。
+              </p>
             </div>
-          )}
-
-          {analysisType !== 'ziwei' && analysisType !== 'yijing' && (
-            <div className="mb-6">
-              <div className="relative">
-                <Input
-                  label="出生地点"
-                  value={formData.birth_place}
-                  onChange={(e) => setFormData(prev => ({ ...prev, birth_place: e.target.value }))}
-                  placeholder="如：北京市朝阳区（选填）"
+          ) : (
+            // 八字和紫微表单
+            <>
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="relative">
+                  <Input
+                    label="姓名 *"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                    placeholder="请输入真实姓名"
+                  />
+                  <User className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+                
+                <Select
+                  label="性别 *"
+                  value={formData.gender}
+                  onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as 'male' | 'female' }))}
+                  options={[
+                    { value: 'male', label: '男性' },
+                    { value: 'female', label: '女性' }
+                  ]}
+                  required
                 />
-                <MapPin className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
               </div>
-            </div>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="relative">
+                  <Input
+                    type="date"
+                    label="出生日期 *"
+                    value={formData.birth_date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, birth_date: e.target.value }))}
+                    required
+                  />
+                  <Calendar className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+                
+                <Input
+                  type="time"
+                  label="出生时间"
+                  value={formData.birth_time}
+                  onChange={(e) => setFormData(prev => ({ ...prev, birth_time: e.target.value }))}
+                  placeholder="选填，但强烈建议填写"
+                />
+              </div>
+
+              {analysisType !== 'ziwei' && (
+                <div className="mb-6">
+                  <div className="relative">
+                    <Input
+                      label="出生地点"
+                      value={formData.birth_place}
+                      onChange={(e) => setFormData(prev => ({ ...prev, birth_place: e.target.value }))}
+                      placeholder="如：北京市朝阳区（选填）"
+                    />
+                    <MapPin className="absolute right-3 top-8 h-4 w-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <Button
             onClick={handleAnalysis}
-            disabled={loading || !formData.name || !formData.birth_date}
+            disabled={loading || (analysisType === 'yijing' ? !formData.question : (!formData.name || !formData.birth_date))}
             className="w-full"
             size="lg"
           >
@@ -286,10 +307,13 @@ const AnalysisPage: React.FC = () => {
         <AnalysisResultDisplay 
           analysisResult={analysisResult}
           analysisType={analysisType}
-          birthDate={analysisResult.type === 'bazi' ? {
+          birthDate={(analysisType === 'bazi' || analysisType === 'ziwei') ? {
             date: formData.birth_date,
             time: formData.birth_time
           } : undefined}
+          question={analysisType === 'yijing' ? formData.question : undefined}
+          userId={user?.id}
+          divinationMethod="time"
         />
       )}
     </div>
