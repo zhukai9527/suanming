@@ -97,8 +97,11 @@ app.use('/api/profile', profileRoutes);
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../dist')));
   
-  // SPA路由处理
-  app.get('*', (req, res) => {
+  // SPA路由处理 - 只处理非API请求
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next(); // 让后续的404处理器处理API请求
+    }
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }
