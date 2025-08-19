@@ -42,11 +42,21 @@ app.use(helmet({
 // CORS配置
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://common-charyl-patdelphi-75adc386.koyeb.app',
-        'http://localhost:5173', 
-        'http://localhost:4173'
-      ] // 生产环境允许的域名
+    ? (origin, callback) => {
+        // 允许Koyeb域名、localhost和环境变量指定的域名
+        const allowedOrigins = [
+          'http://localhost:5173',
+          'http://localhost:4173',
+          process.env.CORS_ORIGIN
+        ].filter(Boolean);
+        
+        // 允许所有.koyeb.app域名
+        if (!origin || origin.endsWith('.koyeb.app') || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
     : true, // 开发环境允许所有域名
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
