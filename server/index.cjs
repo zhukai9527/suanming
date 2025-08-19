@@ -94,7 +94,13 @@ app.use('/api/history', historyRoutes);
 app.use('/api/profile', profileRoutes);
 
 // 静态文件服务 (用于生产环境)
-if (process.env.NODE_ENV === 'production') {
+// 强制在 Koyeb 部署时启用静态文件服务
+const isProduction = process.env.NODE_ENV === 'production' || process.env.PORT === '8000';
+console.log('当前环境:', process.env.NODE_ENV);
+console.log('端口:', process.env.PORT);
+console.log('是否为生产环境:', isProduction);
+
+if (isProduction) {
   const distPath = path.join(__dirname, '../dist');
   const indexPath = path.join(distPath, 'index.html');
   
