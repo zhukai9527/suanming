@@ -95,14 +95,40 @@ app.use('/api/profile', profileRoutes);
 
 // 静态文件服务 (用于生产环境)
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
+  const distPath = path.join(__dirname, '../dist');
+  const indexPath = path.join(distPath, 'index.html');
+  
+  console.log('静态文件目录:', distPath);
+  console.log('index.html路径:', indexPath);
+  
+  // 检查文件是否存在
+  const fs = require('fs');
+  console.log('dist目录存在:', fs.existsSync(distPath));
+  console.log('index.html存在:', fs.existsSync(indexPath));
+  
+  if (fs.existsSync(distPath)) {
+    console.log('dist目录内容:', fs.readdirSync(distPath));
+  }
+  
+  app.use(express.static(distPath));
   
   // SPA路由处理 - 只处理非API请求
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next(); // 让后续的404处理器处理API请求
     }
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
+    
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error('index.html文件不存在:', indexPath);
+      res.status(404).json({ 
+        error: {
+          code: 'STATIC_FILE_NOT_FOUND',
+          message: '静态文件不存在，请检查构建过程'
+        }
+      });
+    }
   });
 }
 
