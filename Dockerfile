@@ -33,4 +33,4 @@ ENV PORT=8000
 EXPOSE 8000
 
 # 初始化数据库并启动应用
-CMD ["sh", "-c", "pnpm run db:init && pnpm start"]
+CMD ["sh", "-c", "node server/scripts/initDatabase.cjs && node server/index.cjs"]

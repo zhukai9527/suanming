@@ -3,7 +3,8 @@
 
 // 强制在开发环境使用正确的后端地址
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.DEV ? 'http://localhost:3001/api' : `${window.location.origin}/api`);
+  (import.meta.env.DEV ? 'http://localhost:3001/api' : 
+   (window.location.hostname.includes('koyeb.app') ? `${window.location.origin}/api` : `${window.location.origin}/api`));
 
 // 调试信息
 console.log('API_BASE_URL:', API_BASE_URL);
