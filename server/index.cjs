@@ -92,31 +92,36 @@ app.use('*', (req, res) => {
 // 错误处理中间件
 app.use(errorHandler);
 
-// 启动服务器
-const server = app.listen(PORT, () => {
-  console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-  console.log(`📊 数据库文件: ${path.resolve('./numerology.db')}`);
+// 启动服务器（仅在非Vercel环境）
+if (process.env.VERCEL !== '1') {
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+    console.log(`📊 数据库文件: ${path.resolve('./numerology.db')}`);
+    console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
+  });
+
+  // 优雅关闭
+  process.on('SIGTERM', () => {
+    console.log('收到SIGTERM信号，开始优雅关闭...');
+    server.close(() => {
+      console.log('HTTP服务器已关闭');
+      dbManager.close();
+      process.exit(0);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    console.log('收到SIGINT信号，开始优雅关闭...');
+    server.close(() => {
+      console.log('HTTP服务器已关闭');
+      dbManager.close();
+      process.exit(0);
+    });
+  });
+} else {
+  console.log('🚀 Vercel serverless 环境已就绪');
   console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// 优雅关闭
-process.on('SIGTERM', () => {
-  console.log('收到SIGTERM信号，开始优雅关闭...');
-  server.close(() => {
-    console.log('HTTP服务器已关闭');
-    dbManager.close();
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('收到SIGINT信号，开始优雅关闭...');
-  server.close(() => {
-    console.log('HTTP服务器已关闭');
-    dbManager.close();
-    process.exit(0);
-  });
-});
+}
 
 // 未捕获异常处理
 process.on('uncaughtException', (error) => {

@@ -1,7 +1,8 @@
 // 本地API客户端
 // 替代Supabase客户端，提供相同的接口
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 
 interface ApiResponse<T> {
   data?: T;
