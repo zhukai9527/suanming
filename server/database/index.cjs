@@ -5,7 +5,10 @@ const fs = require('fs');
 class DatabaseManager {
   constructor() {
     this.db = null;
-    this.dbPath = path.join(__dirname, '../../numerology.db');
+    // 生产环境使用持久化存储路径，开发环境使用本地路径
+    this.dbPath = process.env.NODE_ENV === 'production' 
+      ? '/app/data/numerology.db'
+      : path.join(__dirname, '../../numerology.db');
     this.schemaPath = path.join(__dirname, 'schema.sql');
   }
 

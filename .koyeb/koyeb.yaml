@@ -1,0 +1,31 @@
+# Koyeb部署配置文件
+name: suanming-app
+
+services:
+  - name: suanming-backend
+    type: web
+    git:
+      branch: master
+      build_command: npm ci
+      run_command: npm start
+    instance_type: nano
+    ports:
+      - port: 8000
+        protocol: http
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8000"
+    volumes:
+      - name: sqlite-data
+        mount_path: /app/data
+        size: 1GB
+    health_check:
+      http:
+        path: /api/health
+        port: 8000
+      initial_delay_seconds: 30
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 3

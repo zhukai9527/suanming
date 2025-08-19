@@ -42,12 +42,7 @@ app.use(helmet({
 // CORS配置
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'http://localhost:5173', 
-        'http://localhost:4173',
-        /\.railway\.app$/,  // Railway域名
-        /\.up\.railway\.app$/  // Railway新域名格式
-      ] 
+    ? ['http://localhost:5173', 'http://localhost:4173'] // 生产环境允许的域名
     : true, // 开发环境允许所有域名
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -64,6 +59,16 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
+    database: 'connected'
+  });
+});
+
+// API健康检查端点（用于Koyeb监控）
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
     database: 'connected'
   });
 });
