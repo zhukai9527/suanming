@@ -1,8 +1,13 @@
 // 专业紫微斗数分析服务模块
 // 基于传统紫微斗数理论的精确实现
 
+const BaziAnalyzer = require('./baziAnalyzer.cjs');
+
 class ZiweiAnalyzer {
   constructor() {
+    // 初始化八字分析器
+    this.baziAnalyzer = new BaziAnalyzer();
+    
     // 基础数据
     this.heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
     this.earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -134,43 +139,22 @@ class ZiweiAnalyzer {
 
   // 计算精确的八字信息
   calculatePreciseBazi(birthDateStr, birthTimeStr) {
-    const birthDate = new Date(birthDateStr);
-    const [hour, minute] = birthTimeStr ? birthTimeStr.split(':').map(Number) : [12, 0];
-    
-    const year = birthDate.getFullYear();
-    const month = birthDate.getMonth() + 1;
-    const day = birthDate.getDate();
-    
-    // 精确计算年柱
-    const yearStemIndex = (year - 4) % 10;
-    const yearBranchIndex = (year - 4) % 12;
-    
-    // 精确计算月柱（基于节气）
-    const monthStemIndex = ((yearStemIndex * 2 + month + 1) % 10 + 10) % 10;
-    const monthBranchIndex = (month + 1) % 12;
-    
-    // 精确计算日柱
-    const baseDate = new Date(1900, 0, 31);
-    const daysDiff = Math.floor((birthDate - baseDate) / (24 * 60 * 60 * 1000));
-    const dayStemIndex = (daysDiff + 9) % 10;
-    const dayBranchIndex = (daysDiff + 1) % 12;
-    
-    // 精确计算时柱
-    const hourStemIndex = ((dayStemIndex * 2 + Math.floor(hour / 2) + 2) % 10 + 10) % 10;
-    const hourBranchIndex = Math.floor((hour + 1) / 2) % 12;
+    // 使用优化后的八字分析器获取精确的八字信息
+    const baziResult = this.baziAnalyzer.calculatePreciseBazi(birthDateStr, birthTimeStr);
     
     return {
-      year: this.heavenlyStems[yearStemIndex] + this.earthlyBranches[yearBranchIndex],
-      month: this.heavenlyStems[monthStemIndex] + this.earthlyBranches[monthBranchIndex],
-      day: this.heavenlyStems[dayStemIndex] + this.earthlyBranches[dayBranchIndex],
-      hour: this.heavenlyStems[hourStemIndex] + this.earthlyBranches[hourBranchIndex],
+      year: baziResult.year_pillar.stem + baziResult.year_pillar.branch,
+      month: baziResult.month_pillar.stem + baziResult.month_pillar.branch,
+      day: baziResult.day_pillar.stem + baziResult.day_pillar.branch,
+      hour: baziResult.hour_pillar.stem + baziResult.hour_pillar.branch,
       birth_info: {
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        gender: 'male' // 默认值，实际使用时会被覆盖
+        year: new Date(birthDateStr).getFullYear(),
+        month: new Date(birthDateStr).getMonth() + 1,
+        day: new Date(birthDateStr).getDate(),
+        hour: birthTimeStr ? parseInt(birthTimeStr.split(':')[0]) : 12,
+        minute: birthTimeStr ? parseInt(birthTimeStr.split(':')[1]) : 0,
+        day_master: baziResult.day_master,
+        day_master_element: baziResult.day_master_element
       }
     };
   }
