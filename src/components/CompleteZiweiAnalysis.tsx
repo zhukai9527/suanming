@@ -555,11 +555,70 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
               {/* 五行局和命宫 */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg border-l-4 border-indigo-500">
-                  <h4 className="font-bold text-indigo-800 mb-2">五行局</h4>
-                  <div className={`inline-block px-3 py-2 rounded-lg font-bold ${wuxingJuColors[analysisData.basic_info?.wuxing_ju?.type] || 'text-gray-700 bg-gray-100'}`}>
+                  <h4 className="font-bold text-indigo-800 mb-3">五行局详解</h4>
+                  
+                  {/* 五行局类型 */}
+                  <div className={`inline-block px-3 py-2 rounded-lg font-bold mb-3 ${wuxingJuColors[analysisData.basic_info?.wuxing_ju?.type] || 'text-gray-700 bg-gray-100'}`}>
                     {analysisData.basic_info?.wuxing_ju?.type}
                   </div>
-                  <p className="text-indigo-700 text-sm mt-2">{analysisData.basic_info?.wuxing_ju?.description}</p>
+                  
+                  {/* 纳音五行单独展示 */}
+                  {analysisData.basic_info?.wuxing_ju?.nayin && (
+                    <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-3 rounded-lg border border-amber-200 mb-3">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Sparkles className="h-4 w-4 text-amber-600" />
+                        <span className="text-amber-700 font-semibold text-sm">纳音五行：</span>
+                        <span className="text-amber-800 font-bold">{analysisData.basic_info?.wuxing_ju?.nayin}</span>
+                      </div>
+                      <p className="text-amber-600 text-xs">根据年柱干支计算的传统纳音五行属性</p>
+                      <div className="mt-3 bg-white p-3 rounded-lg border border-amber-300">
+                        <h5 className="font-bold text-amber-800 mb-2 text-sm">纳音五行解释</h5>
+                        <p className="text-amber-700 text-xs leading-relaxed">
+                           {(() => {
+                             const nayin = analysisData.basic_info?.wuxing_ju?.nayin;
+                             const wuxingJu = analysisData.basic_info?.wuxing_ju?.type;
+                             const nayinPersonalizedAnalysis = {
+                               '海中金': `您的年柱纳音为海中金，如深海珍宝般内敛珍贵。在紫微斗数中对应${wuxingJu}，这意味着您的大限运程具有金的坚韧特质，适合稳扎稳打的发展策略。您的性格深沉内敛，不轻易显露才华，但一旦时机成熟便能展现惊人的能力。`,
+                               '剑锋金': `您的年柱纳音为剑锋金，锋利而坚韧。在紫微斗数中对应${wuxingJu}，这赋予了您果断的决策能力和强烈的进取心。您的大限运程充满挑战性，但也蕴含着巨大的成功机会，适合在竞争激烈的环境中发展。`,
+                               '白蜡金': `您的年柱纳音为白蜡金，纯净温润。在紫微斗数中对应${wuxingJu}，这使您具有很强的适应能力和协调能力。您的大限运程相对平稳，适合通过人际关系和团队合作来实现目标。`,
+                               '砂中金': `您的年柱纳音为砂中金，需要淘洗显现。在紫微斗数中对应${wuxingJu}，这表明您的成功需要经过磨练和积累。您的大限运程呈现渐进式发展，通过不断努力最终能获得丰厚回报。`,
+                               '金箔金': `您的年柱纳音为金箔金，薄而广泛。在紫微斗数中对应${wuxingJu}，这赋予了您灵活多变的特质。您的大限运程变化较多，适合在多元化发展中寻找机会。`,
+                               '钗钏金': `您的年柱纳音为钗钏金，精美实用。在紫微斗数中对应${wuxingJu}，这使您注重品质和细节。您的大限运程稳中有升，适合在精品化路线上发展。`,
+                               '大林木': `您的年柱纳音为大林木，如参天大树。在紫微斗数中对应${wuxingJu}，这赋予了您强大的成长潜力和包容能力。您的大限运程具有持续发展的特征，适合长期规划和稳步发展。`,
+                               '杨柳木': `您的年柱纳音为杨柳木，柔韧优美。在紫微斗数中对应${wuxingJu}，这使您具有很强的适应性和创造力。您的大限运程灵活多变，适合在变化中寻找发展机会。`,
+                               '松柏木': `您的年柱纳音为松柏木，坚韧不屈。在紫微斗数中对应${wuxingJu}，这赋予了您顽强的意志力和持久的耐力。您的大限运程虽有波折，但最终能够获得成功。`,
+                               '平地木': `您的年柱纳音为平地木，广阔包容。在紫微斗数中对应${wuxingJu}，这使您具有很强的团队协作能力。您的大限运程平稳发展，适合在团队中发挥领导作用。`,
+                               '桑柘木': `您的年柱纳音为桑柘木，实用有价值。在紫微斗数中对应${wuxingJu}，这使您注重实际效果和长远价值。您的大限运程稳健务实，适合在实业中发展。`,
+                               '石榴木': `您的年柱纳音为石榴木，多子多福。在紫微斗数中对应${wuxingJu}，这赋予了您旺盛的生命力和创造力。您的大限运程充满活力，适合在人际交往中发展事业。`,
+                               '涧下水': `您的年柱纳音为涧下水，清澈持续。在紫微斗数中对应${wuxingJu}，这使您具有纯净的品格和坚持的精神。您的大限运程清晰明确，适合在专业领域深耕发展。`,
+                               '泉中水': `您的年柱纳音为泉中水，源源不断。在紫微斗数中对应${wuxingJu}，这赋予了您丰富的创造力和持续的动力。您的大限运程充满创新机会，适合在新兴领域发展。`,
+                               '长流水': `您的年柱纳音为长流水，绵延不绝。在紫微斗数中对应${wuxingJu}，这使您具有持久的发展能力。您的大限运程稳定持续，适合长期投资和积累。`,
+                               '天河水': `您的年柱纳音为天河水，高远广阔。在紫微斗数中对应${wuxingJu}，这赋予了您远大的志向和宏观的视野。您的大限运程格局较大，适合在高层次平台发展。`,
+                               '大溪水': `您的年柱纳音为大溪水，奔腾有力。在紫微斗数中对应${wuxingJu}，这使您具有强大的行动力和进取心。您的大限运程动态发展，适合在变化中把握机遇。`,
+                               '大海水': `您的年柱纳音为大海水，深邃包容。在紫微斗数中对应${wuxingJu}，这赋予了您深厚的智慧和广阔的胸怀。您的大限运程格局宏大，适合在国际化平台发展。`,
+                               '炉中火': `您的年柱纳音为炉中火，热烈专注。在紫微斗数中对应${wuxingJu}，这使您具有专业的精神和热情的态度。您的大限运程专业化发展，适合在技术领域深入钻研。`,
+                               '山头火': `您的年柱纳音为山头火，明亮显眼。在紫微斗数中对应${wuxingJu}，这赋予了您出众的表现力和领导魅力。您的大限运程充满表现机会，适合在公众平台发展。`,
+                               '霹雳火': `您的年柱纳音为霹雳火，迅猛有力。在紫微斗数中对应${wuxingJu}，这使您具有快速的反应能力和强烈的爆发力。您的大限运程变化迅速，适合在快节奏环境中发展。`,
+                               '山下火': `您的年柱纳音为山下火，温暖持久。在紫微斗数中对应${wuxingJu}，这赋予了您温和的性格和持续的服务精神。您的大限运程稳定温和，适合在服务行业发展。`,
+                               '覆灯火': `您的年柱纳音为覆灯火，温馨照明。在紫微斗数中对应${wuxingJu}，这使您具有照顾他人的天性和温暖的人格魅力。您的大限运程温馨和谐，适合在关怀性行业发展。`,
+                               '天上火': `您的年柱纳音为天上火，光明高远。在紫微斗数中对应${wuxingJu}，这赋予了您正直的品格和崇高的理想。您的大限运程光明正大，适合在公正性行业发展。`,
+                               '路旁土': `您的年柱纳音为路旁土，承载包容。在紫微斗数中对应${wuxingJu}，这使您具有踏实的品格和支持他人的能力。您的大限运程稳健可靠，适合在基础性行业发展。`,
+                               '城头土': `您的年柱纳音为城头土，坚固防护。在紫微斗数中对应${wuxingJu}，这赋予了您强烈的责任感和保护意识。您的大限运程安全稳定，适合在防护性行业发展。`,
+                               '屋上土': `您的年柱纳音为屋上土，实用温馨。在紫微斗数中对应${wuxingJu}，这使您注重家庭和谐与实际效果。您的大限运程温馨实用，适合在家庭相关行业发展。`,
+                               '壁上土': `您的年柱纳音为壁上土，装饰美化。在紫微斗数中对应${wuxingJu}，这赋予了您艺术天赋和美化能力。您的大限运程注重形象，适合在美化性行业发展。`,
+                               '大驿土': `您的年柱纳音为大驿土，连接沟通。在紫微斗数中对应${wuxingJu}，这使您具有很强的组织协调能力。您的大限运程注重沟通，适合在协调性行业发展。`,
+                               '沙中土': `您的年柱纳音为沙中土，细腻广泛。在紫微斗数中对应${wuxingJu}，这赋予了您细致入微的观察力和周到的处事能力。您的大限运程注重细节，适合在精细化行业发展。`
+                             };
+                             return nayinPersonalizedAnalysis[nayin] || `您的年柱纳音为${nayin}，在紫微斗数中对应${wuxingJu}，这是您天生的五行本质和能量特征，深刻影响着您的性格特质和人生发展轨迹。`;
+                           })()
+                         }
+                         </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* 详细描述 */}
+                  <p className="text-indigo-700 text-sm">{analysisData.basic_info?.wuxing_ju?.description}</p>
                 </div>
                 <div className="bg-white p-4 rounded-lg border-l-4 border-blue-500">
                   <h4 className="font-bold text-blue-800 mb-2">命宫位置</h4>
@@ -572,6 +631,97 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
             </div>
           </CardContent>
         </Card>
+
+        {/* 纳音五行与五行局专题解析 */}
+        {analysisData.basic_info?.wuxing_ju?.nayin && (
+          <Card className="chinese-card-decoration border-2 border-amber-400">
+            <CardHeader>
+              <CardTitle className="text-amber-800 text-2xl font-bold chinese-text-shadow flex items-center justify-center space-x-2">
+                <Sparkles className="h-6 w-6" />
+                <span>纳音五行与五行局详解</span>
+                <Sparkles className="h-6 w-6" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* 纳音与五行局的关系 */}
+                  <div className="bg-white p-4 rounded-lg border border-amber-200">
+                    <h4 className="font-bold text-amber-800 mb-3 text-center">纳音决定五行局</h4>
+                    <div className="space-y-3">
+                      <div className="text-center p-3 bg-amber-100 rounded-lg">
+                        <div className="text-sm font-semibold text-amber-800 mb-1">您的年柱纳音</div>
+                        <div className="text-xl font-bold text-amber-900">{analysisData.basic_info.wuxing_ju.nayin}</div>
+                        <div className="text-xs text-amber-700 mt-1">↓ 对应 ↓</div>
+                        <div className="text-lg font-bold text-indigo-800 mt-2">{analysisData.basic_info.wuxing_ju.type}</div>
+                      </div>
+                      
+                      <div className="bg-amber-50 p-3 rounded-lg">
+                        <h5 className="font-semibold text-amber-800 mb-2">五行局影响</h5>
+                        <ul className="text-xs text-amber-700 space-y-1">
+                          <li>• 大限起始年龄：{analysisData.basic_info.wuxing_ju.start_age}岁</li>
+                          <li>• 大限周期：每{analysisData.basic_info.wuxing_ju.number * 10}年一步</li>
+                          <li>• 运势节奏：{analysisData.basic_info.wuxing_ju.type}的能量特征</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 纳音五行分类与特征 */}
+                  <div className="bg-white p-4 rounded-lg border border-amber-200">
+                    <h4 className="font-bold text-amber-800 mb-3 text-center">纳音五行特征</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="p-2 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                        <div className="font-semibold text-yellow-800">金纳音特征</div>
+                        <div className="text-yellow-700">坚韧、果断、重义气，适合从事金融、机械、军警等行业</div>
+                      </div>
+                      <div className="p-2 bg-green-50 rounded border-l-4 border-green-400">
+                        <div className="font-semibold text-green-800">木纳音特征</div>
+                        <div className="text-green-700">仁慈、进取、有创意，适合教育、文化、医疗等行业</div>
+                      </div>
+                      <div className="p-2 bg-blue-50 rounded border-l-4 border-blue-400">
+                        <div className="font-semibold text-blue-800">水纳音特征</div>
+                        <div className="text-blue-700">智慧、灵活、善变通，适合贸易、运输、信息等行业</div>
+                      </div>
+                      <div className="p-2 bg-red-50 rounded border-l-4 border-red-400">
+                        <div className="font-semibold text-red-800">火纳音特征</div>
+                        <div className="text-red-700">热情、积极、有领导力，适合娱乐、广告、能源等行业</div>
+                      </div>
+                      <div className="p-2 bg-orange-50 rounded border-l-4 border-orange-400">
+                        <div className="font-semibold text-orange-800">土纳音特征</div>
+                        <div className="text-orange-700">稳重、诚信、有耐心，适合房地产、农业、建筑等行业</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 bg-white p-4 rounded-lg border border-amber-200">
+                  <h4 className="font-bold text-amber-800 mb-3 text-center">紫微斗数中的纳音应用</h4>
+                  <div className="grid md:grid-cols-3 gap-4 text-xs">
+                    <div className="bg-purple-50 p-3 rounded-lg">
+                      <h5 className="font-semibold text-purple-800 mb-2">🏰 五行局确定</h5>
+                      <p className="text-purple-700 leading-relaxed">
+                        年柱纳音直接决定五行局类型，影响紫微星的定位和整个命盘的格局。
+                      </p>
+                    </div>
+                    <div className="bg-indigo-50 p-3 rounded-lg">
+                      <h5 className="font-semibold text-indigo-800 mb-2">⏰ 大限推算</h5>
+                      <p className="text-indigo-700 leading-relaxed">
+                        五行局数决定大限的起始年龄和每步大限的年数，是推算运程的基础。
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <h5 className="font-semibold text-blue-800 mb-2">🌟 性格分析</h5>
+                      <p className="text-blue-700 leading-relaxed">
+                        纳音五行体现了深层的性格特质，与主星配合形成完整的性格画像。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 命宫主星信息 */}
         {analysisData.ziwei_analysis?.ming_gong_stars && analysisData.ziwei_analysis.ming_gong_stars.length > 0 && (

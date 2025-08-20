@@ -319,6 +319,69 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
                   </p>
                 </div>
               </div>
+              
+              {/* 纳音五行信息 */}
+              {analysisData.basic_info?.bazi_chart?.nayin_info && (
+                <div className="mt-4 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-lg border border-amber-200">
+                  <h4 className="font-bold text-amber-800 mb-3 flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    四柱纳音五行
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="text-center">
+                      <div className="text-amber-700 font-semibold text-sm mb-1">年柱纳音</div>
+                      <div className="text-amber-800 font-bold">{analysisData.basic_info.bazi_chart.nayin_info.year_nayin}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-amber-700 font-semibold text-sm mb-1">月柱纳音</div>
+                      <div className="text-amber-800 font-bold">{analysisData.basic_info.bazi_chart.nayin_info.month_nayin}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-amber-700 font-semibold text-sm mb-1">日柱纳音</div>
+                      <div className="text-amber-800 font-bold">{analysisData.basic_info.bazi_chart.nayin_info.day_nayin}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-amber-700 font-semibold text-sm mb-1">时柱纳音</div>
+                      <div className="text-amber-800 font-bold">{analysisData.basic_info.bazi_chart.nayin_info.hour_nayin}</div>
+                    </div>
+                  </div>
+                  <p className="text-amber-600 text-xs mt-3 text-center">
+                     纳音五行是根据干支组合推算的传统五行属性，体现了深层的命理特征
+                   </p>
+                   
+                   {/* 纳音详细解释 */}
+                   <div className="mt-4 bg-white p-4 rounded-lg border border-amber-300">
+                     <h5 className="font-bold text-amber-800 mb-3 text-center">纳音五行理论解释</h5>
+                     <div className="space-y-3 text-xs text-amber-700">
+                       <div className="bg-amber-50 p-3 rounded-lg">
+                         <h6 className="font-semibold mb-1">📚 理论来源</h6>
+                         <p className="leading-relaxed">
+                           纳音五行起源于古代音律学说，将60甲子干支与五音十二律相配，
+                           形成独特的五行分类体系。每两个干支为一组，共30组纳音。
+                         </p>
+                       </div>
+                       
+                       <div className="bg-amber-50 p-3 rounded-lg">
+                         <h6 className="font-semibold mb-1">🎯 八字应用</h6>
+                         <p className="leading-relaxed">
+                           在八字命理中，纳音五行补充了正五行的不足，提供了另一个维度的分析角度。
+                           年柱纳音代表祖业根基，月柱纳音影响青年运势，日柱纳音关乎夫妻关系，
+                           时柱纳音预示子女和晚年。四柱纳音的相生相克关系，揭示了命运的深层规律。
+                         </p>
+                       </div>
+                       
+                       <div className="bg-amber-50 p-3 rounded-lg">
+                         <h6 className="font-semibold mb-1">⚖️ 实用价值</h6>
+                         <p className="leading-relaxed">
+                           纳音五行在择偶合婚、起名改名、择日选时等方面具有重要参考价值。
+                           同类纳音的人往往有相似的性格特征和人生际遇，
+                           不同纳音之间的配合关系影响着人际交往和事业合作的成败。
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -383,6 +446,179 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
                     <p className="text-red-700 leading-relaxed text-sm">
                       {analysisData.basic_info.pillar_interpretations.hour_pillar}
                     </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 纳音五行专题解析 */}
+        {analysisData.basic_info?.bazi_chart?.nayin_info && (
+          <Card className="chinese-card-decoration dragon-corner border-2 border-amber-400">
+            <CardHeader>
+              <CardTitle className="text-amber-800 text-2xl font-bold chinese-text-shadow text-center flex items-center justify-center">
+                <Sparkles className="mr-2 h-6 w-6" />
+                纳音五行专题解析
+                <Sparkles className="ml-2 h-6 w-6" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* 纳音分类表 */}
+                  <div className="bg-white p-4 rounded-lg border border-amber-200">
+                    <h4 className="font-bold text-amber-800 mb-3 text-center">纳音五行分类</h4>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
+                        <span className="font-semibold text-yellow-800">金纳音</span>
+                        <span className="text-yellow-700">海中金、剑锋金、白蜡金、砂中金、金箔金、钗钏金</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                        <span className="font-semibold text-green-800">木纳音</span>
+                        <span className="text-green-700">大林木、杨柳木、松柏木、平地木、桑柘木、石榴木</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-blue-50 rounded">
+                        <span className="font-semibold text-blue-800">水纳音</span>
+                        <span className="text-blue-700">涧下水、泉中水、长流水、天河水、大溪水、大海水</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-red-50 rounded">
+                        <span className="font-semibold text-red-800">火纳音</span>
+                        <span className="text-red-700">炉中火、山头火、霹雳火、山下火、覆灯火、天上火</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-orange-50 rounded">
+                        <span className="font-semibold text-orange-800">土纳音</span>
+                        <span className="text-orange-700">路旁土、城头土、屋上土、壁上土、大驿土、沙中土</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 您的纳音特征 */}
+                  <div className="bg-white p-4 rounded-lg border border-amber-200">
+                    <h4 className="font-bold text-amber-800 mb-3 text-center">您的纳音特征分析</h4>
+                    <div className="space-y-3">
+                       <div className="text-center p-3 bg-amber-100 rounded-lg">
+                         <div className="text-lg font-bold text-amber-800 mb-1">年柱纳音</div>
+                         <div className="text-2xl font-bold text-amber-900">{analysisData.basic_info.bazi_chart.nayin_info.year_nayin}</div>
+                         <div className="text-xs text-amber-700 mt-1">主导您的根基特质</div>
+                       </div>
+                       
+                       {/* 四柱纳音对比分析 */}
+                       <div className="bg-amber-50 p-3 rounded-lg">
+                         <h5 className="font-semibold text-amber-800 mb-2">四柱纳音配合分析</h5>
+                         <div className="grid grid-cols-2 gap-2 text-xs">
+                           <div className="bg-white p-2 rounded border-l-2 border-red-400">
+                             <div className="font-semibold text-red-800">年柱：{analysisData.basic_info.bazi_chart.nayin_info.year_nayin}</div>
+                             <div className="text-red-700">祖业根基，早年环境</div>
+                           </div>
+                           <div className="bg-white p-2 rounded border-l-2 border-green-400">
+                             <div className="font-semibold text-green-800">月柱：{analysisData.basic_info.bazi_chart.nayin_info.month_nayin}</div>
+                             <div className="text-green-700">父母宫位，青年运势</div>
+                           </div>
+                           <div className="bg-white p-2 rounded border-l-2 border-blue-400">
+                             <div className="font-semibold text-blue-800">日柱：{analysisData.basic_info.bazi_chart.nayin_info.day_nayin}</div>
+                             <div className="text-blue-700">夫妻宫位，中年发展</div>
+                           </div>
+                           <div className="bg-white p-2 rounded border-l-2 border-purple-400">
+                             <div className="font-semibold text-purple-800">时柱：{analysisData.basic_info.bazi_chart.nayin_info.hour_nayin}</div>
+                             <div className="text-purple-700">子女宫位，晚年归宿</div>
+                           </div>
+                         </div>
+                         <p className="text-xs text-amber-700 mt-2 leading-relaxed">
+                           {(() => {
+                             const yearNayin = analysisData.basic_info.bazi_chart.nayin_info.year_nayin;
+                             const monthNayin = analysisData.basic_info.bazi_chart.nayin_info.month_nayin;
+                             const dayNayin = analysisData.basic_info.bazi_chart.nayin_info.day_nayin;
+                             const hourNayin = analysisData.basic_info.bazi_chart.nayin_info.hour_nayin;
+                             
+                             // 判断纳音五行的生克关系
+                             const getNayinElement = (nayin) => {
+                               if (nayin.includes('金')) return '金';
+                               if (nayin.includes('木')) return '木';
+                               if (nayin.includes('水')) return '水';
+                               if (nayin.includes('火')) return '火';
+                               if (nayin.includes('土')) return '土';
+                               return '未知';
+                             };
+                             
+                             const yearElement = getNayinElement(yearNayin);
+                             const dayElement = getNayinElement(dayNayin);
+                             
+                             if (yearElement === dayElement) {
+                               return `您的年柱和日柱纳音同属${yearElement}行，表明您的根基特质与核心性格高度一致，人生发展方向明确，容易在专业领域取得成就。`;
+                             } else {
+                               const relationship = {
+                                 '金木': '金克木，需要在坚持原则与灵活变通之间找到平衡',
+                                 '木土': '木克土，创新精神与稳重品格的结合',
+                                 '土水': '土克水，务实态度与智慧思维的融合',
+                                 '水火': '水克火，理性思考与热情行动的协调',
+                                 '火金': '火克金，热情活力与冷静判断的平衡',
+                                 '木金': '金克木，需要在坚持原则与灵活变通之间找到平衡',
+                                 '土木': '木克土，创新精神与稳重品格的结合',
+                                 '水土': '土克水，务实态度与智慧思维的融合',
+                                 '火水': '水克火，理性思考与热情行动的协调',
+                                 '金火': '火克金，热情活力与冷静判断的平衡'
+                               };
+                               const key = yearElement + dayElement;
+                               const reverseKey = dayElement + yearElement;
+                               return relationship[key] || relationship[reverseKey] || `您的年柱${yearElement}行与日柱${dayElement}行相配，形成了独特的性格组合，需要在不同特质间寻求和谐发展。`;
+                             }
+                           })()
+                         }
+                         </p>
+                       </div>
+                      
+                      <div className="bg-amber-50 p-3 rounded-lg">
+                         <h5 className="font-semibold text-amber-800 mb-2">您的纳音特质分析</h5>
+                         <p className="text-xs text-amber-700 leading-relaxed">
+                           {(() => {
+                             const yearNayin = analysisData.basic_info.bazi_chart.nayin_info.year_nayin;
+                             const nayinAnalysis = {
+                               '海中金': '您具有海中金的特质，如深海中的珍宝，内敛而珍贵。性格沉稳内敛，不轻易显露锋芒，但内在蕴含巨大潜力。适合从事需要耐心和深度思考的工作，如研究、金融分析等。',
+                               '剑锋金': '您具有剑锋金的特质，锋利而坚韧。性格刚毅果断，有很强的执行力和领导能力。适合从事需要决断力的工作，如管理、军警、外科医生等。',
+                               '白蜡金': '您具有白蜡金的特质，纯净而温润。性格温和细腻，善于协调人际关系。适合从事服务性行业，如教育、咨询、艺术等。',
+                               '砂中金': '您具有砂中金的特质，需要淘洗才能显现价值。性格踏实勤奋，通过不断努力获得成功。适合从事需要积累的行业，如技术、工艺等。',
+                               '金箔金': '您具有金箔金的特质，薄而广泛。性格灵活多变，善于适应环境。适合从事变化性强的工作，如销售、媒体、设计等。',
+                               '钗钏金': '您具有钗钏金的特质，精美而实用。性格优雅实际，注重品质和细节。适合从事精品行业，如珠宝、奢侈品、高端服务等。',
+                               '大林木': '您具有大林木的特质，如参天大树般稳重。性格宽容大度，有很强的包容力和成长性。适合从事教育、管理、环保等需要长期发展的行业。',
+                               '杨柳木': '您具有杨柳木的特质，柔韧而优美。性格温柔灵活，善于适应变化。适合从事创意性工作，如艺术、设计、文学等。',
+                               '松柏木': '您具有松柏木的特质，坚韧不屈。性格坚强独立，有很强的意志力。适合从事需要坚持的工作，如科研、创业等。',
+                               '平地木': '您具有平地木的特质，广阔而包容。性格平和宽广，善于团结他人。适合从事团队协作性强的工作，如项目管理、公共服务等。',
+                               '桑柘木': '您具有桑柘木的特质，实用而有价值。性格务实勤劳，注重实际效果。适合从事实用性强的行业，如农业、制造业等。',
+                               '石榴木': '您具有石榴木的特质，多子多福。性格热情开朗，善于交际。适合从事人际交往频繁的工作，如销售、公关、娱乐等。',
+                               '涧下水': '您具有涧下水的特质，清澈而持续。性格纯净坚持，有很强的原则性。适合从事需要专业性的工作，如医疗、法律、技术等。',
+                               '泉中水': '您具有泉中水的特质，源源不断。性格富有创造力，思维活跃。适合从事创新性工作，如科技、研发、创意等。',
+                               '长流水': '您具有长流水的特质，绵延不绝。性格持久稳定，有很强的耐力。适合从事需要长期坚持的工作，如教育、慈善等。',
+                               '天河水': '您具有天河水的特质，高远而广阔。性格志向远大，有很强的理想主义色彩。适合从事高层次的工作，如学术研究、政策制定等。',
+                               '大溪水': '您具有大溪水的特质，奔腾而有力。性格积极进取，行动力强。适合从事动态性强的工作，如体育、旅游、物流等。',
+                               '大海水': '您具有大海水的特质，深邃而包容。性格深沉大度，有很强的包容力。适合从事需要大局观的工作，如战略规划、国际贸易等。',
+                               '炉中火': '您具有炉中火的特质，热烈而专注。性格热情专一，有很强的专业精神。适合从事需要专业技能的工作，如工程、医疗、艺术等。',
+                               '山头火': '您具有山头火的特质，明亮而显眼。性格开朗外向，善于表现自己。适合从事表演性质的工作，如娱乐、广告、演讲等。',
+                               '霹雳火': '您具有霹雳火的特质，迅猛而有力。性格急躁直接，行动迅速。适合从事需要快速反应的工作，如急救、新闻、竞技等。',
+                               '山下火': '您具有山下火的特质，温暖而持久。性格温和坚持，有很强的服务精神。适合从事服务性工作，如护理、客服、社工等。',
+                               '覆灯火': '您具有覆灯火的特质，温馨而照明。性格温暖体贴，善于照顾他人。适合从事关怀性工作，如教育、医护、家政等。',
+                               '天上火': '您具有天上火的特质，光明而高远。性格光明磊落，有很强的正义感。适合从事公正性工作，如法律、监督、公益等。',
+                               '路旁土': '您具有路旁土的特质，承载而包容。性格踏实可靠，善于支持他人。适合从事基础性工作，如基建、物流、服务等。',
+                               '城头土': '您具有城头土的特质，坚固而防护。性格稳重可靠，有很强的责任感。适合从事安全防护性工作，如保安、保险、质检等。',
+                               '屋上土': '您具有屋上土的特质，实用而温馨。性格实际温和，注重家庭和谐。适合从事家庭相关工作，如房地产、家装、育儿等。',
+                               '壁上土': '您具有壁上土的特质，装饰而美化。性格注重外表和形象，有艺术天赋。适合从事美化性工作，如装修、美容、设计等。',
+                               '大驿土': '您具有大驿土的特质，连接而沟通。性格善于沟通协调，有很强的组织能力。适合从事协调性工作，如管理、外交、中介等。',
+                               '沙中土': '您具有沙中土的特质，细腻而广泛。性格细心周到，注重细节。适合从事精细化工作，如会计、编辑、工艺等。'
+                             };
+                             return nayinAnalysis[yearNayin] || `您的${yearNayin}纳音代表了独特的五行特质，影响着您的性格和人生发展方向。`;
+                           })()
+                         }
+                         </p>
+                       </div>
+                      
+                      <div className="bg-amber-50 p-3 rounded-lg">
+                        <h5 className="font-semibold text-amber-800 mb-2">四柱配合</h5>
+                        <p className="text-xs text-amber-700 leading-relaxed">
+                          年月日时四柱的纳音相互作用，形成了您独特的命理格局。
+                          纳音的生克制化关系，揭示了人生各个阶段的运势变化规律。
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
