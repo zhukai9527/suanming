@@ -179,7 +179,7 @@ class InputValidator {
     this.validatePattern(birthDate, this.validationRules.date, '出生日期');
     
     // 验证日期有效性
-    const date = new Date(birthDate);
+    const date = new Date(birthDate + 'T00:00:00.000Z');
     if (isNaN(date.getTime())) {
       throw new AppError(
         this.formatErrorMessage('invalid_date', { field: '出生日期' }),
@@ -188,24 +188,52 @@ class InputValidator {
       );
     }
     
-    // 验证日期范围（1900-2100）
+    // 验证日期范围（1800-2100）- 扩大范围支持更多历史日期
     const year = date.getFullYear();
-    if (year < 1900 || year > 2100) {
+    if (year < 1800 || year > 2100) {
       throw new AppError(
-        '出生日期年份应在1900-2100年之间',
+        '出生日期年份应在1800-2100年之间',
         400,
         'VALIDATION_ERROR'
       );
     }
     
-    // 验证不能是未来日期
-    if (date > new Date()) {
+    // 验证不能是未来日期（允许今天）
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // 设置为今天的最后一刻
+    if (date > today) {
       throw new AppError(
         '出生日期不能是未来日期',
         400,
         'VALIDATION_ERROR'
       );
     }
+    
+    // 验证月份和日期的合理性
+    const [yearStr, monthStr, dayStr] = birthDate.split('-');
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+    
+    if (month < 1 || month > 12) {
+      throw new AppError(
+        '月份应在1-12之间',
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+    
+    // 验证每月的天数
+    const daysInMonth = new Date(year, month, 0).getDate();
+    if (day < 1 || day > daysInMonth) {
+      throw new AppError(
+        `${year}年${month}月只有${daysInMonth}天`,
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+    
+    // 验证特殊日期（如闰年）
+    this.validateSpecialDates(birthDate);
   }
 
   /**
@@ -443,6 +471,156 @@ class InputValidator {
   }
 
   /**
+   * 验证特殊日期（如闰年2月29日）
+   * @param {string} birthDate 出生日期
+   * @throws {AppError} 验证失败时抛出错误
+   */
+  validateSpecialDates(birthDate) {
+    const [yearStr, monthStr, dayStr] = birthDate.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
+    
+    // 验证闰年2月29日
+    if (month === 2 && day === 29) {
+      const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+      if (!isLeapYear) {
+        throw new AppError(
+          `${year}年不是闰年，2月没有29日`,
+          400,
+          'VALIDATION_ERROR'
+        );
+      }
+    }
+  }
+  
+  /**
+   * 验证时区信息
+   * @param {string} timezone 时区
+   * @throws {AppError} 验证失败时抛出错误
+   */
+  validateTimezone(timezone) {
+    if (!timezone) return;
+    
+    const validTimezones = [
+      'Asia/Shanghai', 'Asia/Hong_Kong', 'Asia/Taipei', 'Asia/Tokyo',
+      'America/New_York', 'America/Los_Angeles', 'Europe/London',
+      'UTC', 'GMT', 'CST', 'EST', 'PST'
+    ];
+    
+    // 支持UTC偏移格式 (+08:00, -05:00等)
+    const utcOffsetPattern = /^[+-]\d{2}:\d{2}$/;
+    
+    if (!validTimezones.includes(timezone) && !utcOffsetPattern.test(timezone)) {
+      throw new AppError(
+        '时区格式不正确，请使用标准时区名称或UTC偏移格式',
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+  }
+  
+  /**
+   * 验证IP地址
+   * @param {string} ip IP地址
+   * @throws {AppError} 验证失败时抛出错误
+   */
+  validateIP(ip) {
+    if (!ip) return;
+    
+    const ipv4Pattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    const ipv6Pattern = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+    
+    if (!ipv4Pattern.test(ip) && !ipv6Pattern.test(ip)) {
+      throw new AppError(
+        'IP地址格式不正确',
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+  }
+  
+  /**
+   * 验证用户代理字符串
+   * @param {string} userAgent 用户代理
+   * @throws {AppError} 验证失败时抛出错误
+   */
+  validateUserAgent(userAgent) {
+    if (!userAgent) return;
+    
+    // 检查用户代理长度和基本格式
+    if (userAgent.length > 500) {
+      throw new AppError(
+        '用户代理字符串过长',
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+    
+    // 检查是否包含可疑内容
+    const suspiciousPatterns = [
+      /<script/i, /javascript:/i, /vbscript:/i, /onload=/i, /onerror=/i
+    ];
+    
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(userAgent)) {
+        throw new AppError(
+          '用户代理包含可疑内容',
+          400,
+          'VALIDATION_ERROR'
+        );
+      }
+    }
+  }
+  
+  /**
+   * 验证文件上传
+   * @param {Object} file 文件对象
+   * @param {Array} allowedTypes 允许的文件类型
+   * @param {number} maxSize 最大文件大小（字节）
+   * @throws {AppError} 验证失败时抛出错误
+   */
+  validateFileUpload(file, allowedTypes = [], maxSize = 5 * 1024 * 1024) {
+    if (!file) {
+      throw new AppError(
+        '文件不能为空',
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+    
+    // 验证文件大小
+    if (file.size > maxSize) {
+      throw new AppError(
+        `文件大小不能超过${Math.round(maxSize / 1024 / 1024)}MB`,
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+    
+    // 验证文件类型
+    if (allowedTypes.length > 0 && !allowedTypes.includes(file.mimetype)) {
+      throw new AppError(
+        `文件类型不支持，只允许：${allowedTypes.join(', ')}`,
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+    
+    // 验证文件名
+    if (file.originalname) {
+      const dangerousChars = /[<>:"/\\|?*]/;
+      if (dangerousChars.test(file.originalname)) {
+        throw new AppError(
+          '文件名包含非法字符',
+          400,
+          'VALIDATION_ERROR'
+        );
+      }
+    }
+  }
+  
+  /**
    * 创建验证中间件
    * @param {Function} validationFn 验证函数
    * @returns {Function} Express中间件
@@ -450,6 +628,10 @@ class InputValidator {
   createValidationMiddleware(validationFn) {
     return (req, res, next) => {
       try {
+        // 验证请求头信息
+        this.validateUserAgent(req.get('User-Agent'));
+        this.validateIP(req.ip || req.connection.remoteAddress);
+        
         // 清理输入数据
         req.body = this.sanitizeObject(req.body);
         req.query = this.sanitizeObject(req.query);
