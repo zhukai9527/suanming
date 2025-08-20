@@ -165,7 +165,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             <div className="text-2xl font-bold text-gray-800 mb-2">
               {hexagram.name || hexagram}
             </div>
-            {hexagram.number && (
+            {hexagram && hexagram.number && (
               <div className="text-sm text-gray-600 mb-2">第{hexagram.number}卦</div>
             )}
             <div className="text-sm text-gray-700 mb-3">
@@ -317,7 +317,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
               name: analysisData.basic_info.hexagram_info.main_hexagram,
               symbol: analysisData.basic_info.hexagram_info.main_hexagram_symbol,
               number: analysisData.basic_info.hexagram_info.main_hexagram_number,
-              meaning: analysisData.detailed_analysis.hexagram_analysis.primary_meaning.split(' - ')[1]
+              meaning: analysisData.detailed_analysis.hexagram_analysis.primary_meaning?.split(' - ')[1] || '卦象含义'
             }, '本卦', true)}
             
             {/* 八卦结构 */}
@@ -504,30 +504,30 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                   <h4 className="font-bold text-red-800 mb-2">上卦数</h4>
-                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.number}</div>
-                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.meaning}</div>
-                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.upper_trigram_number.influence}</div>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis?.upper_trigram_analysis?.number || analysisData.detailed_analysis.numerology_analysis?.upper_trigram_number?.number || '-'}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis?.upper_trigram_analysis?.personalized_meaning || analysisData.detailed_analysis.numerology_analysis?.upper_trigram_number?.meaning || '上卦含义'}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis?.upper_trigram_analysis?.environmental_influence || analysisData.detailed_analysis.numerology_analysis?.upper_trigram_number?.influence || '外在影响'}</div>
                 </div>
                 
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                   <h4 className="font-bold text-red-800 mb-2">下卦数</h4>
-                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.number}</div>
-                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.meaning}</div>
-                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.lower_trigram_number.influence}</div>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis?.lower_trigram_analysis?.number || analysisData.detailed_analysis.numerology_analysis?.lower_trigram_number?.number || '-'}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis?.lower_trigram_analysis?.personalized_meaning || analysisData.detailed_analysis.numerology_analysis?.lower_trigram_number?.meaning || '下卦含义'}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis?.lower_trigram_analysis?.internal_motivation || analysisData.detailed_analysis.numerology_analysis?.lower_trigram_number?.influence || '内在动机'}</div>
                 </div>
                 
                 <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                   <h4 className="font-bold text-red-800 mb-2">组合能量</h4>
-                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.combined_energy.total}</div>
-                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.combined_energy.interpretation}</div>
-                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.combined_energy.harmony}</div>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis?.combined_energy?.total_number || analysisData.detailed_analysis.numerology_analysis?.combined_energy?.total || '-'}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis?.combined_energy?.interpretation || '组合能量分析'}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis?.combined_energy?.harmony_analysis?.description || analysisData.detailed_analysis.numerology_analysis?.combined_energy?.harmony || '和谐度分析'}</div>
                 </div>
                 
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                   <h4 className="font-bold text-red-800 mb-2">时间共振</h4>
-                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis.time_resonance.resonance_number}</div>
-                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis.time_resonance.meaning}</div>
-                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis.time_resonance.interpretation}</div>
+                  <div className="text-2xl font-bold text-red-700 mb-1">{analysisData.detailed_analysis.numerology_analysis?.time_space_resonance?.number_time_harmony?.level || analysisData.detailed_analysis.numerology_analysis?.time_resonance?.resonance_number || '-'}</div>
+                  <div className="text-sm text-red-600">{analysisData.detailed_analysis.numerology_analysis?.time_space_resonance?.time_energy?.description || analysisData.detailed_analysis.numerology_analysis?.time_resonance?.meaning || '时间能量'}</div>
+                  <div className="text-xs text-red-500 mt-1">{analysisData.detailed_analysis.numerology_analysis?.time_space_resonance?.optimal_action_time || analysisData.detailed_analysis.numerology_analysis?.time_resonance?.interpretation || '最佳时机'}</div>
                 </div>
               </div>
             </CardContent>

@@ -54,7 +54,7 @@ class YijingAnalyzer {
       const dynamicAnalysis = this.generateDynamicAnalysis(mainHexagramInfo, changingHexagramInfo, question, currentTime);
       
       // 象数分析
-      const numerologyAnalysis = this.performNumerologyAnalysis(hexagramData, currentTime);
+      const numerologyAnalysis = this.performNumerologyAnalysis(hexagramData, currentTime, question);
 
       return {
         analysis_type: 'yijing',
@@ -529,30 +529,119 @@ class YijingAnalyzer {
     return { name: '寅时', energy: '阳气初动', advice: '准备行动' };
   }
 
-  // 象数分析
-  performNumerologyAnalysis(hexagramData, currentTime) {
+  // 深度象数分析
+  performNumerologyAnalysis(hexagramData, currentTime, question) {
     const upperNum = hexagramData.upperTrigram || 1;
     const lowerNum = hexagramData.lowerTrigram || 1;
     const totalNum = upperNum + lowerNum;
+    const changingLines = hexagramData.changingLines || [];
     
     return {
-      upper_trigram_number: {
-        number: upperNum,
-        meaning: this.NUMBERS[upperNum]?.meaning || '未知',
-        influence: '代表外在环境和表面现象'
-      },
-      lower_trigram_number: {
-        number: lowerNum,
-        meaning: this.NUMBERS[lowerNum]?.meaning || '未知',
-        influence: '代表内在动机和根本原因'
-      },
-      combined_energy: {
-        total: totalNum,
-        interpretation: this.interpretCombinedNumber(totalNum),
-        harmony: this.analyzeNumberHarmony(upperNum, lowerNum)
-      },
-      time_resonance: this.analyzeTimeResonance(totalNum, currentTime)
+      upper_trigram_analysis: this.analyzeUpperTrigramNumber(upperNum, question),
+      lower_trigram_analysis: this.analyzeLowerTrigramNumber(lowerNum, question),
+      combined_energy: this.analyzeCombinedNumerology(upperNum, lowerNum, totalNum, question),
+      changing_lines_numerology: this.analyzeChangingLinesNumerology(changingLines, question),
+      time_space_resonance: this.analyzeTimeSpaceResonance(totalNum, currentTime, question),
+      personal_guidance: this.generatePersonalizedNumerologyGuidance(upperNum, lowerNum, totalNum, question),
+      symbolic_interpretation: this.generateSymbolicInterpretation(upperNum, lowerNum, question),
+      practical_application: this.generatePracticalNumerologyApplication(totalNum, question)
     };
+  }
+  
+  // 分析上卦数字
+  analyzeUpperTrigramNumber(upperNum, question) {
+    const trigram = this.NUMBERS[upperNum]?.trigram || '乾';
+    const trigramData = this.TRIGRAMS[trigram];
+    
+    const personalizedAnalysis = {
+      1: `上卦数字1，对应乾卦天象。在您的问题"${question}"中，这表示事情的外在表现具有天的特质——刚健、主动、领导。天象主动，预示着您需要主动出击，发挥领导作用。`,
+      2: `上卦数字2，对应兑卦泽象。在您的问题"${question}"中，这表示外在环境充满喜悦和交流的机会。泽象主悦，预示着通过良好的沟通和人际关系能够获得成功。`,
+      3: `上卦数字3，对应离卦火象。在您的问题"${question}"中，这表示外在表现需要光明和智慧。火象主明，预示着需要用智慧照亮前路，保持清醒的判断。`,
+      4: `上卦数字4，对应震卦雷象。在您的问题"${question}"中，这表示外在环境充满动力和变化。雷象主动，预示着需要抓住时机，果断行动。`,
+      5: `上卦数字5，对应巽卦风象。在您的问题"${question}"中，这表示外在需要温和渗透的方式。风象主入，预示着需要循序渐进，以柔克刚。`,
+      6: `上卦数字6，对应坎卦水象。在您的问题"${question}"中，这表示外在环境可能存在困难和挑战。水象主险，预示着需要智慧和勇气来克服障碍。`,
+      7: `上卦数字7，对应艮卦山象。在您的问题"${question}"中，这表示外在需要稳定和静止。山象主止，预示着需要适时停止，等待时机。`,
+      8: `上卦数字8，对应坤卦地象。在您的问题"${question}"中，这表示外在环境具有包容和承载的特质。地象主顺，预示着需要顺应自然，厚德载物。`
+    };
+    
+    return {
+      number: upperNum,
+      trigram: trigram,
+      nature: trigramData?.nature || '未知',
+      attribute: trigramData?.attribute || '未知',
+      direction: trigramData?.direction || '未知',
+      element: trigramData?.element || '未知',
+      personalized_meaning: personalizedAnalysis[upperNum] || `上卦数字${upperNum}在您的问题中具有特殊含义`,
+      environmental_influence: `外在环境呈现${trigramData?.nature}的特质，需要以${trigramData?.attribute}的方式应对`
+    };
+  }
+  
+  // 分析下卦数字
+  analyzeLowerTrigramNumber(lowerNum, question) {
+    const trigram = this.NUMBERS[lowerNum]?.trigram || '坤';
+    const trigramData = this.TRIGRAMS[trigram];
+    
+    const personalizedAnalysis = {
+      1: `下卦数字1，对应乾卦天象。在您的问题"${question}"中，这表示您内心具有天的品质——刚健、自强、不息。内在动力强劲，具有开创精神。`,
+      2: `下卦数字2，对应兑卦泽象。在您的问题"${question}"中，这表示您内心渴望喜悦和和谐。内在动机是追求快乐和良好的人际关系。`,
+      3: `下卦数字3，对应离卦火象。在您的问题"${question}"中，这表示您内心充满智慧和光明。内在动力来自于对真理和美好的追求。`,
+      4: `下卦数字4，对应震卦雷象。在您的问题"${question}"中，这表示您内心充满行动的冲动。内在动机是要有所作为，不甘平庸。`,
+      5: `下卦数字5，对应巽卦风象。在您的问题"${question}"中，这表示您内心温和而有渗透力。内在动机是通过温和的方式达成目标。`,
+      6: `下卦数字6，对应坎卦水象。在您的问题"${question}"中，这表示您内心深沉而有智慧。内在动力来自于对深层真理的探索。`,
+      7: `下卦数字7，对应艮卦山象。在您的问题"${question}"中，这表示您内心稳重而有定力。内在动机是追求稳定和安全。`,
+      8: `下卦数字8，对应坤卦地象。在您的问题"${question}"中，这表示您内心包容而有承载力。内在动机是服务他人，厚德载物。`
+    };
+    
+    return {
+      number: lowerNum,
+      trigram: trigram,
+      nature: trigramData?.nature || '未知',
+      attribute: trigramData?.attribute || '未知',
+      family_position: trigramData?.family || '未知',
+      body_part: trigramData?.body || '未知',
+      personalized_meaning: personalizedAnalysis[lowerNum] || `下卦数字${lowerNum}在您的问题中具有特殊含义`,
+      internal_motivation: `内在动机体现${trigramData?.nature}的特质，以${trigramData?.attribute}的方式推动行动`
+    };
+  }
+  
+  // 分析组合数理
+  analyzeCombinedNumerology(upperNum, lowerNum, totalNum, question) {
+    const harmony = this.analyzeAdvancedNumberHarmony(upperNum, lowerNum);
+    const energyFlow = this.analyzeEnergyFlow(upperNum, lowerNum);
+    const developmentTrend = this.analyzeDevelopmentTrend(totalNum);
+    
+    return {
+      total_number: totalNum,
+      interpretation: this.getPersonalizedCombinedInterpretation(totalNum, question),
+      harmony_analysis: harmony,
+      energy_flow: energyFlow,
+      development_trend: developmentTrend,
+      success_probability: this.calculateSuccessProbability(upperNum, lowerNum, totalNum),
+      timing_guidance: this.getTimingGuidanceFromNumbers(totalNum)
+    };
+  }
+  
+  // 获取个性化组合解释
+  getPersonalizedCombinedInterpretation(totalNum, question) {
+    const interpretations = {
+      2: `总数2在您的问题"${question}"中代表二元对立，需要在对立中寻求统一。这是一个需要耐心和智慧的阶段，建议您保持平衡的心态。`,
+      3: `总数3在您的问题"${question}"中代表生发创造，事物开始有了新的发展。这是一个充满希望的数字，预示着新的开始和成长。`,
+      4: `总数4在您的问题"${question}"中代表稳定建设，需要脚踏实地地工作。这个数字提醒您要有耐心，循序渐进地推进计划。`,
+      5: `总数5在您的问题"${question}"中代表变化转折，事物处于变动之中。这是一个需要灵活应对的时期，建议您保持开放的心态。`,
+      6: `总数6在您的问题"${question}"中代表和谐圆满，各方面趋于平衡。这是一个相对稳定的阶段，适合巩固成果。`,
+      7: `总数7在您的问题"${question}"中代表完善提升，需要精益求精。这个数字提醒您要注重质量，追求卓越。`,
+      8: `总数8在您的问题"${question}"中代表丰盛收获，是收获成果的时机。这个数字预示着您的努力将得到回报。`,
+      9: `总数9在您的问题"${question}"中代表圆满完成，事物达到了一个高峰。这是一个成功的数字，但也要准备新的开始。`,
+      10: `总数10在您的问题"${question}"中代表完成循环，一个阶段的结束和新阶段的开始。这是转折的关键时刻。`,
+      11: `总数11在您的问题"${question}"中代表突破创新，需要勇于打破常规。这个数字鼓励您要有创新精神。`,
+      12: `总数12在您的问题"${question}"中代表周期循环，事物按照自然规律发展。建议您顺应自然，把握节奏。`,
+      13: `总数13在您的问题"${question}"中代表转化重生，可能面临重大变化。这个数字提醒您要有心理准备。`,
+      14: `总数14在您的问题"${question}"中代表调和统一，需要协调各方面的关系。这是一个需要平衡技巧的时期。`,
+      15: `总数15在您的问题"${question}"中代表圆融和谐，各方面都比较顺利。这是一个相对轻松的阶段。`,
+      16: `总数16在您的问题"${question}"中代表极盛转衰，提醒您要居安思危。成功时更要保持谦逊和警觉。`
+    };
+    
+    return interpretations[totalNum] || `总数${totalNum}在您的问题中具有特殊的象数含义，需要结合具体情况分析。`;
   }
 
   // 解释组合数字
@@ -587,7 +676,507 @@ class YijingAnalyzer {
     return '需要进一步分析';
   }
 
-  // 添加更多专业分析方法
+  // 高级数字和谐度分析
+  analyzeAdvancedNumberHarmony(upperNum, lowerNum) {
+    const diff = Math.abs(upperNum - lowerNum);
+    const sum = upperNum + lowerNum;
+    
+    let harmonyLevel = '';
+    let harmonyDescription = '';
+    
+    if (diff === 0) {
+      harmonyLevel = '完全和谐';
+      harmonyDescription = '上下卦数字相同，表示内外一致，心想事成的良好状态';
+    } else if (diff === 1) {
+      harmonyLevel = '高度和谐';
+      harmonyDescription = '上下卦数字相近，表示内外基本协调，只需微调即可';
+    } else if (diff === 2) {
+      harmonyLevel = '适度和谐';
+      harmonyDescription = '上下卦存在适度差异，需要在内外之间寻求平衡';
+    } else if (diff === 3) {
+      harmonyLevel = '需要调和';
+      harmonyDescription = '上下卦差异较大，需要主动协调内外关系';
+    } else {
+      harmonyLevel = '较大冲突';
+      harmonyDescription = '上下卦差异很大，需要深度调整和耐心化解';
+    }
+    
+    return {
+      level: harmonyLevel,
+      description: harmonyDescription,
+      difference: diff,
+      total: sum,
+      balance_advice: this.getBalanceAdvice(diff)
+    };
+  }
+  
+  // 获取平衡建议
+  getBalanceAdvice(diff) {
+    const advice = {
+      0: '保持当前的和谐状态，继续按既定方向发展',
+      1: '稍作调整即可，注意细节的完善',
+      2: '需要在两个方面之间找到平衡点',
+      3: '需要更多的耐心和智慧来协调',
+      4: '建议寻求外界帮助来化解差异',
+      5: '需要重新审视目标和方法',
+      6: '可能需要根本性的改变',
+      7: '建议暂停行动，重新规划'
+    };
+    
+    return advice[diff] || '需要深入分析具体情况';
+  }
+  
+  // 分析能量流动
+  analyzeEnergyFlow(upperNum, lowerNum) {
+    if (upperNum > lowerNum) {
+      return {
+        direction: '向下流动',
+        description: '外在能量向内在渗透，适合内省和积累',
+        advice: '建议多关注内在修养，厚积薄发'
+      };
+    } else if (upperNum < lowerNum) {
+      return {
+        direction: '向上流动',
+        description: '内在能量向外在释放，适合行动和表现',
+        advice: '建议积极行动，展现才华和能力'
+      };
+    } else {
+      return {
+        direction: '平衡流动',
+        description: '内外能量平衡，适合稳定发展',
+        advice: '建议保持现状，稳步前进'
+      };
+    }
+  }
+  
+  // 分析发展趋势
+  analyzeDevelopmentTrend(totalNum) {
+    const trends = {
+      2: { trend: '起步阶段', description: '事物刚刚开始，需要耐心培育' },
+      3: { trend: '成长阶段', description: '事物开始发展，充满生机' },
+      4: { trend: '稳定阶段', description: '事物趋于稳定，需要巩固' },
+      5: { trend: '变化阶段', description: '事物处于转折，需要灵活应对' },
+      6: { trend: '和谐阶段', description: '事物达到平衡，适合发展' },
+      7: { trend: '完善阶段', description: '事物接近完美，需要精益求精' },
+      8: { trend: '丰收阶段', description: '事物达到高峰，可以收获' },
+      9: { trend: '圆满阶段', description: '事物达到顶点，准备新的开始' },
+      10: { trend: '转换阶段', description: '一个周期结束，新周期开始' },
+      11: { trend: '突破阶段', description: '需要创新和突破' },
+      12: { trend: '循环阶段', description: '按自然规律发展' },
+      13: { trend: '转化阶段', description: '面临重大变化' },
+      14: { trend: '调和阶段', description: '需要协调统一' },
+      15: { trend: '圆融阶段', description: '各方面和谐发展' },
+      16: { trend: '极盛阶段', description: '达到顶峰，需要谨慎' }
+    };
+    
+    return trends[totalNum] || { trend: '特殊阶段', description: '需要特别关注' };
+  }
+  
+  // 计算成功概率
+  calculateSuccessProbability(upperNum, lowerNum, totalNum) {
+    const harmony = this.analyzeAdvancedNumberHarmony(upperNum, lowerNum);
+    const energyFlow = this.analyzeEnergyFlow(upperNum, lowerNum);
+    
+    let baseScore = 50;
+    
+    // 根据和谐度调整
+    if (harmony.level === '完全和谐') baseScore += 30;
+    else if (harmony.level === '高度和谐') baseScore += 20;
+    else if (harmony.level === '适度和谐') baseScore += 10;
+    else if (harmony.level === '需要调和') baseScore -= 10;
+    else baseScore -= 20;
+    
+    // 根据总数调整
+    if ([6, 8, 9].includes(totalNum)) baseScore += 15;
+    else if ([3, 7, 10].includes(totalNum)) baseScore += 10;
+    else if ([2, 4, 5].includes(totalNum)) baseScore += 5;
+    
+    // 确保在合理范围内
+    baseScore = Math.max(10, Math.min(90, baseScore));
+    
+    return {
+      percentage: baseScore,
+      level: baseScore >= 70 ? '高' : baseScore >= 50 ? '中' : '低',
+      description: this.getSuccessDescription(baseScore)
+    };
+  }
+  
+  // 获取成功描述
+  getSuccessDescription(score) {
+    if (score >= 80) return '成功概率很高，时机成熟，可以积极行动';
+    if (score >= 70) return '成功概率较高，条件良好，适合推进计划';
+    if (score >= 60) return '成功概率中等偏上，需要努力但前景乐观';
+    if (score >= 50) return '成功概率中等，需要谨慎规划和持续努力';
+    if (score >= 40) return '成功概率中等偏下，需要更多准备和耐心';
+    if (score >= 30) return '成功概率较低，建议重新评估或寻求帮助';
+    return '成功概率很低，建议暂缓行动或改变策略';
+  }
+  
+  // 从数字获取时机指导
+  getTimingGuidanceFromNumbers(totalNum) {
+    const timingAdvice = {
+      2: '宜静不宜动，适合准备和积累',
+      3: '宜动不宜静，适合开始新的行动',
+      4: '宜稳不宜急，适合稳步推进',
+      5: '宜变不宜守，适合灵活调整',
+      6: '宜和不宜争，适合协调合作',
+      7: '宜精不宜粗，适合精益求精',
+      8: '宜收不宜散，适合收获成果',
+      9: '宜满不宜缺，适合圆满完成',
+      10: '宜转不宜停，适合转换方向',
+      11: '宜新不宜旧，适合创新突破',
+      12: '宜顺不宜逆，适合顺应自然',
+      13: '宜化不宜固，适合转化升级',
+      14: '宜调不宜偏，适合平衡协调',
+      15: '宜融不宜分，适合和谐统一',
+      16: '宜谦不宜骄，适合谦逊谨慎'
+    };
+    
+    return timingAdvice[totalNum] || '需要根据具体情况判断时机';
+  }
+  
+  // 分析动爻数理
+   analyzeChangingLinesNumerology(changingLines, question) {
+     if (!changingLines || changingLines.length === 0) {
+       return {
+         count: 0,
+         analysis: '本次占卜无动爻，卦象稳定，按本卦分析即可',
+         guidance: '静卦主静，建议保持现状，耐心等待'
+       };
+     }
+     
+     const lineAnalysis = changingLines.map(line => {
+       return {
+         position: line,
+         meaning: this.getChangingLineMeaning(line),
+         influence: this.getChangingLineInfluence(line, question)
+       };
+     });
+     
+     return {
+       count: changingLines.length,
+       lines: lineAnalysis,
+       overall_influence: this.getOverallChangingInfluence(changingLines.length),
+       timing_advice: this.getChangingLinesTiming(changingLines)
+     };
+   }
+   
+   // 获取动爻含义
+   getChangingLineMeaning(linePosition) {
+     const meanings = {
+       1: '初爻动，事物刚开始变化，需要谨慎起步',
+       2: '二爻动，内部开始变化，需要调整心态',
+       3: '三爻动，人事关系变化，需要处理人际',
+       4: '四爻动，外部环境变化，需要适应调整',
+       5: '五爻动，领导层面变化，需要把握机会',
+       6: '六爻动，事物达到极点，需要准备转换'
+     };
+     
+     return meanings[linePosition] || '特殊位置，需要特别关注';
+   }
+   
+   // 获取动爻影响
+   getChangingLineInfluence(linePosition, question) {
+     const influences = {
+       1: `在您的问题"${question}"中，初爻动表示事情刚刚开始有变化的迹象，需要从基础做起`,
+       2: `在您的问题"${question}"中，二爻动表示内在想法开始改变，需要调整心态和方法`,
+       3: `在您的问题"${question}"中，三爻动表示人际关系出现变化，需要妥善处理`,
+       4: `在您的问题"${question}"中，四爻动表示外在环境发生变化，需要灵活应对`,
+       5: `在您的问题"${question}"中，五爻动表示高层或权威方面有变化，是重要机会`,
+       6: `在您的问题"${question}"中，六爻动表示事情达到顶点，需要准备新的开始`
+     };
+     
+     return influences[linePosition] || `在您的问题中，这个位置的变化需要特别关注`;
+   }
+   
+   // 获取整体动爻影响
+   getOverallChangingInfluence(count) {
+     if (count === 1) return '单爻动，变化明确，按动爻指导行动';
+     if (count === 2) return '两爻动，变化复杂，需要综合考虑';
+     if (count === 3) return '三爻动，变化剧烈，需要谨慎应对';
+     if (count >= 4) return '多爻动，大变在即，需要全面准备';
+     return '变化程度需要具体分析';
+   }
+   
+   // 获取动爻时机
+   getChangingLinesTiming(changingLines) {
+     const maxLine = Math.max(...changingLines);
+     const minLine = Math.min(...changingLines);
+     
+     if (maxLine <= 2) return '变化在初期，宜早不宜迟';
+     if (minLine >= 5) return '变化在后期，需要耐心等待';
+     return '变化正在进行中，把握当下时机';
+   }
+   
+   // 分析时空共振
+   analyzeTimeSpaceResonance(totalNum, currentTime, question) {
+     const hour = currentTime.getHours();
+     const month = currentTime.getMonth() + 1;
+     const day = currentTime.getDate();
+     
+     return {
+       time_energy: this.getTimeEnergy(hour),
+       seasonal_influence: this.getSeasonalInfluence(month),
+       daily_rhythm: this.getDailyRhythm(day),
+       number_time_harmony: this.analyzeNumberTimeHarmony(totalNum, hour),
+       optimal_action_time: this.getOptimalActionTime(totalNum, question)
+     };
+   }
+   
+   // 获取时间能量
+   getTimeEnergy(hour) {
+     if (hour >= 23 || hour < 1) return { energy: '子时能量', description: '阴极阳生，适合规划和思考' };
+     if (hour >= 1 && hour < 3) return { energy: '丑时能量', description: '沉静内敛，适合深度思考' };
+     if (hour >= 3 && hour < 5) return { energy: '寅时能量', description: '阳气初生，适合开始行动' };
+     if (hour >= 5 && hour < 7) return { energy: '卯时能量', description: '朝气蓬勃，适合新的开始' };
+     if (hour >= 7 && hour < 9) return { energy: '辰时能量', description: '阳气渐盛，适合推进计划' };
+     if (hour >= 9 && hour < 11) return { energy: '巳时能量', description: '阳气旺盛，适合积极行动' };
+     if (hour >= 11 && hour < 13) return { energy: '午时能量', description: '阳气最盛，适合重要决策' };
+     if (hour >= 13 && hour < 15) return { energy: '未时能量', description: '阳气渐收，适合整理总结' };
+     if (hour >= 15 && hour < 17) return { energy: '申时能量', description: '阳气转阴，适合反思调整' };
+     if (hour >= 17 && hour < 19) return { energy: '酉时能量', description: '阴气初生，适合收敛整理' };
+     if (hour >= 19 && hour < 21) return { energy: '戌时能量', description: '阴气渐盛，适合休息调养' };
+     return { energy: '亥时能量', description: '阴气最盛，适合静心养神' };
+   }
+   
+   // 获取季节影响
+   getSeasonalInfluence(month) {
+     if ([12, 1, 2].includes(month)) return { season: '冬季', influence: '收藏蛰伏，适合积累和规划' };
+     if ([3, 4, 5].includes(month)) return { season: '春季', influence: '生发向上，适合开始和创新' };
+     if ([6, 7, 8].includes(month)) return { season: '夏季', influence: '繁荣茂盛，适合发展和扩张' };
+     return { season: '秋季', influence: '收获成熟，适合总结和收获' };
+   }
+   
+   // 获取日期节律
+   getDailyRhythm(day) {
+     if (day <= 10) return { phase: '上旬', rhythm: '新月能量，适合新的开始' };
+     if (day <= 20) return { phase: '中旬', rhythm: '满月能量，适合推进发展' };
+     return { phase: '下旬', rhythm: '残月能量，适合总结收尾' };
+   }
+   
+   // 分析数字时间和谐
+   analyzeNumberTimeHarmony(totalNum, hour) {
+     const timeNum = hour % 8 + 1; // 将24小时转换为8个时段
+     const harmony = Math.abs(totalNum - timeNum);
+     
+     if (harmony <= 1) return { level: '高度和谐', description: '时机与数理高度契合，行动有利' };
+     if (harmony <= 3) return { level: '基本和谐', description: '时机与数理基本契合，可以行动' };
+     return { level: '需要调和', description: '时机与数理存在差异，需要耐心等待' };
+   }
+   
+   // 获取最佳行动时间
+   getOptimalActionTime(totalNum, question) {
+     const timeAdvice = {
+       2: `对于"${question}"，建议在子时或丑时（23:00-03:00）进行深度思考和规划`,
+       3: `对于"${question}"，建议在寅时或卯时（03:00-07:00）开始新的行动`,
+       4: `对于"${question}"，建议在辰时或巳时（07:00-11:00）稳步推进`,
+       5: `对于"${question}"，建议在午时或未时（11:00-15:00）灵活调整`,
+       6: `对于"${question}"，建议在申时或酉时（15:00-19:00）协调平衡`,
+       7: `对于"${question}"，建议在戌时或亥时（19:00-23:00）完善细节`,
+       8: `对于"${question}"，建议在午时（11:00-13:00）把握收获时机`
+     };
+     
+     return timeAdvice[totalNum] || `对于您的问题，建议根据具体情况选择合适的行动时机`;
+   }
+   
+   // 生成个性化数理指导
+   generatePersonalizedNumerologyGuidance(upperNum, lowerNum, totalNum, question) {
+     const guidance = [];
+     
+     // 基于上下卦数字的指导
+     guidance.push(`根据您的问题"${question}"，上卦数字${upperNum}提示您在外在表现上要${this.getActionGuidance(upperNum)}`);
+     guidance.push(`下卦数字${lowerNum}提示您在内在动机上要${this.getMotivationGuidance(lowerNum)}`);
+     
+     // 基于总数的综合指导
+     guidance.push(`总数${totalNum}的象数含义提醒您：${this.getComprehensiveGuidance(totalNum, question)}`);
+     
+     return guidance.join('；');
+   }
+   
+   // 获取行动指导
+   getActionGuidance(num) {
+     const guidance = {
+       1: '展现领导力，主动承担责任',
+       2: '保持和谐，善于沟通交流',
+       3: '发挥智慧，保持光明正大',
+       4: '积极行动，把握变化时机',
+       5: '温和渗透，循序渐进发展',
+       6: '谨慎应对，用智慧化解困难',
+       7: '适时停止，等待更好时机',
+       8: '包容承载，顺应自然发展'
+     };
+     
+     return guidance[num] || '根据具体情况灵活应对';
+   }
+   
+   // 获取动机指导
+   getMotivationGuidance(num) {
+     const guidance = {
+       1: '保持自强不息的精神',
+       2: '追求内心的喜悦和满足',
+       3: '坚持智慧和光明的追求',
+       4: '保持积极进取的心态',
+       5: '培养温和包容的品格',
+       6: '增强内在的智慧和定力',
+       7: '培养稳重和耐心的品质',
+       8: '发扬厚德载物的精神'
+     };
+     
+     return guidance[num] || '根据内心真实想法行动';
+   }
+   
+   // 获取综合指导
+   getComprehensiveGuidance(totalNum, question) {
+     const guidance = {
+       2: '在对立中寻求统一，耐心是关键',
+       3: '新的开始充满希望，积极行动',
+       4: '稳扎稳打，循序渐进最重要',
+       5: '变化中蕴含机遇，保持灵活',
+       6: '和谐平衡是成功的基础',
+       7: '精益求精，追求完美品质',
+       8: '收获的时机已到，把握机会',
+       9: '圆满在即，准备新的开始',
+       10: '转折关键时刻，需要智慧选择',
+       11: '突破创新是发展的必由之路',
+       12: '顺应自然规律，把握发展节奏',
+       13: '转化升级的机会来临',
+       14: '协调统一各方面关系',
+       15: '和谐发展，各方面都会顺利',
+       16: '居安思危，保持谦逊谨慎'
+     };
+     
+     return guidance[totalNum] || '需要根据具体情况综合判断';
+   }
+   
+   // 生成象征性解释
+   generateSymbolicInterpretation(upperNum, lowerNum, question) {
+     const upperTrigram = this.NUMBERS[upperNum]?.trigram || '乾';
+     const lowerTrigram = this.NUMBERS[lowerNum]?.trigram || '坤';
+     const upperData = this.TRIGRAMS[upperTrigram];
+     const lowerData = this.TRIGRAMS[lowerTrigram];
+     
+     return {
+       cosmic_symbolism: `在您的问题"${question}"中，上卦${upperTrigram}象征${upperData?.nature}，代表${upperData?.attribute}的力量；下卦${lowerTrigram}象征${lowerData?.nature}，代表${lowerData?.attribute}的品质`,
+       natural_analogy: `这就像${upperData?.nature}在上，${lowerData?.nature}在下的自然景象，提示您要${this.getNaturalGuidance(upperTrigram, lowerTrigram)}`,
+       family_dynamics: `从家庭关系看，上卦代表${upperData?.family}，下卦代表${lowerData?.family}，暗示${this.getFamilyGuidance(upperData?.family, lowerData?.family)}`,
+       body_correspondence: `从身体对应看，上卦对应${upperData?.body}，下卦对应${lowerData?.body}，提醒您要${this.getBodyGuidance(upperData?.body, lowerData?.body)}`
+     };
+   }
+   
+   // 获取自然指导
+   getNaturalGuidance(upper, lower) {
+     const combinations = {
+       '乾坤': '效法天地，刚柔并济',
+       '坤乾': '地承天载，厚德载物',
+       '震巽': '雷风相薄，动静结合',
+       '巽震': '风雷激荡，变化有序',
+       '坎离': '水火既济，阴阳调和',
+       '离坎': '火水未济，需要调节'
+     };
+     
+     return combinations[upper + lower] || `学习${upper}和${lower}的自然规律，顺应天道`;
+   }
+   
+   // 获取家庭指导
+   getFamilyGuidance(upperFamily, lowerFamily) {
+     if (upperFamily === '父' && lowerFamily === '母') return '父母和谐，家庭稳定';
+     if (upperFamily === '母' && lowerFamily === '父') return '母慈父严，教育有方';
+     if (upperFamily?.includes('男') && lowerFamily?.includes('女')) return '男女搭配，阴阳平衡';
+     return '家庭关系和谐，相互支持';
+   }
+   
+   // 获取身体指导
+   getBodyGuidance(upperBody, lowerBody) {
+     return `注意${upperBody}和${lowerBody}的健康，保持身心平衡`;
+   }
+   
+   // 生成实用数理应用
+   generatePracticalNumerologyApplication(totalNum, question) {
+     return {
+       decision_making: this.getDecisionMakingAdvice(totalNum, question),
+       timing_strategy: this.getTimingStrategy(totalNum),
+       resource_allocation: this.getResourceAllocation(totalNum),
+       risk_management: this.getRiskManagement(totalNum),
+       success_factors: this.getSuccessFactors(totalNum)
+     };
+   }
+   
+   // 获取决策建议
+   getDecisionMakingAdvice(totalNum, question) {
+     const advice = {
+       2: `对于"${question}"，建议采用二元思维，权衡利弊后做决定`,
+       3: `对于"${question}"，建议采用创新思维，勇于尝试新方法`,
+       4: `对于"${question}"，建议采用稳健思维，循序渐进做决定`,
+       5: `对于"${question}"，建议采用灵活思维，随机应变做调整`,
+       6: `对于"${question}"，建议采用平衡思维，协调各方利益`,
+       7: `对于"${question}"，建议采用精细思维，注重细节完善`,
+       8: `对于"${question}"，建议采用收获思维，把握成果机会`
+     };
+     
+     return advice[totalNum] || `对于您的问题，建议综合考虑各种因素后做决定`;
+   }
+   
+   // 获取时机策略
+   getTimingStrategy(totalNum) {
+     const strategies = {
+       2: '等待时机成熟，不宜急于求成',
+       3: '抓住初期机会，及早布局',
+       4: '稳步推进，按计划执行',
+       5: '灵活调整时机，随时准备变化',
+       6: '把握平衡时机，协调推进',
+       7: '等待完善时机，精益求精',
+       8: '抓住收获时机，及时行动'
+     };
+     
+     return strategies[totalNum] || '根据具体情况把握时机';
+   }
+   
+   // 获取资源配置
+   getResourceAllocation(totalNum) {
+     const allocations = {
+       2: '资源分配要平衡，避免偏重一方',
+       3: '资源投入要积极，支持新发展',
+       4: '资源使用要稳健，确保可持续',
+       5: '资源配置要灵活，随时调整',
+       6: '资源分配要和谐，各方兼顾',
+       7: '资源使用要精细，提高效率',
+       8: '资源投入要充足，确保收获'
+     };
+     
+     return allocations[totalNum] || '合理配置资源，提高使用效率';
+   }
+   
+   // 获取风险管理
+   getRiskManagement(totalNum) {
+     const management = {
+       2: '风险控制要平衡，不可偏废',
+       3: '新项目风险要评估，谨慎创新',
+       4: '稳健发展，控制系统性风险',
+       5: '变化中的风险要及时识别',
+       6: '平衡各种风险，综合管理',
+       7: '精细化风险管理，防微杜渐',
+       8: '收获期要防范过度乐观风险'
+     };
+     
+     return management[totalNum] || '全面识别和管理各种风险';
+   }
+   
+   // 获取成功要素
+   getSuccessFactors(totalNum) {
+     const factors = {
+       2: '成功关键：平衡协调，耐心等待',
+       3: '成功关键：创新突破，积极行动',
+       4: '成功关键：稳扎稳打，持续努力',
+       5: '成功关键：灵活应变，把握变化',
+       6: '成功关键：和谐发展，平衡各方',
+       7: '成功关键：精益求精，追求完美',
+       8: '成功关键：把握时机，及时收获'
+     };
+     
+     return factors[totalNum] || '成功需要综合多种因素';
+   }
+   
+   // 添加更多专业分析方法
   
   // 获取起卦方法名称
   getMethodName(method) {

@@ -312,14 +312,24 @@ class ZiweiAnalyzer {
     // 排布十四主星
     const starPositions = this.arrangeMainStars(ziweiPosition, mingGongIndex);
     
+    // 安排六吉星
+    const luckyStarPositions = this.arrangeLuckyStars(birthDate, mingGongIndex);
+    
+    // 安排六煞星
+    const unluckyStarPositions = this.arrangeUnluckyStars(birthDate, mingGongIndex);
+    
     // 计算十二宫位
-    const twelvePalaces = this.calculateTwelvePalaces(mingGongIndex, starPositions);
+    const twelvePalaces = this.calculateTwelvePalaces(mingGongIndex, starPositions, luckyStarPositions, unluckyStarPositions);
     
     // 计算四化
     const siHua = this.calculateSiHua(year);
     
+    // 计算五行局（为大限计算提供参数）
+    const baziInfo = this.calculatePreciseBazi(birthDateStr, birthTimeStr);
+    const wuxingJu = this.calculateWuxingJu(baziInfo);
+    
     // 计算大限
-    const majorPeriods = this.calculateMajorPeriods(mingGongIndex, gender);
+    const majorPeriods = this.calculateMajorPeriods(mingGongIndex, gender, wuxingJu, year);
     
     return {
       mingGong: mingGong,
@@ -327,7 +337,7 @@ class ZiweiAnalyzer {
       twelvePalaces: twelvePalaces,
       siHua: siHua,
       majorPeriods: majorPeriods,
-      birthChart: this.generateBirthChart(twelvePalaces, starPositions)
+      birthChart: this.generateCompleteChart(twelvePalaces, starPositions, luckyStarPositions, unluckyStarPositions)
     };
   }
 
@@ -888,21 +898,194 @@ class ZiweiAnalyzer {
     };
   }
 
-  // 生成个性分析
+  // 生成深度个性分析
   generatePersonalityAnalysis(personName, personGender, mingGong, mainStar) {
     const mainStars = mingGong.main_stars;
     const luckyStars = mingGong.lucky_stars;
     const unluckyStars = mingGong.unlucky_stars;
+    const position = mingGong.position;
     
     return {
-      overview: `${personName}的命宫位于${mingGong.position}，主星为${mainStars.join('、') || '无主星'}，${this.getStarKeyInfluence(mainStar)}`,
-      core_traits: this.analyzePersonalityTraits(mainStars, luckyStars, unluckyStars),
-      strengths: this.analyzePersonalityStrengths(mainStars, luckyStars),
-      challenges: this.analyzePersonalityChallenges(mainStars, unluckyStars),
-      development_potential: this.analyzePersonalityPotential(mainStars, luckyStars, personGender),
-      life_attitude: this.analyzeLifeAttitude(mainStar, personGender)
+      overview: this.generatePersonalityOverview(personName, position, mainStars, mainStar, personGender),
+      core_traits: this.analyzeDeepPersonalityTraits(mainStars, luckyStars, unluckyStars, personName, personGender),
+      strengths: this.analyzePersonalizedStrengths(mainStars, luckyStars, personName, personGender),
+      challenges: this.analyzePersonalizedChallenges(mainStars, unluckyStars, personName, personGender),
+      development_potential: this.analyzePersonalizedPotential(mainStars, luckyStars, personGender, personName),
+      life_attitude: this.analyzePersonalizedLifeAttitude(mainStar, personGender, personName),
+      personality_evolution: this.analyzePersonalityEvolution(mainStars, personName, personGender),
+      social_interaction: this.analyzeSocialInteractionStyle(mainStars, luckyStars, personName),
+      decision_making: this.analyzeDecisionMakingStyle(mainStars, personName, personGender)
     };
   }
+  
+  // 生成个性化概述
+  generatePersonalityOverview(personName, position, mainStars, mainStar, personGender) {
+    const starCombination = mainStars.join('、') || '无主星';
+    const positionInfluence = this.getPositionPersonalityInfluence(position);
+    const genderModifier = personGender === '男性' ? '展现出男性的阳刚特质' : '体现了女性的阴柔魅力';
+    
+    return `${personName}，您的命宫坐落在${position}，主星为${starCombination}。${positionInfluence}这样的星曜组合使您${this.getStarCombinationPersonality(mainStars, personName)}，同时${genderModifier}。您的人生格局${this.getLifePatternDescription(mainStar, personName)}。`;
+  }
+  
+  // 获取宫位对性格的影响
+  getPositionPersonalityInfluence(position) {
+    const positionInfluences = {
+      '子': '您天生具有智慧和灵活性，思维敏捷，适应能力强。',
+      '丑': '您性格稳重踏实，做事有条不紊，具有很强的耐心和毅力。',
+      '寅': '您充满活力和创造力，勇于开拓，具有领导潜质。',
+      '卯': '您温和善良，具有艺术天赋，人际关系和谐。',
+      '辰': '您聪明好学，具有很强的分析能力和判断力。',
+      '巳': '您热情奔放，具有很强的表现力和感染力。',
+      '午': '您光明磊落，具有正义感，喜欢帮助他人。',
+      '未': '您细腻敏感，具有很强的直觉力和同情心。',
+      '申': '您机智灵活，具有很强的变通能力和商业头脑。',
+      '酉': '您追求完美，注重细节，具有很强的审美能力。',
+      '戌': '您忠诚可靠，具有很强的责任感和正义感。',
+      '亥': '您包容性强，具有很强的想象力和创造力。'
+    };
+    
+    return positionInfluences[position] || '您具有独特的性格特质。';
+  }
+  
+  // 获取星曜组合的性格特征
+  getStarCombinationPersonality(mainStars, personName) {
+    if (mainStars.length === 0) {
+      return '虽然命宫无主星，但这反而赋予了您更大的可塑性和发展空间';
+    }
+    
+    if (mainStars.length === 1) {
+      const star = mainStars[0];
+      const singleStarPersonality = {
+        '紫微': '具有天生的领导气质和贵族风范，喜欢受人尊敬，有很强的自尊心',
+        '天机': '思维敏捷，善于策划，具有很强的分析能力和应变能力',
+        '太阳': '光明磊落，热情开朗，具有很强的正义感和表现欲',
+        '武曲': '意志坚强，执行力强，具有很强的赚钱能力和理财观念',
+        '天同': '性格温和，人缘好，具有很强的亲和力和包容心',
+        '廉贞': '感情丰富，有艺术天分，但情绪波动较大',
+        '天府': '稳重可靠，善于积累，注重安全感',
+        '太阴': '细腻敏感，直觉力强，善于照顾他人',
+        '贪狼': '多才多艺，善于交际，欲望强烈，喜欢新鲜事物',
+        '巨门': '口才好，分析力强，善于发现问题',
+        '天相': '忠诚可靠，协调能力强，善于辅助他人',
+        '天梁': '正直善良，有长者风范，具有很强的责任感',
+        '七杀': '冲劲十足，勇于开拓，不怕困难',
+        '破军': '喜欢变化，勇于创新，不满足现状'
+      };
+      
+      return singleStarPersonality[star] || '具有独特的个性特征';
+    }
+    
+    // 双星或多星组合的特殊分析
+    const starSet = new Set(mainStars);
+    
+    if (starSet.has('紫微') && starSet.has('天府')) {
+      return '集领导才能与稳重品格于一身，既有帝王之气又有宰相之才';
+    }
+    if (starSet.has('紫微') && starSet.has('贪狼')) {
+      return '既有领导欲望又富有才艺，能在多个领域展现才华';
+    }
+    if (starSet.has('太阳') && starSet.has('太阴')) {
+      return '阴阳调和，既有阳光的热情又有月亮的温柔，性格平衡';
+    }
+    if (starSet.has('武曲') && starSet.has('贪狼')) {
+      return '既有赚钱能力又有多元才华，适合多方面发展';
+    }
+    
+    return `融合了${mainStars.join('、')}的特质，形成了独特而复合的性格特征`;
+   }
+   
+   // 深度性格特质分析
+   analyzeDeepPersonalityTraits(mainStars, luckyStars, unluckyStars, personName, personGender) {
+     let traits = [];
+     
+     // 基于主星的核心特质
+     mainStars.forEach(star => {
+       const starTraits = this.getStarCoreTraits(star, personName, personGender);
+       traits.push(starTraits);
+     });
+     
+     // 吉星的正面影响
+     if (luckyStars.length > 0) {
+       const luckyInfluence = this.getLuckyStarsInfluence(luckyStars, personName);
+       traits.push(luckyInfluence);
+     }
+     
+     // 煞星的挑战与成长
+     if (unluckyStars.length > 0) {
+       const challengeGrowth = this.getUnluckyStarsGrowth(unluckyStars, personName);
+       traits.push(challengeGrowth);
+     }
+     
+     return traits.join('；');
+   }
+   
+   // 获取主星核心特质
+   getStarCoreTraits(star, personName, personGender) {
+     const genderPrefix = personGender === '男性' ? '作为男性' : '作为女性';
+     
+     const starTraits = {
+       '紫微': `${personName}，您具有天生的领导魅力和高贵气质。${genderPrefix}，您展现出强烈的责任感和使命感，喜欢在团队中担任核心角色，但有时可能过于在意他人的看法`,
+       '天机': `${personName}，您的思维极其敏捷，善于洞察事物的本质。${genderPrefix}，您具有很强的策划能力和应变能力，但有时可能因为想得太多而错失行动的最佳时机`,
+       '太阳': `${personName}，您如太阳般光明磊落，具有强烈的正义感。${genderPrefix}，您天生具有感染他人的能力，喜欢帮助他人，但要注意不要过度消耗自己的能量`,
+       '武曲': `${personName}，您意志坚强，执行力超群。${genderPrefix}，您具有很强的目标导向性和实现能力，在财务管理方面有天赋，但要学会在坚持中保持灵活`,
+       '天同': `${personName}，您性格温和，具有很强的亲和力。${genderPrefix}，您善于营造和谐的氛围，人际关系良好，但有时可能因为过于随和而缺乏主见`,
+       '廉贞': `${personName}，您感情丰富，具有艺术天赋。${genderPrefix}，您追求美好的事物，有很强的审美能力，但情绪波动较大，需要学会情绪管理`,
+       '天府': `${personName}，您稳重可靠，是他人的依靠。${genderPrefix}，您善于积累和管理，注重安全感，具有很强的组织能力，但有时可能过于保守`,
+       '太阴': `${personName}，您细腻敏感，直觉力强。${genderPrefix}，您善于照顾他人，具有很强的同理心，但有时可能过于敏感，容易受到情绪影响`,
+       '贪狼': `${personName}，您多才多艺，充满魅力。${genderPrefix}，您善于交际，适应能力强，喜欢尝试新事物，但要注意专注力的培养`,
+       '巨门': `${personName}，您口才出众，分析能力强。${genderPrefix}，您善于发现问题的关键，具有很强的研究精神，但要注意表达方式的温和`,
+       '天相': `${personName}，您忠诚可靠，协调能力强。${genderPrefix}，您善于辅助他人，具有很强的服务精神，但要学会在帮助他人的同时也要为自己考虑`,
+       '天梁': `${personName}，您正直善良，具有长者风范。${genderPrefix}，您有很强的责任感和正义感，喜欢帮助弱者，但要避免过于严肃`,
+       '七杀': `${personName}，您冲劲十足，勇于开拓。${genderPrefix}，您不怕困难，具有很强的开拓精神，但要学会在冲劲中保持理性`,
+       '破军': `${personName}，您勇于创新，不满足现状。${genderPrefix}，您具有很强的变革能力，善于突破，但要注意在变化中保持稳定的核心价值`
+     };
+     
+     return starTraits[star] || `${personName}，您具有${star}的独特特质`;
+   }
+   
+   // 获取吉星影响
+   getLuckyStarsInfluence(luckyStars, personName) {
+     const influences = [];
+     
+     luckyStars.forEach(star => {
+       const starInfluence = {
+         '文昌': `${personName}，文昌星的加持使您文思敏捷，学习能力强，在文化艺术方面有特殊天赋`,
+         '文曲': `${personName}，文曲星的影响让您口才出众，表达能力强，善于与人沟通交流`,
+         '左辅': `${personName}，左辅星的帮助使您容易得到贵人相助，在团队中能发挥重要作用`,
+         '右弼': `${personName}，右弼星的支持让您具有很强的协调能力，善于处理人际关系`,
+         '天魁': `${personName}，天魁星的庇佑使您容易遇到年长的贵人，在关键时刻得到指导`,
+         '天钺': `${personName}，天钺星的照耀让您具有很强的直觉力，能够把握机会`
+       };
+       
+       if (starInfluence[star]) {
+         influences.push(starInfluence[star]);
+       }
+     });
+     
+     return influences.join('；');
+   }
+   
+   // 获取煞星成长机会
+   getUnluckyStarsGrowth(unluckyStars, personName) {
+     const growthOpportunities = [];
+     
+     unluckyStars.forEach(star => {
+       const starGrowth = {
+         '擎羊': `${personName}，擎羊星虽然带来冲动，但也赋予了您勇往直前的勇气，学会控制冲动就能化阻力为动力`,
+         '陀罗': `${personName}，陀罗星可能带来拖延，但也培养了您的耐心和坚持，学会把握节奏就能稳步前进`,
+         '火星': `${personName}，火星虽然容易急躁，但也给了您快速行动的能力，学会冷静思考就能事半功倍`,
+         '铃星': `${personName}，铃星可能带来波动，但也增强了您的敏感度，学会情绪管理就能化挑战为优势`,
+         '地空': `${personName}，地空星虽然可能带来空想，但也赋予了您丰富的想象力，脚踏实地就能实现理想`,
+         '地劫': `${personName}，地劫星可能带来变化，但也培养了您的适应能力，学会稳中求变就能化险为夷`
+       };
+       
+       if (starGrowth[star]) {
+         growthOpportunities.push(starGrowth[star]);
+       }
+     });
+     
+     return growthOpportunities.join('；');
+   }
 
   // 生成事业分析
   generateCareerAnalysis(personName, careerPalace, mingGong, majorPeriods) {
@@ -1737,6 +1920,328 @@ class ZiweiAnalyzer {
       10: '深秋季节，宜内省修养', 11: '初冬时节，宜蓄势待发', 12: '年终岁末，宜规划未来'
     };
     return seasons[currentMonth] || '顺应自然，把握节奏';
+  }
+  
+  // 分析个性化优势
+  analyzePersonalizedStrengths(mainStars, luckyStars, personName, personGender) {
+    const strengths = [];
+    
+    // 基于主星的优势
+    mainStars.forEach(star => {
+      const starStrengths = this.getStarStrengths(star, personName, personGender);
+      if (starStrengths) strengths.push(starStrengths);
+    });
+    
+    // 基于吉星的加持
+    if (luckyStars.length > 0) {
+      const luckyBonus = this.getLuckyStarsBonus(luckyStars, personName);
+      if (luckyBonus) strengths.push(luckyBonus);
+    }
+    
+    return strengths.join('；') || `${personName}，您具有独特的个人优势`;
+  }
+  
+  // 获取主星优势
+  getStarStrengths(star, personName, personGender) {
+    const genderPrefix = personGender === '男性' ? '作为男性' : '作为女性';
+    
+    const starStrengths = {
+      '紫微': `${personName}，您具有天生的领导魅力和组织能力。${genderPrefix}，您能够在团队中发挥核心作用，具有很强的责任感和使命感`,
+      '天机': `${personName}，您思维敏捷，善于策划和分析。${genderPrefix}，您具有很强的洞察力和应变能力，能够在复杂情况下找到最佳解决方案`,
+      '太阳': `${personName}，您光明磊落，具有很强的正义感。${genderPrefix}，您天生具有感染他人的能力，能够成为他人的榜样和引导者`,
+      '武曲': `${personName}，您意志坚强，执行力超群。${genderPrefix}，您具有很强的目标导向性和实现能力，在财务管理方面有天赋`,
+      '天同': `${personName}，您性格温和，人际关系和谐。${genderPrefix}，您具有很强的亲和力和包容心，能够营造和谐的氛围`,
+      '廉贞': `${personName}，您感情丰富，具有艺术天赋。${genderPrefix}，您追求美好的事物，有很强的审美能力和创造力`,
+      '天府': `${personName}，您稳重可靠，善于积累和管理。${genderPrefix}，您注重安全感，具有很强的组织能力和理财天赋`,
+      '太阴': `${personName}，您细腻敏感，直觉力强。${genderPrefix}，您善于照顾他人，具有很强的同理心和洞察力`,
+      '贪狼': `${personName}，您多才多艺，充满魅力。${genderPrefix}，您善于交际，适应能力强，具有很强的学习能力`,
+      '巨门': `${personName}，您口才出众，分析能力强。${genderPrefix}，您善于发现问题的关键，具有很强的研究精神和专业能力`,
+      '天相': `${personName}，您忠诚可靠，协调能力强。${genderPrefix}，您善于辅助他人，具有很强的服务精神和团队合作能力`,
+      '天梁': `${personName}，您正直善良，具有长者风范。${genderPrefix}，您有很强的责任感和正义感，能够给他人提供指导和帮助`,
+      '七杀': `${personName}，您冲劲十足，勇于开拓。${genderPrefix}，您不怕困难，具有很强的开拓精神和执行力`,
+      '破军': `${personName}，您勇于创新，不满足现状。${genderPrefix}，您具有很强的变革能力和突破精神，善于在变化中寻找机会`
+    };
+    
+    return starStrengths[star];
+  }
+  
+  // 获取吉星加持
+  getLuckyStarsBonus(luckyStars, personName) {
+    const bonuses = [];
+    
+    luckyStars.forEach(star => {
+      const starBonus = {
+        '文昌': `${personName}，文昌星的加持使您在学习和文化方面有特殊天赋，表达能力强`,
+        '文曲': `${personName}，文曲星的影响让您口才出众，善于沟通交流，具有艺术气质`,
+        '左辅': `${personName}，左辅星的帮助使您容易得到贵人相助，在团队中能发挥重要作用`,
+        '右弼': `${personName}，右弼星的支持让您具有很强的协调能力，善于处理人际关系`,
+        '天魁': `${personName}，天魁星的庇佑使您容易遇到年长的贵人，在关键时刻得到指导`,
+        '天钺': `${personName}，天钺星的照耀让您具有很强的直觉力，能够把握机会`
+      };
+      
+      if (starBonus[star]) {
+        bonuses.push(starBonus[star]);
+      }
+    });
+    
+    return bonuses.join('；');
+  }
+  
+  // 分析个性化挑战
+  analyzePersonalizedChallenges(mainStars, unluckyStars, personName, personGender) {
+    const challenges = [];
+    
+    // 基于主星的挑战
+    mainStars.forEach(star => {
+      const starChallenges = this.getStarChallenges(star, personName, personGender);
+      if (starChallenges) challenges.push(starChallenges);
+    });
+    
+    // 基于煞星的挑战
+    if (unluckyStars.length > 0) {
+      const unluckyChallenge = this.getUnluckyStarsChallenge(unluckyStars, personName);
+      if (unluckyChallenge) challenges.push(unluckyChallenge);
+    }
+    
+    return challenges.join('；') || `${personName}，您需要注意平衡发展，避免过度偏向某一方面`;
+  }
+  
+  // 获取主星挑战
+  getStarChallenges(star, personName, personGender) {
+    const genderPrefix = personGender === '男性' ? '作为男性' : '作为女性';
+    
+    const starChallenges = {
+      '紫微': `${personName}，您需要注意不要过于自我中心。${genderPrefix}，要学会倾听他人意见，避免过于强势`,
+      '天机': `${personName}，您需要注意不要想得太多而缺乏行动。${genderPrefix}，要学会在思考和行动之间找到平衡`,
+      '太阳': `${personName}，您需要注意不要过度消耗自己的能量。${genderPrefix}，要学会适度休息，避免过度付出`,
+      '武曲': `${personName}，您需要注意不要过于注重物质而忽视情感。${genderPrefix}，要学会在坚持中保持灵活`,
+      '天同': `${personName}，您需要注意不要过于随和而缺乏主见。${genderPrefix}，要学会在适当时候坚持自己的立场`,
+      '廉贞': `${personName}，您需要注意情绪管理，避免过度敏感。${genderPrefix}，要学会在感性和理性之间找到平衡`,
+      '天府': `${personName}，您需要注意不要过于保守而错失机会。${genderPrefix}，要学会在稳重中保持开放`,
+      '太阴': `${personName}，您需要注意不要过于敏感而影响判断。${genderPrefix}，要学会保护自己的情绪边界`,
+      '贪狼': `${personName}，您需要注意专注力的培养，避免三心二意。${genderPrefix}，要学会在多元发展中保持重点`,
+      '巨门': `${personName}，您需要注意表达方式的温和，避免过于直接。${genderPrefix}，要学会在坚持真理的同时照顾他人感受`,
+      '天相': `${personName}，您需要注意在帮助他人的同时也要为自己考虑。${genderPrefix}，要学会适当拒绝不合理要求`,
+      '天梁': `${personName}，您需要注意不要过于严肃而缺乏灵活性。${genderPrefix}，要学会在原则性和灵活性之间找到平衡`,
+      '七杀': `${personName}，您需要注意控制冲动，学会深思熟虑。${genderPrefix}，要学会在冲劲中保持理性`,
+      '破军': `${personName}，您需要注意在变化中保持稳定的核心价值。${genderPrefix}，要学会在创新中保持连续性`
+    };
+    
+    return starChallenges[star];
+  }
+  
+  // 获取煞星挑战
+  getUnluckyStarsChallenge(unluckyStars, personName) {
+    const challenges = [];
+    
+    unluckyStars.forEach(star => {
+      const starChallenge = {
+        '擎羊': `${personName}，擎羊星提醒您要控制冲动，学会耐心等待合适的时机`,
+        '陀罗': `${personName}，陀罗星提醒您要克服拖延，提高行动效率`,
+        '火星': `${personName}，火星提醒您要控制急躁情绪，学会冷静思考`,
+        '铃星': `${personName}，铃星提醒您要稳定情绪，避免过度波动`,
+        '地空': `${personName}，地空星提醒您要脚踏实地，避免好高骛远`,
+        '地劫': `${personName}，地劫星提醒您要谨慎理财，避免不必要的损失`
+      };
+      
+      if (starChallenge[star]) {
+        challenges.push(starChallenge[star]);
+      }
+    });
+    
+    return challenges.join('；');
+  }
+  
+  // 分析个性化潜力
+  analyzePersonalizedPotential(mainStars, luckyStars, personGender, personName) {
+    const potentials = [];
+    
+    // 基于主星的潜力
+    mainStars.forEach(star => {
+      const starPotential = this.getStarPotential(star, personName, personGender);
+      if (starPotential) potentials.push(starPotential);
+    });
+    
+    // 基于吉星的潜力加成
+    if (luckyStars.length > 0) {
+      const luckyPotential = this.getLuckyStarsPotential(luckyStars, personName);
+      if (luckyPotential) potentials.push(luckyPotential);
+    }
+    
+    return potentials.join('；') || `${personName}，您具有无限的发展潜力，关键在于如何发掘和运用`;
+  }
+  
+  // 获取主星潜力
+  getStarPotential(star, personName, personGender) {
+    const genderPrefix = personGender === '男性' ? '作为男性' : '作为女性';
+    
+    const starPotentials = {
+      '紫微': `${personName}，您有成为杰出领导者的潜力。${genderPrefix}，您可以在管理、政治或大型组织中发挥重要作用`,
+      '天机': `${personName}，您有成为优秀策划师的潜力。${genderPrefix}，您可以在咨询、策划或智力密集型行业中获得成功`,
+      '太阳': `${personName}，您有成为公众人物的潜力。${genderPrefix}，您可以在教育、传媒或公共服务领域发光发热`,
+      '武曲': `${personName}，您有成为财务专家的潜力。${genderPrefix}，您可以在金融、投资或实业领域取得卓越成就`,
+      '天同': `${personName}，您有成为和谐使者的潜力。${genderPrefix}，您可以在服务、协调或人际关系领域发挥特长`,
+      '廉贞': `${personName}，您有成为艺术家的潜力。${genderPrefix}，您可以在艺术、设计或创意产业中展现才华`,
+      '天府': `${personName}，您有成为管理专家的潜力。${genderPrefix}，您可以在行政、管理或组织运营方面取得成功`,
+      '太阴': `${personName}，您有成为心理专家的潜力。${genderPrefix}，您可以在心理咨询、教育或照护行业中发挥专长`,
+      '贪狼': `${personName}，您有成为多元发展者的潜力。${genderPrefix}，您可以在多个领域同时发展，成为复合型人才`,
+      '巨门': `${personName}，您有成为专业分析师的潜力。${genderPrefix}，您可以在研究、分析或专业咨询领域获得认可`,
+      '天相': `${personName}，您有成为优秀助手的潜力。${genderPrefix}，您可以在辅助、支持或协调性工作中发挥重要作用`,
+      '天梁': `${personName}，您有成为人生导师的潜力。${genderPrefix}，您可以在教育、指导或公益事业中贡献力量`,
+      '七杀': `${personName}，您有成为开拓者的潜力。${genderPrefix}，您可以在创业、开拓或竞争性行业中取得突破`,
+      '破军': `${personName}，您有成为变革者的潜力。${genderPrefix}，您可以在创新、改革或新兴行业中引领潮流`
+    };
+    
+    return starPotentials[star];
+  }
+  
+  // 获取吉星潜力加成
+  getLuckyStarsPotential(luckyStars, personName) {
+    const potentials = [];
+    
+    luckyStars.forEach(star => {
+      const starPotential = {
+        '文昌': `${personName}，文昌星增强了您的学习和表达潜力，有望在文化教育领域取得成就`,
+        '文曲': `${personName}，文曲星提升了您的沟通和艺术潜力，有望在创意表达方面获得成功`,
+        '左辅': `${personName}，左辅星增强了您的团队合作潜力，有望在协作性工作中发挥重要作用`,
+        '右弼': `${personName}，右弼星提升了您的协调管理潜力，有望在组织管理方面取得成就`,
+        '天魁': `${personName}，天魁星增强了您获得贵人帮助的潜力，有望在关键时刻得到重要支持`,
+        '天钺': `${personName}，天钺星提升了您的直觉判断潜力，有望在需要洞察力的领域获得成功`
+      };
+      
+      if (starPotential[star]) {
+        potentials.push(starPotential[star]);
+      }
+    });
+    
+    return potentials.join('；');
+  }
+  
+  // 分析个性化人生态度
+  analyzePersonalizedLifeAttitude(mainStar, personGender, personName) {
+    const genderPrefix = personGender === '男性' ? '作为男性' : '作为女性';
+    
+    const lifeAttitudes = {
+      '紫微': `${personName}，您的人生态度是追求卓越和领导地位。${genderPrefix}，您相信通过努力和责任感可以实现人生价值，喜欢在团队中发挥核心作用`,
+      '天机': `${personName}，您的人生态度是追求智慧和变化。${genderPrefix}，您相信知识就是力量，喜欢通过学习和思考来解决问题`,
+      '太阳': `${personName}，您的人生态度是追求光明和正义。${genderPrefix}，您相信正直和热情可以感化他人，喜欢为他人带来希望和温暖`,
+      '武曲': `${personName}，您的人生态度是追求实际和成果。${genderPrefix}，您相信通过努力工作可以获得物质成功，注重实际效果和结果`,
+      '天同': `${personName}，您的人生态度是追求和谐和快乐。${genderPrefix}，您相信知足常乐，喜欢在平和的环境中享受生活`,
+      '廉贞': `${personName}，您的人生态度是追求美好和完美。${genderPrefix}，您相信生活应该充满美感，注重精神层面的满足`,
+      '天府': `${personName}，您的人生态度是追求稳定和积累。${genderPrefix}，您相信稳扎稳打可以获得长久成功，注重安全感和保障`,
+      '太阴': `${personName}，您的人生态度是追求内在和深度。${genderPrefix}，您相信内心的丰富比外在的繁华更重要，注重精神世界的建设`,
+      '贪狼': `${personName}，您的人生态度是追求多元和体验。${genderPrefix}，您相信人生应该丰富多彩，喜欢尝试不同的可能性`,
+      '巨门': `${personName}，您的人生态度是追求真理和深度。${genderPrefix}，您相信通过深入研究可以发现真相，注重专业性和权威性`,
+      '天相': `${personName}，您的人生态度是追求服务和奉献。${genderPrefix}，您相信帮助他人就是帮助自己，喜欢在服务中体现价值`,
+      '天梁': `${personName}，您的人生态度是追求正义和责任。${genderPrefix}，您相信每个人都有社会责任，喜欢为弱者发声和提供帮助`,
+      '七杀': `${personName}，您的人生态度是追求挑战和突破。${genderPrefix}，您相信只有在困难中才能成长，喜欢迎接各种挑战`,
+      '破军': `${personName}，您的人生态度是追求变革和创新。${genderPrefix}，您相信变化是进步的动力，喜欢在变化中寻找机会`
+    };
+    
+    return lifeAttitudes[mainStar] || `${personName}，您有着独特的人生态度和价值观，这是您最宝贵的财富`;
+  }
+  
+  // 分析性格演化
+  analyzePersonalityEvolution(mainStars, personName, personGender) {
+    const evolution = `${personName}，根据您的主星${mainStars.join('、')}，您的性格会随着人生阶段的变化而不断演化。青年时期您可能更多展现星曜的基本特质，中年时期会逐渐整合各种经验形成成熟的个性，晚年时期则会达到性格的升华和圆融。${personGender === '男性' ? '作为男性，您的性格演化会更多体现在责任感和成就感的提升上' : '作为女性，您的性格演化会更多体现在智慧和包容性的增长上'}。`;
+    
+    return evolution;
+  }
+  
+  // 分析社交互动风格
+  analyzeSocialInteractionStyle(mainStars, luckyStars, personName) {
+    const socialStyles = [];
+    
+    mainStars.forEach(star => {
+      const starStyle = this.getStarSocialStyle(star);
+      if (starStyle) socialStyles.push(starStyle);
+    });
+    
+    const baseStyle = socialStyles.join('，同时');
+    const luckyBonus = luckyStars.length > 0 ? '在吉星的加持下，您的人际关系会更加和谐顺利' : '';
+    
+    return `${personName}，您的社交风格${baseStyle}。${luckyBonus}`;
+  }
+  
+  // 获取主星社交风格
+  getStarSocialStyle(star) {
+    const socialStyles = {
+      '紫微': '倾向于在社交中担任领导角色，喜欢被人尊重和仰慕',
+      '天机': '善于在社交中提供智慧建议，喜欢与人分享见解',
+      '太阳': '在社交中充满热情和正能量，容易成为人群的焦点',
+      '武曲': '在社交中比较直接务实，注重实际利益和结果',
+      '天同': '在社交中温和友善，善于营造和谐的氛围',
+      '廉贞': '在社交中注重品味和美感，喜欢与有艺术气质的人交往',
+      '天府': '在社交中稳重可靠，容易获得他人的信任',
+      '太阴': '在社交中比较内敛，但善于倾听和理解他人',
+      '贪狼': '在社交中活跃多变，善于与不同类型的人交往',
+      '巨门': '在社交中善于分析和表达，但有时过于直接',
+      '天相': '在社交中善于协调和服务，容易成为团队的润滑剂',
+      '天梁': '在社交中具有长者风范，善于给他人提供指导',
+      '七杀': '在社交中比较直接有力，喜欢与有挑战性的人交往',
+      '破军': '在社交中喜欢新鲜和变化，容易与创新型人才产生共鸣'
+    };
+    
+    return socialStyles[star];
+  }
+  
+  // 分析决策风格
+  analyzeDecisionMakingStyle(mainStars, personName, personGender) {
+    const decisionStyles = [];
+    
+    mainStars.forEach(star => {
+      const starDecisionStyle = this.getStarDecisionStyle(star);
+      if (starDecisionStyle) decisionStyles.push(starDecisionStyle);
+    });
+    
+    const baseStyle = decisionStyles.join('，并且');
+    const genderModifier = personGender === '男性' ? '作为男性，您在决策时会更多考虑责任和成就' : '作为女性，您在决策时会更多考虑和谐和感受';
+    
+    return `${personName}，您的决策风格${baseStyle}。${genderModifier}。`;
+  }
+  
+  // 获取主星决策风格
+  getStarDecisionStyle(star) {
+    const decisionStyles = {
+      '紫微': '倾向于从全局角度考虑问题，注重决策的权威性和影响力',
+      '天机': '善于分析各种可能性，但有时会因为想得太多而延迟决策',
+      '太阳': '倾向于做出光明正大的决策，注重决策的道德性和正义性',
+      '武曲': '注重决策的实际效果和经济效益，倾向于快速果断的决策',
+      '天同': '倾向于做出让大家都满意的决策，注重决策的和谐性',
+      '廉贞': '在决策时会考虑美感和完美性，有时会因为追求完美而犹豫',
+      '天府': '倾向于稳健保守的决策，注重决策的安全性和可靠性',
+      '太阴': '在决策时会深入考虑各种细节，注重决策的周全性',
+      '贪狼': '倾向于多元化的决策，喜欢保留多种选择的可能性',
+      '巨门': '善于深入分析问题的本质，但决策过程可能比较谨慎',
+      '天相': '在决策时会考虑对他人的影响，注重决策的协调性',
+      '天梁': '倾向于做出有原则性的决策，注重决策的正确性和长远性',
+      '七杀': '倾向于快速果断的决策，不怕承担决策的风险和责任',
+      '破军': '倾向于创新性的决策，喜欢尝试不同寻常的解决方案'
+    };
+    
+    return decisionStyles[star];
+  }
+  
+  // 获取人生格局描述
+  getLifePatternDescription(mainStar, personName) {
+    const lifePatterns = {
+      '紫微': `${personName}，注定要承担重要责任，在人生的舞台上发挥领导作用`,
+      '天机': `${personName}，充满智慧和变化，人生路径多样且富有创意`,
+      '太阳': `${personName}，光明磊落，注定要照亮他人，成为正能量的源泉`,
+      '武曲': `${personName}，意志坚定，通过不懈努力必能获得物质成功`,
+      '天同': `${personName}，追求和谐快乐，人生注重精神层面的满足`,
+      '廉贞': `${personName}，感情丰富，人生充满艺术气息和美好追求`,
+      '天府': `${personName}，稳重可靠，人生注重积累和长远发展`,
+      '太阴': `${personName}，细腻敏感，人生重视内在修养和精神世界`,
+      '贪狼': `${personName}，多才多艺，人生充满各种可能性和机遇`,
+      '巨门': `${personName}，善于分析，人生注重专业发展和深度研究`,
+      '天相': `${personName}，忠诚可靠，人生价值在于服务他人和协调关系`,
+      '天梁': `${personName}，正直善良，人生使命是指导他人和维护正义`,
+      '七杀': `${personName}，勇于开拓，人生充满挑战和突破的机会`,
+      '破军': `${personName}，勇于创新，人生注定要在变革中寻找新的道路`
+    };
+    
+    return lifePatterns[mainStar] || `${personName}，拥有独特的人生格局和发展道路`;
   }
 }
 

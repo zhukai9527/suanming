@@ -643,7 +643,7 @@ class BaziAnalyzer {
     
     const personalityTraits = this.generateAdvancedPersonalityTraits(dayMaster, strengthLevel, useGodAnalysis, gender);
     const balanceAnalysis = this.generateAdvancedBalanceAnalysis(elements, dayMasterElement, strengthAnalysis, name);
-    const improvementSuggestions = this.generateAdvancedImprovementSuggestions(useGodAnalysis, strengthLevel, name, gender);
+    const improvementSuggestions = this.generateAdvancedImprovementSuggestions(useGodAnalysis, strengthLevel, name, gender, baziChart);
 
     return {
       distribution: elements,
@@ -760,43 +760,83 @@ class BaziAnalyzer {
     return analysis;
   }
   
-  // 高级改进建议 - 基于用神理论
-  generateAdvancedImprovementSuggestions(useGodAnalysis, strengthLevel, name, gender) {
+  // 高级个性化改进建议 - 基于具体八字组合的深度分析
+  generateAdvancedImprovementSuggestions(useGodAnalysis, strengthLevel, name, gender, baziChart) {
     const suggestions = [];
+    const dayMaster = baziChart.day_master;
+    const dayMasterElement = baziChart.day_master_element;
     
-    // 基于用神的具体建议
-    if (useGodAnalysis.use_god.includes('木')) {
-      suggestions.push('五行补木：多接触大自然，居住环境宜有绿植，适合向东方发展，可多穿绿色衣物');
-    }
-    if (useGodAnalysis.use_god.includes('火')) {
-      suggestions.push('五行补火：多晒太阳，居住环境宜光线充足，适合向南方发展，可多穿红色衣物');
-    }
-    if (useGodAnalysis.use_god.includes('土')) {
-      suggestions.push('五行补土：多接触土地，居住环境宜稳定，适合本地发展，可多穿黄色衣物');
-    }
-    if (useGodAnalysis.use_god.includes('金')) {
-      suggestions.push('五行补金：多接触金属制品，居住环境宜整洁，适合向西方发展，可多穿白色衣物');
-    }
-    if (useGodAnalysis.use_god.includes('水')) {
-      suggestions.push('五行补水：多亲近水源，居住环境宜临水，适合向北方发展，可多穿黑色衣物');
-    }
+    // 基于日主和用神的个性化建议
+    const personalizedAdvice = this.generatePersonalizedAdvice(dayMaster, useGodAnalysis.use_god, strengthLevel, gender, name);
+    suggestions.push(personalizedAdvice);
     
-    // 基于旺衰的生活建议
-    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
-      suggestions.push('日主偏强，宜多参与团队合作，发挥领导才能，但要注意不可过于强势');
-      suggestions.push('适合从事需要决断力和执行力的工作，但要学会倾听他人意见');
-    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
-      suggestions.push('日主偏弱，宜多寻求贵人帮助，加强自身修养，提升内在实力');
-      suggestions.push('适合从事需要细心和耐心的工作，要学会坚持和自信');
-    }
+    // 基于四柱组合的综合建议
+    const combinationAdvice = this.generateCombinationAdvice(baziChart, useGodAnalysis, name);
+    suggestions.push(combinationAdvice);
     
-    // 性别化建议
-    const genderAdvice = gender === 'male' || gender === '男' 
-      ? '作为男性，建议在事业上积极进取，同时注重家庭责任的承担，培养阳刚正气' 
-      : '作为女性，建议在温柔的同时保持独立，事业与家庭并重，培养内在美德';
-    suggestions.push(genderAdvice);
+    // 基于旺衰程度的精准建议
+    const strengthAdvice = this.generateStrengthBasedAdvice(strengthLevel, dayMasterElement, name, gender);
+    suggestions.push(strengthAdvice);
     
     return suggestions.join('；') + '。';
+  }
+  
+  // 生成个性化建议
+  generatePersonalizedAdvice(dayMaster, useGod, strengthLevel, gender, name) {
+    const dayMasterAdvice = {
+      '甲': `${name}，您的日主甲木如参天大树，${useGod.includes('水') ? '需要充足的水分滋养，建议多亲近水源，从事流动性行业' : useGod.includes('火') ? '需要阳光照耀，建议多接触阳光，发挥创造才能' : '需要土壤扎根，建议脚踏实地，稳步发展'}。性格上您天生具有领导气质，但要注意不可过于刚硬，学会柔中带刚。`,
+      '乙': `${name}，您的日主乙木如柔韧花草，${useGod.includes('水') ? '需要细水长流的滋润，建议培养耐心，从事需要细致的工作' : useGod.includes('火') ? '需要温和阳光，建议保持乐观心态，发挥艺术天赋' : '需要肥沃土壤，建议注重积累，稳中求进'}。您天生温和善良，但要学会在适当时候展现坚韧。`,
+      '丙': `${name}，您的日主丙火如太阳光辉，${useGod.includes('木') ? '需要木材助燃，建议多结交志同道合的朋友，团队合作' : useGod.includes('水') ? '需要水来调节，建议保持冷静理性，避免过于冲动' : '天生光明磊落，建议发挥正面影响力'}。您性格开朗热情，但要注意控制脾气，学会包容。`,
+      '丁': `${name}，您的日主丁火如温暖烛光，${useGod.includes('木') ? '需要木材续燃，建议持续学习，不断充实自己' : useGod.includes('水') ? '需要适度调节，建议在热情与理性间找到平衡' : '天生温暖人心，建议从事服务他人的工作'}。您细腻敏感，善解人意，但要增强自信心。`,
+      '戊': `${name}，您的日主戊土如高山大地，${useGod.includes('火') ? '需要阳光普照，建议积极向上，发挥稳重品格' : useGod.includes('金') ? '蕴含金矿，建议发掘自身潜力，从事实业' : '天生厚德载物，建议承担更多责任'}。您稳重可靠，但要避免过于固执，学会变通。`,
+      '己': `${name}，您的日主己土如田园沃土，${useGod.includes('火') ? '需要温暖滋养，建议保持积极心态，培养人际关系' : useGod.includes('金') ? '能生金养金，建议从事金融或精密工作' : '天生包容性强，建议发挥协调能力'}。您温和包容，善于照顾他人，但要学会为自己争取。`,
+      '庚': `${name}，您的日主庚金如刀剑钢铁，${useGod.includes('土') ? '需要土来生养，建议脚踏实地，积累实力' : useGod.includes('水') ? '需要水来淬炼，建议在挫折中成长，越挫越勇' : '天生意志坚强，建议从事需要决断的工作'}。您果断坚毅，但要学会柔和待人，刚柔并济。`,
+      '辛': `${name}，您的日主辛金如珠宝美玉，${useGod.includes('土') ? '需要土来孕育，建议注重内在修养，提升品味' : useGod.includes('水') ? '需要水来洗练，建议保持纯净心灵，发挥艺术天赋' : '天生气质优雅，建议从事精美行业'}。您细腻优雅，品味高雅，但要增强执行力。`,
+      '壬': `${name}，您的日主壬水如江河大海，${useGod.includes('金') ? '需要金来生源，建议结交贵人，借力发展' : useGod.includes('木') ? '能滋养万物，建议发挥智慧，帮助他人成长' : '天生智慧如海，建议从事智力密集型工作'}。您聪明灵活，适应力强，但要学会专注，避免三心二意。`,
+      '癸': `${name}，您的日主癸水如甘露雨水，${useGod.includes('金') ? '需要金来生养，建议寻找可靠支持，稳步前进' : useGod.includes('木') ? '能润物无声，建议发挥细致特质，从事精细工作' : '天生纯净善良，建议保持初心'}。您温柔细腻，善于感化他人，但要增强自信和主见。`
+    };
+    
+    return dayMasterAdvice[dayMaster] || `${name}，根据您的日主特质，建议发挥自身优势，补强不足之处。`;
+  }
+  
+  // 生成组合建议
+  generateCombinationAdvice(baziChart, useGodAnalysis, name) {
+    const yearStem = baziChart.year_pillar.stem;
+    const monthBranch = baziChart.month_pillar.branch;
+    const dayStem = baziChart.day_master;
+    const hourBranch = baziChart.hour_pillar.branch;
+    
+    // 分析年月日时的组合特征
+    const seasonMap = {
+      '寅': '春', '卯': '春', '辰': '春',
+      '巳': '夏', '午': '夏', '未': '夏', 
+      '申': '秋', '酉': '秋', '戌': '秋',
+      '亥': '冬', '子': '冬', '丑': '冬'
+    };
+    
+    const season = seasonMap[monthBranch];
+    const timeMap = {
+      '子': '深夜', '丑': '凌晨', '寅': '黎明', '卯': '清晨',
+      '辰': '上午', '巳': '上午', '午': '正午', '未': '下午',
+      '申': '下午', '酉': '傍晚', '戌': '黄昏', '亥': '夜晚'
+    };
+    
+    const timeOfDay = timeMap[hourBranch];
+    
+    return `${name}，您生于${season}季${timeOfDay}时分，这个时空组合赋予了您独特的能量场。${season === '春' ? '春生者生机勃勃，适合创新发展' : season === '夏' ? '夏生者热情奔放，适合展现才华' : season === '秋' ? '秋生者收敛内敛，适合积累沉淀' : '冬生者深沉内敛，适合厚积薄发'}。${timeOfDay.includes('夜') || timeOfDay.includes('凌晨') ? '夜时出生者思维深邃，适合从事需要深度思考的工作' : '日时出生者阳光开朗，适合从事需要沟通交流的工作'}。`;
+  }
+  
+  // 生成基于旺衰的建议
+  generateStrengthBasedAdvice(strengthLevel, dayMasterElement, name, gender) {
+    const strengthAdvice = {
+      '太旺': `${name}，您的${dayMasterElement}行能量过于旺盛，建议适当收敛锋芒，学会低调行事。在人际交往中要多倾听他人意见，避免过于自我。${gender === 'male' || gender === '男' ? '作为男性，您天生具有强势特质，但要学会温和待人，刚柔并济' : '作为女性，您个性较强，建议在坚持原则的同时保持女性的温柔魅力'}。`,
+      '偏旺': `${name}，您的${dayMasterElement}行能量较为旺盛，这是您的优势所在。建议充分发挥自身特长，但要注意团队合作，不可过于独断专行。${gender === 'male' || gender === '男' ? '男性的您适合担任领导角色，但要学会授权和信任他人' : '女性的您可以在事业上积极进取，同时保持内在的柔美'}。`,
+      '中和': `${name}，您的${dayMasterElement}行能量平衡，这是非常难得的命格。建议保持现有的平衡状态，在各个方面都能稳步发展。${gender === 'male' || gender === '男' ? '男性的您性格温和理性，适合从事需要平衡协调的工作' : '女性的您内外兼修，能够很好地平衡事业与家庭'}。`,
+      '偏弱': `${name}，您的${dayMasterElement}行能量略显不足，建议多寻求外界支持，加强自身修养。要学会借力发力，通过团队合作来实现目标。${gender === 'male' || gender === '男' ? '男性的您要增强自信心，多参与社交活动，扩大人脉圈' : '女性的您要发挥细腻优势，在细节中体现价值'}。`,
+      '太弱': `${name}，您的${dayMasterElement}行能量较为薄弱，建议重点加强自身实力，多学习充电。要学会依靠贵人相助，选择合适的平台发展。${gender === 'male' || gender === '男' ? '男性的您要培养坚韧品格，在逆境中成长' : '女性的您要发挥柔韧特质，以柔克刚，以退为进'}。`
+    };
+    
+    return strengthAdvice[strengthLevel] || `${name}，建议根据自身特点，扬长避短，稳步发展。`;
   }
 
   // 生成平衡分析
@@ -1495,12 +1535,193 @@ class BaziAnalyzer {
   }
 
   generateModernApplications(baziChart, patternAnalysis, gender, name) {
+    const dayMaster = baziChart.day_master;
+    const dayMasterElement = baziChart.day_master_element;
+    const strengthLevel = baziChart.element_strength?.strength_level || '中和';
+    const monthBranch = baziChart.month_pillar.branch;
+    
     return {
-      daily_life: `${name}适合规律的生活方式，建议早睡早起，保持良好习惯`,
-      professional_development: '职业发展建议选择稳定的行业，注重技能提升',
-      interpersonal_skills: '人际交往中建议真诚待人，建立良好的人际关系',
-      timing_guidance: '重要决策建议在春秋两季进行，避免夏冬季节的冲动决定'
+      daily_life: this.generateDailyLifeAdvice(dayMaster, dayMasterElement, strengthLevel, gender, name),
+      professional_development: this.generateProfessionalAdvice(baziChart, patternAnalysis, gender, name),
+      interpersonal_skills: this.generateInterpersonalAdvice(dayMaster, strengthLevel, gender, name),
+      timing_guidance: this.generateTimingAdvice(monthBranch, dayMasterElement, name),
+      digital_age_advice: this.generateDigitalAgeAdvice(dayMaster, dayMasterElement, gender, name),
+      investment_guidance: this.generateInvestmentAdvice(baziChart, strengthLevel, name),
+      health_optimization: this.generateHealthOptimization(dayMasterElement, strengthLevel, gender, name)
     };
+  }
+  
+  // 生成日常生活建议
+  generateDailyLifeAdvice(dayMaster, dayMasterElement, strengthLevel, gender, name) {
+    const elementAdvice = {
+      '木': `${name}，您的${dayMasterElement}命适合早起，建议6-7点起床，多接触绿色植物。居住环境宜朝东，房间多放置木质家具和绿植。饮食上多吃蔬菜水果，少吃辛辣食物。`,
+      '火': `${name}，您的${dayMasterElement}命适合阳光充足的环境，建议多进行户外活动。居住环境宜朝南，房间色调以红色、橙色为主。饮食上可适当吃辣，但要注意降火。`,
+      '土': `${name}，您的${dayMasterElement}命适合稳定规律的生活，建议固定作息时间。居住环境宜选择地势平坦的地方，房间色调以黄色、棕色为主。饮食上注重营养均衡。`,
+      '金': `${name}，您的${dayMasterElement}命适合整洁有序的环境，建议保持房间清洁。居住环境宜朝西，房间多用白色、银色装饰。饮食上多吃白色食物，如白萝卜、梨等。`,
+      '水': `${name}，您的${dayMasterElement}命适合临水而居，建议多喝水，常洗澡。居住环境宜朝北或临水，房间色调以蓝色、黑色为主。饮食上多吃海鲜、黑色食物。`
+    };
+    
+    let advice = elementAdvice[dayMasterElement] || `${name}，建议保持规律的生活作息。`;
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      advice += '由于您能量较旺，建议适当进行冥想或瑜伽来平衡内心，避免过度兴奋。';
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      advice += '由于您能量较弱，建议多进行适度运动来增强体质，保持积极心态。';
+    }
+    
+    return advice;
+  }
+  
+  // 生成职业发展建议
+  generateProfessionalAdvice(baziChart, patternAnalysis, gender, name) {
+    const dayMaster = baziChart.day_master;
+    const dayMasterElement = baziChart.day_master_element;
+    const strengthLevel = baziChart.element_strength?.strength_level || '中和';
+    
+    const careerAdvice = {
+      '甲': `${name}，您的甲木特质适合领导管理类工作，如企业高管、项目经理、教育管理等。建议发挥您的组织协调能力，在团队中担任核心角色。`,
+      '乙': `${name}，您的乙木特质适合创意设计类工作，如平面设计、园艺、文案策划等。建议发挥您的艺术天赋和细腻感知力。`,
+      '丙': `${name}，您的丙火特质适合公众服务类工作，如销售、演讲、媒体、公关等。建议发挥您的感染力和表现力。`,
+      '丁': `${name}，您的丁火特质适合精细服务类工作，如咨询、培训、医疗、美容等。建议发挥您的耐心和专业技能。`,
+      '戊': `${name}，您的戊土特质适合实业建设类工作，如建筑、房地产、制造业等。建议发挥您的稳重和执行力。`,
+      '己': `${name}，您的己土特质适合服务协调类工作，如人力资源、客服、行政管理等。建议发挥您的亲和力和协调能力。`,
+      '庚': `${name}，您的庚金特质适合技术专业类工作，如工程师、医生、律师等。建议发挥您的专业技能和决断力。`,
+      '辛': `${name}，您的辛金特质适合精品服务类工作，如珠宝、奢侈品、高端服务等。建议发挥您的品味和细致。`,
+      '壬': `${name}，您的壬水特质适合流通贸易类工作，如国际贸易、物流、金融等。建议发挥您的灵活性和适应力。`,
+      '癸': `${name}，您的癸水特质适合研究分析类工作，如科研、数据分析、心理咨询等。建议发挥您的洞察力和专注力。`
+    };
+    
+    let advice = careerAdvice[dayMaster] || `${name}，建议根据自身特长选择合适的职业方向。`;
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      advice += '您适合担任领导职务，但要学会授权和团队合作。';
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      advice += '建议先从基础岗位做起，通过不断学习提升来获得发展机会。';
+    }
+    
+    return advice;
+  }
+  
+  // 生成人际交往建议
+  generateInterpersonalAdvice(dayMaster, strengthLevel, gender, name) {
+    const interpersonalStyles = {
+      '甲': `${name}，您天生具有领导魅力，在人际交往中要注意倾听他人意见，避免过于强势。建议多参与团队活动，发挥组织协调作用。`,
+      '乙': `${name}，您性格温和亲切，容易获得他人好感。建议在保持温和的同时，适当表达自己的观点和立场。`,
+      '丙': `${name}，您热情开朗，善于活跃气氛。建议在社交中保持真诚，避免过于张扬，学会照顾内向朋友的感受。`,
+      '丁': `${name}，您细腻体贴，善于察言观色。建议主动表达关心，但要避免过度敏感，学会保护自己的情绪。`,
+      '戊': `${name}，您稳重可靠，是朋友们的依靠。建议在提供帮助的同时，也要学会寻求他人的支持。`,
+      '己': `${name}，您包容性强，善于调解矛盾。建议在帮助他人的同时，也要为自己的利益考虑。`,
+      '庚': `${name}，您直率坦诚，但有时过于直接。建议在表达观点时注意方式方法，学会委婉表达。`,
+      '辛': `${name}，您优雅细致，注重品质。建议在追求完美的同时，也要包容他人的不完美。`,
+      '壬': `${name}，您聪明灵活，善于变通。建议在灵活应对的同时，保持一定的原则和底线。`,
+      '癸': `${name}，您温柔敏感，善解人意。建议增强自信心，在关心他人的同时也要关爱自己。`
+    };
+    
+    let advice = interpersonalStyles[dayMaster] || `${name}，建议在人际交往中保持真诚和善意。`;
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      advice += '您个性较强，要学会换位思考，多理解他人的立场。';
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      advice += '建议增强自信心，勇于表达自己的想法和需求。';
+    }
+    
+    return advice;
+  }
+  
+  // 生成时机把握建议
+  generateTimingAdvice(monthBranch, dayMasterElement, name) {
+    const seasonMap = {
+      '寅': '春', '卯': '春', '辰': '春',
+      '巳': '夏', '午': '夏', '未': '夏',
+      '申': '秋', '酉': '秋', '戌': '秋',
+      '亥': '冬', '子': '冬', '丑': '冬'
+    };
+    
+    const birthSeason = seasonMap[monthBranch];
+    
+    const seasonAdvice = {
+      '春': `${name}，您出生在春季，天生具有生发之气。建议在春季（2-4月）进行重要决策和新项目启动，这是您的幸运季节。`,
+      '夏': `${name}，您出生在夏季，天生具有旺盛之气。建议在夏季（5-7月）展现才华和推进事业，这是您的能量高峰期。`,
+      '秋': `${name}，您出生在秋季，天生具有收获之气。建议在秋季（8-10月）进行总结和收获，这是您的成果展现期。`,
+      '冬': `${name}，您出生在冬季，天生具有储藏之气。建议在冬季（11-1月）进行规划和学习，这是您的积累充电期。`
+    };
+    
+    let advice = seasonAdvice[birthSeason] || `${name}，建议根据季节变化调整工作节奏。`;
+    
+    // 根据五行元素添加具体时机建议
+    const elementTiming = {
+      '木': '每日6-10点是您的最佳工作时间，适合处理重要事务。',
+      '火': '每日10-14点是您的最佳工作时间，适合展示和表现。',
+      '土': '每日14-18点是您的最佳工作时间，适合稳定和执行。',
+      '金': '每日18-22点是您的最佳工作时间，适合分析和决策。',
+      '水': '每日22-2点是您的最佳思考时间，适合规划和创意。'
+    };
+    
+    advice += elementTiming[dayMasterElement] || '';
+    
+    return advice;
+  }
+  
+  // 生成数字时代建议
+  generateDigitalAgeAdvice(dayMaster, dayMasterElement, gender, name) {
+    const digitalAdvice = {
+      '木': `${name}，在数字时代建议多使用绿色主题的应用界面，关注环保科技和生物技术领域。适合从事互联网教育、在线设计等工作。`,
+      '火': `${name}，建议多使用社交媒体展示才华，关注新媒体和直播行业。适合从事网络营销、内容创作等工作。`,
+      '土': `${name}，建议注重数字安全和隐私保护，关注区块链和数字货币。适合从事电商平台、数字金融等稳定的互联网行业。`,
+      '金': `${name}，建议学习编程和数据分析技能，关注人工智能和精密制造。适合从事软件开发、数据科学等技术工作。`,
+      '水': `${name}，建议保持信息敏感度，关注云计算和物联网技术。适合从事网络运营、数字咨询等流动性强的工作。`
+    };
+    
+    return digitalAdvice[dayMasterElement] || `${name}，建议积极拥抱数字化时代，提升数字技能。`;
+  }
+  
+  // 生成投资理财建议
+  generateInvestmentAdvice(baziChart, strengthLevel, name) {
+    const dayMasterElement = baziChart.day_master_element;
+    const monthBranch = baziChart.month_pillar.branch;
+    
+    const investmentStyles = {
+      '木': `${name}，您适合长期投资和成长型投资，如股票基金、绿色能源等。建议定期定额投资，耐心等待收获。`,
+      '火': `${name}，您适合短期投资和热门投资，但要控制风险。建议关注科技股、新兴产业，但要及时止盈止损。`,
+      '土': `${name}，您适合稳健投资和保值投资，如房地产、债券等。建议以安全为主，稳步增值。`,
+      '金': `${name}，您适合贵金属投资和价值投资，如黄金、优质股票等。建议精选投资标的，长期持有。`,
+      '水': `${name}，您适合灵活投资和流动性投资，如货币基金、短期理财等。建议保持资金流动性，随时调整。`
+    };
+    
+    let advice = investmentStyles[dayMasterElement] || `${name}，建议根据自身风险承受能力选择投资方式。`;
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      advice += '您决策力强，但要避免过度自信，建议分散投资降低风险。';
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      advice += '建议先从低风险投资开始，逐步积累经验和资金。';
+    }
+    
+    return advice;
+  }
+  
+  // 生成健康优化建议
+  generateHealthOptimization(dayMasterElement, strengthLevel, gender, name) {
+    const healthAdvice = {
+      '木': `${name}，您要注意肝胆和眼部健康，建议多吃绿色蔬菜，进行拉伸运动如瑜伽、太极。避免熬夜和过度用眼。`,
+      '火': `${name}，您要注意心脏和血液循环，建议适度有氧运动，多吃红色食物。避免过度兴奋和情绪激动。`,
+      '土': `${name}，您要注意脾胃和消化系统，建议规律饮食，多吃黄色食物如小米、南瓜。避免暴饮暴食。`,
+      '金': `${name}，您要注意肺部和呼吸系统，建议多做深呼吸练习，多吃白色食物如梨、银耳。避免吸烟和空气污染。`,
+      '水': `${name}，您要注意肾脏和泌尿系统，建议多喝水，多吃黑色食物如黑豆、黑芝麻。避免过度劳累。`
+    };
+    
+    let advice = healthAdvice[dayMasterElement] || `${name}，建议保持规律的作息和适度的运动。`;
+    
+    if (strengthLevel === '太旺' || strengthLevel === '偏旺') {
+      advice += '您精力旺盛，但要注意适度休息，避免过度消耗。';
+    } else if (strengthLevel === '太弱' || strengthLevel === '偏弱') {
+      advice += '建议加强营养补充和体质锻炼，提高身体抵抗力。';
+    }
+    
+    if (gender === 'female' || gender === '女') {
+      advice += '作为女性，要特别注意气血调养和内分泌平衡。';
+    }
+    
+    return advice;
   }
 
   // 生成四柱详细解释
