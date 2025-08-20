@@ -181,9 +181,17 @@ Content-Type: application/json
 {
   "question": "string",
   "user_id": "string",
-  "divination_method": "time"
+  "divination_method": "time",
+  "user_timezone": "string (可选)",
+  "local_time": "string (可选)"
 }
 ```
+
+**时区处理说明**:
+- `user_timezone`: 用户时区标识符（如 "Asia/Shanghai", "America/New_York"）
+- `local_time`: 用户当地时间的ISO字符串格式
+- 优先级：local_time > user_timezone > 服务器时间
+- 时间起卦法依赖准确的当地时间，建议前端传递用户时区信息
 
 **响应示例**:
 ```json

@@ -56,7 +56,7 @@ router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
 
 // 易经分析接口
 router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
-  const { question, user_id, divination_method } = req.body;
+  const { question, user_id, divination_method, user_timezone, local_time } = req.body;
   
   // 输入验证
   if (!question) {
@@ -68,7 +68,9 @@ router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
     const analysisResult = yijingAnalyzer.performYijingAnalysis({
       question: question,
       user_id: user_id || req.user.id,
-      divination_method: divination_method || 'time'
+      divination_method: divination_method || 'time',
+      user_timezone: user_timezone,
+      local_time: local_time
     });
     
     // 只返回分析结果，不存储历史记录

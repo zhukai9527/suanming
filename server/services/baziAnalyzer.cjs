@@ -1,10 +1,17 @@
 // 八字分析服务模块
 // 基于传统四柱八字理论的动态分析系统
 
+const SolarTermsCalculator = require('../utils/solarTerms.cjs');
+const WanNianLi = require('../utils/wanNianLi.cjs');
+
 class BaziAnalyzer {
   constructor() {
     this.heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
     this.earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    
+    // 初始化节气计算器和万年历
+    this.solarTermsCalculator = new SolarTermsCalculator();
+    this.wanNianLi = new WanNianLi();
     
     // 地支藏干表 - 传统命理核心数据
     this.branchHiddenStems = {
@@ -144,12 +151,13 @@ class BaziAnalyzer {
     const birthMonth = birthDate.getMonth() + 1;
     const birthDay = birthDate.getDate();
     const birthHour = birth_time ? parseInt(birth_time.split(':')[0]) : 12;
+    const birthMinute = birth_time ? parseInt(birth_time.split(':')[1]) : 0;
 
-    // 1. 年柱计算 - 基于立春节气
-    const yearPillar = this.calculateYearPillar(birthYear, birthMonth, birthDay);
+    // 1. 年柱计算 - 基于精确立春节气
+    const yearPillar = this.calculateYearPillar(birthYear, birthMonth, birthDay, birthHour, birthMinute);
     
-    // 2. 月柱计算 - 基于节气交替
-    const monthPillar = this.calculateMonthPillar(birthYear, birthMonth, birthDay, yearPillar.stemIndex);
+    // 2. 月柱计算 - 基于精确节气交替
+    const monthPillar = this.calculateMonthPillar(birthYear, birthMonth, birthDay, yearPillar.stemIndex, birthHour, birthMinute);
     
     // 3. 日柱计算 - 基于万年历推算
     const dayPillar = this.calculateDayPillar(birthYear, birthMonth, birthDay);
@@ -204,72 +212,61 @@ class BaziAnalyzer {
     return result;
   }
   
-  // 年柱计算 - 考虑立春节气
-  calculateYearPillar(year, month, day) {
+  // 年柱计算 - 基于精确立春节气
+  calculateYearPillar(year, month, day, hour = 12, minute = 0) {
     let actualYear = year;
     
-    // 如果在立春前，年柱应该是前一年
-    if (month === 1 || (month === 2 && day < 4)) {
+    // 使用精确的立春时间判断
+    const currentDate = new Date(year, month - 1, day, hour, minute);
+    const isAfterSpring = this.solarTermsCalculator.isAfterSpringBeginning(currentDate);
+    
+    if (!isAfterSpring) {
       actualYear = year - 1;
     }
     
-    const stemIndex = (actualYear - 4) % 10;
-    const branchIndex = (actualYear - 4) % 12;
+    // 修正年份计算基准（以1984年甲子年为基准）
+    const stemIndex = (actualYear - 1984) % 10;
+    const branchIndex = (actualYear - 1984) % 12;
+    
+    // 确保索引为正数
+    const finalStemIndex = ((stemIndex % 10) + 10) % 10;
+    const finalBranchIndex = ((branchIndex % 12) + 12) % 12;
     
     return {
-      stem: this.heavenlyStems[stemIndex],
-      branch: this.earthlyBranches[branchIndex],
-      stemIndex: stemIndex,
-      branchIndex: branchIndex
+      stem: this.heavenlyStems[finalStemIndex],
+      branch: this.earthlyBranches[finalBranchIndex],
+      stemIndex: finalStemIndex,
+      branchIndex: finalBranchIndex
     };
   }
   
-  // 月柱计算 - 基于节气
-  calculateMonthPillar(year, month, day, yearStemIndex) {
-    // 月支固定规律：寅月(立春)开始
-    let monthBranchIndex;
+  // 月柱计算 - 基于精确节气
+  calculateMonthPillar(year, month, day, yearStemIndex, hour = 12, minute = 0) {
+    // 使用精确的节气时间确定月支
+    const currentDate = new Date(year, month - 1, day, hour, minute);
+    const solarTermMonth = this.solarTermsCalculator.getSolarTermMonth(currentDate);
     
-    if (month === 1 || (month === 2 && day < 4)) {
-      monthBranchIndex = 11; // 丑月
-    } else if (month === 2 || (month === 3 && day < 6)) {
-      monthBranchIndex = 2; // 寅月
-    } else if (month === 3 || (month === 4 && day < 5)) {
-      monthBranchIndex = 3; // 卯月
-    } else if (month === 4 || (month === 5 && day < 6)) {
-      monthBranchIndex = 4; // 辰月
-    } else if (month === 5 || (month === 6 && day < 6)) {
-      monthBranchIndex = 5; // 巳月
-    } else if (month === 6 || (month === 7 && day < 7)) {
-      monthBranchIndex = 6; // 午月
-    } else if (month === 7 || (month === 8 && day < 8)) {
-      monthBranchIndex = 7; // 未月
-    } else if (month === 8 || (month === 9 && day < 8)) {
-      monthBranchIndex = 8; // 申月
-    } else if (month === 9 || (month === 10 && day < 8)) {
-      monthBranchIndex = 9; // 酉月
-    } else if (month === 10 || (month === 11 && day < 7)) {
-      monthBranchIndex = 10; // 戌月
-    } else if (month === 11 || (month === 12 && day < 7)) {
-      monthBranchIndex = 11; // 亥月
-    } else {
-      monthBranchIndex = 0; // 子月
-    }
+    // 获取月支索引
+    const branchNames = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    const monthBranchIndex = branchNames.indexOf(solarTermMonth.monthBranch);
     
-    // 月干推算：甲己之年丙作首
+    // 月干推算：甲己之年丙作首，乙庚之年戊为头，丙辛之年庚寅上，丁壬壬位顺行流，戊癸甲寅好追求
     const monthStemBase = {
-      0: 2, // 甲年、己年从丙开始
-      1: 4, // 乙年、庚年从戊开始
-      2: 6, // 丙年、辛年从庚开始
-      3: 8, // 丁年、壬年从壬开始
-      4: 0, // 戊年、癸年从甲开始
-      5: 2, // 己年从丙开始
-      6: 4, // 庚年从戊开始
-      7: 6, // 辛年从庚开始
-      8: 8, // 壬年从壬开始
-      9: 0  // 癸年从甲开始
+      0: 2, // 甲年从丙开始（寅月丙寅）
+      1: 4, // 乙年从戊开始（寅月戊寅）
+      2: 6, // 丙年从庚开始（寅月庚寅）
+      3: 8, // 丁年从壬开始（寅月壬寅）
+      4: 0, // 戊年从甲开始（寅月甲寅）
+      5: 2, // 己年从丙开始（寅月丙寅）
+      6: 4, // 庚年从戊开始（寅月戊寅）
+      7: 6, // 辛年从庚开始（寅月庚寅）
+      8: 8, // 壬年从壬开始（寅月壬寅）
+      9: 0  // 癸年从甲开始（寅月甲寅）
     };
     
-    const monthStemIndex = (monthStemBase[yearStemIndex] + monthBranchIndex - 2) % 10;
+    // 月支索引：寅=2, 卯=3, 辰=4, 巳=5, 午=6, 未=7, 申=8, 酉=9, 戌=10, 亥=11, 子=0, 丑=1
+    // 月干 = 年干对应的起始月干 + (月支索引 - 寅月索引)
+    const monthStemIndex = (monthStemBase[yearStemIndex] + (monthBranchIndex - 2 + 12) % 12) % 10;
     
     return {
       stem: this.heavenlyStems[monthStemIndex],
@@ -279,22 +276,10 @@ class BaziAnalyzer {
     };
   }
   
-  // 日柱计算 - 万年历推算
+  // 日柱计算 - 权威万年历查表法
   calculateDayPillar(year, month, day) {
-    // 使用简化的万年历算法
-    const baseDate = new Date(1900, 0, 31); // 1900年1月31日为甲子日
-    const currentDate = new Date(year, month - 1, day);
-    const daysDiff = Math.floor((currentDate - baseDate) / (1000 * 60 * 60 * 24));
-    
-    const stemIndex = (daysDiff + 0) % 10; // 甲子日开始
-    const branchIndex = (daysDiff + 0) % 12;
-    
-    return {
-      stem: this.heavenlyStems[stemIndex],
-      branch: this.earthlyBranches[branchIndex],
-      stemIndex: stemIndex,
-      branchIndex: branchIndex
-    };
+    // 使用权威万年历数据获取精确日柱
+    return this.wanNianLi.getAccurateDayPillar(year, month, day);
   }
   
   // 时柱计算 - 日干推时干

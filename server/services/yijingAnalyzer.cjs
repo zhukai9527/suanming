@@ -39,8 +39,20 @@ class YijingAnalyzer {
   // 专业易经分析主函数
   performYijingAnalysis(inputData) {
     try {
-      const { question, user_id, birth_data, divination_method = 'time' } = inputData;
-      const currentTime = new Date();
+      const { question, user_id, birth_data, divination_method = 'time', user_timezone, local_time } = inputData;
+      
+      // 优先使用用户提供的当地时间，其次使用时区信息，最后使用服务器时间
+      let currentTime;
+      if (local_time) {
+        // 如果前端提供了当地时间，直接使用
+        currentTime = new Date(local_time);
+      } else if (user_timezone) {
+        // 如果提供了时区信息，创建对应时区的时间
+        currentTime = new Date(new Date().toLocaleString("en-US", {timeZone: user_timezone}));
+      } else {
+        // 兜底使用服务器时间（保持向后兼容）
+        currentTime = new Date();
+      }
       
       // 根据不同方法起卦
       const hexagramData = this.generateHexagramByMethod(divination_method, currentTime, user_id, question);
@@ -121,19 +133,26 @@ class YijingAnalyzer {
     }
   }
 
-  // 梅花易数时间起卦法
+  // 梅花易数时间起卦法（优化版）
   generateHexagramByTime(currentTime, userId) {
     const year = currentTime.getFullYear();
     const month = currentTime.getMonth() + 1;
     const day = currentTime.getDate();
     const hour = currentTime.getHours();
     const minute = currentTime.getMinutes();
+    const second = currentTime.getSeconds();
+    const millisecond = currentTime.getMilliseconds();
     
-    const userFactor = userId ? parseInt(String(userId).slice(-5).replace(/[^0-9]/g, '') || '12', 10) : 12;
+    // 改进的用户因子算法
+    const userFactor = this.calculateImprovedUserFactor(userId, currentTime);
     
-    const upperTrigramNum = (year + month + day + userFactor) % 8 || 8;
-    const lowerTrigramNum = (year + month + day + hour + minute + userFactor) % 8 || 8;
-    const changingLinePos = (year + month + day + hour + minute + userFactor) % 6 + 1;
+    // 增强的时间因子
+    const timeFactor = year * 10000 + month * 1000 + day * 100 + hour * 10 + minute + second * 0.1 + millisecond * 0.0001;
+    
+    // 使用更复杂的算法确保分布均匀
+    const upperTrigramNum = this.calculateTrigramNumber(timeFactor + userFactor * 1.618, 8); // 使用黄金比例
+    const lowerTrigramNum = this.calculateTrigramNumber(timeFactor * 2.718 + userFactor, 8); // 使用自然常数
+    const changingLinePos = this.calculateTrigramNumber(timeFactor + userFactor * 3.14159, 6) + 1; // 使用圆周率
     
     const mainHexNumber = this.getHexagramNumber(upperTrigramNum, lowerTrigramNum);
     
@@ -202,14 +221,15 @@ class YijingAnalyzer {
     };
   }
 
-  // 数字起卦法
+  // 数字起卦法（优化版）
   generateHexagramByNumber(currentTime, userId) {
     const timeNum = currentTime.getTime();
-    const userNum = userId ? parseInt(String(userId).slice(-3)) || 123 : 123;
+    const userFactor = this.calculateImprovedUserFactor(userId, currentTime);
     
-    const upperTrigramNum = (Math.floor(timeNum / 1000) + userNum) % 8 || 8;
-    const lowerTrigramNum = (Math.floor(timeNum / 100) + userNum * 2) % 8 || 8;
-    const changingLinePos = (timeNum + userNum) % 6 + 1;
+    // 使用更复杂的数学运算增加随机性
+    const upperTrigramNum = this.calculateTrigramNumber(Math.sin(timeNum / 1000000) * userFactor + timeNum, 8);
+    const lowerTrigramNum = this.calculateTrigramNumber(Math.cos(timeNum / 1000000) * userFactor + timeNum * 1.414, 8);
+    const changingLinePos = this.calculateTrigramNumber(Math.tan(timeNum / 1000000) * userFactor + timeNum * 1.732, 6) + 1;
     
     const mainHexNumber = this.getHexagramNumber(upperTrigramNum, lowerTrigramNum);
     
@@ -220,6 +240,44 @@ class YijingAnalyzer {
       upperTrigram: upperTrigramNum,
       lowerTrigram: lowerTrigramNum
     };
+  }
+
+  // 计算改进的用户因子
+  calculateImprovedUserFactor(userId, currentTime) {
+    if (!userId) {
+      // 如果没有用户ID，使用时间戳的复杂变换
+      const timestamp = currentTime.getTime();
+      return Math.floor(Math.sin(timestamp / 1000000) * 10000) + 12;
+    }
+    
+    // 将用户ID转换为数字并增加复杂性
+    const userIdStr = String(userId);
+    let userNum = 0;
+    
+    // 使用字符编码和位置权重
+    for (let i = 0; i < userIdStr.length; i++) {
+      const charCode = userIdStr.charCodeAt(i);
+      userNum += charCode * (i + 1) * Math.pow(2, i % 4);
+    }
+    
+    // 添加时间因子增加变化
+    const timeHash = (currentTime.getHours() * 3600 + currentTime.getMinutes() * 60 + currentTime.getSeconds()) % 1000;
+    
+    return Math.abs(userNum + timeHash) % 10000 + 1;
+  }
+
+  // 计算八卦数字（确保分布均匀）
+  calculateTrigramNumber(value, max) {
+    // 使用改进的哈希函数确保分布均匀
+    const hash = Math.abs(Math.sin(value * 12.9898) * 43758.5453);
+    const fractional = hash - Math.floor(hash);
+    let result = Math.floor(fractional * max) + 1;
+    
+    // 确保结果在有效范围内
+    if (result < 1) result = 1;
+    if (result > max) result = max;
+    
+    return result;
   }
 
   // 根据二进制获取卦象

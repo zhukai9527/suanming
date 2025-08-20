@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
 import { ChineseButton } from '../components/ui/ChineseButton';
@@ -15,6 +15,7 @@ type AnalysisType = 'bazi' | 'ziwei' | 'yijing';
 
 const AnalysisPage: React.FC = () => {
   const { user } = useAuth();
+  const analysisResultRef = useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [analysisType, setAnalysisType] = useState<AnalysisType>('bazi');
   const [formData, setFormData] = useState({
@@ -114,7 +115,9 @@ const AnalysisPage: React.FC = () => {
           const yijingData = {
             question: formData.question,
             user_id: user.id,
-            divination_method: 'time'
+            divination_method: 'time',
+            user_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            local_time: new Date().toISOString()
           };
           response = await localApi.analysis.yijing(yijingData);
           break;
@@ -139,6 +142,16 @@ const AnalysisPage: React.FC = () => {
         type: analysisType,
         data: analysisData
       });
+      
+      // 分析完成后，滚动到结果区域
+      setTimeout(() => {
+        if (analysisResultRef.current) {
+          analysisResultRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }, 100);
       
       // 分析完成后，保存历史记录
       try {
@@ -382,14 +395,16 @@ const AnalysisPage: React.FC = () => {
 
       {/* 分析结果 */}
       {analysisResult && (
-        <AnalysisResultDisplay 
-          analysisResult={analysisResult}
-          analysisType={analysisType}
-          birthDate={memoizedBirthDate}
-          question={analysisType === 'yijing' ? formData.question : undefined}
-          userId={user?.id?.toString()}
-          divinationMethod="time"
-        />
+        <div ref={analysisResultRef}>
+          <AnalysisResultDisplay 
+            analysisResult={analysisResult}
+            analysisType={analysisType}
+            birthDate={memoizedBirthDate}
+            question={analysisType === 'yijing' ? formData.question : undefined}
+            userId={user?.id?.toString()}
+            divinationMethod="time"
+          />
+        </div>
       )}
     </div>
   );

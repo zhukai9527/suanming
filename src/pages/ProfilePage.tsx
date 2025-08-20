@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
 import { ChineseButton } from '../components/ui/ChineseButton';
@@ -11,6 +12,7 @@ import { UserProfile } from '../types';
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [formData, setFormData] = useState({
@@ -74,7 +76,12 @@ const ProfilePage: React.FC = () => {
       if (result.data && result.data.profile) {
         setProfile(result.data.profile);
       }
-      toast.success('档案保存成功！');
+      toast.success('档案保存成功！即将跳转到分析页面...');
+      
+      // 延迟跳转，让用户看到成功提示
+      setTimeout(() => {
+        navigate('/analysis');
+      }, 1500);
     } catch (error: any) {
       console.error('保存档案失败:', error);
       toast.error('保存档案失败：' + error.message);
