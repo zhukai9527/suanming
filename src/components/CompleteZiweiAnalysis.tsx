@@ -4,6 +4,7 @@ import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, L
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from './ui/ChineseCard';
 import { ChineseLoading } from './ui/ChineseLoading';
+import { BackToTop } from './ui/BackToTop';
 import { localApi } from '../lib/localApi';
 import { cn } from '../lib/utils';
 
@@ -1550,6 +1551,9 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
           </CardContent>
         </Card>
       </div>
+      
+      {/* 回到顶部按钮 */}
+      <BackToTop />
     </div>
   );
 };

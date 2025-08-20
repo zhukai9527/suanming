@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+import { BackToTop } from './ui/BackToTop';
 import { localApi } from '../lib/localApi';
 
 interface CompleteBaziAnalysisProps {
@@ -1031,6 +1032,9 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
           </CardContent>
         </Card>
       </div>
+      
+      {/* 回到顶部按钮 */}
+      <BackToTop />
     </div>
   );
 };
