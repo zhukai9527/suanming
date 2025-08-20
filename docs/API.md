@@ -1,6 +1,6 @@
 # API 文档
 
-本文档描述了三算命平台的后端API接口，基于Node.js Express框架实现。
+本文档描述了神机阁平台的后端API接口，基于Node.js Express框架实现。
 
 ## 基础信息
 

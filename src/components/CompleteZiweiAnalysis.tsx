@@ -458,6 +458,40 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
             </div>
           )}
           
+          {/* 强度解释 */}
+          {palace.strength && (
+            <div className="border-t border-red-100 pt-3 mt-3">
+              <h5 className="text-label-lg font-semibold text-gray-800 mb-2 font-chinese flex items-center">
+                <BarChart3 className="h-4 w-4 mr-1" />
+                强度解释
+              </h5>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-body-md font-medium text-gray-800 font-chinese">当前强度：</span>
+                  <span className={cn(
+                    'px-2 py-1 rounded-full text-label-md font-medium font-chinese',
+                    strengthColors[palace.strength] || 'text-gray-600 bg-gray-50'
+                  )}>
+                    {palace.strength}
+                  </span>
+                </div>
+                <p className="text-body-sm text-gray-700 leading-relaxed font-chinese">
+                  {(() => {
+                    const strengthExplanations = {
+                      '旺': '星曜力量最强，正面特质充分发挥，该宫位代表的人生领域发展顺利，容易获得成功和满足。建议积极把握机会，发挥优势。',
+                      '得地': '星曜力量较强，能够较好地发挥正面影响，在该领域有良好的发展基础。建议稳步前进，持续努力。',
+                      '平': '星曜力量中等，需要通过努力来激发潜能，在该领域的发展需要更多的主观能动性。建议保持积极态度，寻找突破点。',
+                      '不得地': '星曜力量较弱，正面特质难以充分发挥，在该领域可能遇到较多困难和阻力。建议通过学习和努力来弥补不足，寻求他人帮助。',
+                      '陷': '星曜力量最弱，该宫位代表的人生领域面临较大挑战，需要格外用心经营。建议保持耐心，通过持续努力和正确方法来改善。'
+                    };
+                    return strengthExplanations[palace.strength] || '该宫位的星曜配置具有独特的影响模式，需要结合具体情况来分析。';
+                  })()
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+          
           {/* 宫位解读 */}
           {palace.interpretation && (
             <div className="border-t border-red-100 pt-3 mt-3">
@@ -625,7 +659,34 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
                   <div className="text-2xl font-bold text-blue-800 mb-2">
                     {analysisData.basic_info?.ming_gong_position?.branch}
                   </div>
-                  <p className="text-blue-700 text-sm">{analysisData.basic_info?.ming_gong_position?.description}</p>
+                  <p className="text-blue-700 text-sm mb-3">{analysisData.basic_info?.ming_gong_position?.description}</p>
+                  {/* 详细的命宫位置解释 */}
+                  {analysisData.detailed_analysis?.personality_analysis?.overview && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <h5 className="font-semibold text-blue-800 mb-2 flex items-center">
+                        <Compass className="h-4 w-4 mr-1" />
+                        命宫位置详解
+                      </h5>
+                      <div className="text-blue-700 text-sm whitespace-pre-line">
+                        {/* 提取命宫位置相关的详细解释 */}
+                        {(() => {
+                          const overview = analysisData.detailed_analysis.personality_analysis.overview;
+                          // 查找包含五行属性和宫位解释的部分
+                          const positionMatch = overview.match(/([子丑寅卯辰巳午未申酉戌亥])宫属[金木水火土].*?。/g);
+                          if (positionMatch) {
+                            return positionMatch.join(' ');
+                          }
+                          // 如果没有找到特定格式，显示包含宫位信息的句子
+                          const sentences = overview.split('。');
+                          const relevantSentences = sentences.filter(sentence => 
+                            sentence.includes('宫') && (sentence.includes('属') || sentence.includes('代表') || sentence.includes('使您'))
+                          );
+                          return relevantSentences.length > 0 ? relevantSentences.join('。') + '。' : '命宫位置影响着您的基本性格特质和人生发展方向。';
+                        })()
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -817,6 +878,36 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
                 十二宫位详解
               </ChineseCardTitle>
               <p className="text-gray-600 mt-2 font-chinese">紫微斗数将人生分为十二个宫位，每个宫位代表不同的人生领域</p>
+              
+              {/* 星曜强度等级说明 */}
+              <div className="mt-4 bg-gradient-to-r from-red-50 to-yellow-50 p-4 rounded-lg border border-red-200">
+                <h4 className="font-bold text-red-800 mb-3 text-center font-chinese">星曜强度等级说明</h4>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+                  <div className="text-center p-2 bg-green-100 rounded border border-green-300">
+                    <div className="font-semibold text-green-800 font-chinese">旺</div>
+                    <div className="text-green-700 font-chinese">最强</div>
+                  </div>
+                  <div className="text-center p-2 bg-blue-100 rounded border border-blue-300">
+                    <div className="font-semibold text-blue-800 font-chinese">得地</div>
+                    <div className="text-blue-700 font-chinese">较强</div>
+                  </div>
+                  <div className="text-center p-2 bg-yellow-100 rounded border border-yellow-300">
+                    <div className="font-semibold text-yellow-800 font-chinese">平</div>
+                    <div className="text-yellow-700 font-chinese">中等</div>
+                  </div>
+                  <div className="text-center p-2 bg-orange-100 rounded border border-orange-300">
+                    <div className="font-semibold text-orange-800 font-chinese">不得地</div>
+                    <div className="text-orange-700 font-chinese">较弱</div>
+                  </div>
+                  <div className="text-center p-2 bg-red-100 rounded border border-red-300">
+                    <div className="font-semibold text-red-800 font-chinese">陷</div>
+                    <div className="text-red-700 font-chinese">最弱</div>
+                  </div>
+                </div>
+                <p className="text-red-700 text-xs mt-3 text-center font-chinese">
+                  星曜强度反映了该宫位星曜力量的强弱，影响相关人生领域的发展顺逆程度
+                </p>
+              </div>
             </div>
           </ChineseCardHeader>
           <ChineseCardContent>
@@ -1219,8 +1310,12 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
                   <p className="text-gray-700 text-sm">{analysisData.detailed_analysis.career_analysis.leadership_style}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-blue-800 mb-2">发展建议</h4>
-                  <p className="text-gray-700 text-sm">{analysisData.detailed_analysis.career_analysis.career_advice}</p>
+                  <h4 className="font-semibold text-blue-800 mb-2">成功策略</h4>
+                  <div className="text-gray-700 text-sm whitespace-pre-line">{analysisData.detailed_analysis.career_analysis.success_strategies}</div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-green-800 mb-2">现代事业建议</h4>
+                  <div className="text-gray-700 text-sm whitespace-pre-line">{analysisData.detailed_analysis.career_analysis.modern_career_advice}</div>
                 </div>
               </CardContent>
             </Card>
@@ -1249,8 +1344,8 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
                   <p className="text-gray-700 text-sm">{analysisData.detailed_analysis.wealth_analysis.investment_tendency}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-green-800 mb-2">理财建议</h4>
-                  <p className="text-gray-700 text-sm">{analysisData.detailed_analysis.wealth_analysis.financial_advice}</p>
+                  <h4 className="font-semibold text-green-800 mb-2">理财规划建议</h4>
+                  <div className="text-gray-700 text-sm whitespace-pre-line">{analysisData.detailed_analysis.wealth_analysis.financial_planning}</div>
                 </div>
               </CardContent>
             </Card>

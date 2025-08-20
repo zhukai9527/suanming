@@ -1,20 +1,31 @@
 # 神机阁 - AI命理分析平台
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/your-repo/ai-numerology-refactored)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/your-repo/shenjige-numerology)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/react-18.3.1-blue.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.6.2-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/vite-6.0.1-646CFF.svg)](https://vitejs.dev/)
 
 一个纯AI生成的中华传统命理分析平台，提供八字命理、紫微斗数、易经占卜等专业分析服务。
 
 ## ✨ 核心功能
 
-- 🎯 **八字命理分析** - 四柱排盘、五行分析、格局判断
-- 🌟 **紫微斗数分析** - 星盘排布、十二宫位、四化飞星
+### 🔮 命理分析服务
+- 🎯 **八字命理分析** - 四柱排盘、五行分析、格局判断、大运流年
+- 🌟 **紫微斗数分析** - 星盘排布、十二宫位、四化飞星、详细解读
 - 🔮 **易经占卜分析** - 梅花易数、卦象解读、人生指导
-- 👤 **用户系统** - 注册登录、个人资料、历史记录
-- 📱 **响应式设计** - 支持桌面端和移动端
+
+### 💡 智能特性
+- 🧠 **AI增强分析** - 个性化理财建议、事业发展指导、现代职业建议
+- 📊 **星曜强度解释** - 旺、得地、平、不得地、陷的详细说明
+- 🎨 **命宫位置详解** - 五行属性、深层含义、性格影响分析
+
+### 🛠️ 系统功能
+- 👤 **完整用户系统** - 注册登录、个人资料、分析历史
+- 📱 **响应式设计** - 完美支持桌面端、平板和移动端
 - 🎨 **中国风UI** - 传统文化与现代设计的完美融合
+- 🔒 **数据安全** - JWT认证、SQLite本地存储、隐私保护
 
 ## 🚀 快速开始
 
@@ -52,7 +63,7 @@ npm run dev
 - 前端应用: http://localhost:5173
 - 后端API: http://localhost:3001/api
 
-## 🏗️ 项目架构 (v2.0)
+## 🏗️ 项目架构 (v3.0)
 
 ### 架构特点
 
@@ -60,20 +71,34 @@ npm run dev
 - **API去重**: 防止重复调用的请求去重机制
 - **性能优化**: useMemo缓存和useEffect依赖优化
 - **错误隔离**: 历史记录保存失败不影响分析功能
+- **智能增强**: AI驱动的个性化分析和现代化建议
+- **用户体验**: 详细的星曜强度解释和命宫位置分析
 
 ### 技术栈
 
-**前端**
-- React 18.3.1 + TypeScript
-- Tailwind CSS (中国风主题)
-- Vite (构建工具)
-- React Router (路由管理)
+**前端技术**
+- React 18.3.1 + TypeScript 5.6.2
+- Vite 6.0.1 (构建工具)
+- Tailwind CSS 3.4.16 (中国风主题)
+- React Router 6 (路由管理)
+- Radix UI (组件库)
+- React Hook Form + Zod (表单验证)
+- Recharts (数据可视化)
+- Lucide React (图标库)
 
-**后端**
-- Node.js + Express
-- SQLite (数据库)
-- JWT (身份认证)
+**后端技术**
+- Node.js + Express 4.18.2
+- Better-SQLite3 12.2.0 (数据库)
+- JWT + bcryptjs (身份认证)
+- Helmet (安全中间件)
+- CORS (跨域处理)
 - 分层架构设计
+
+**开发工具**
+- ESLint + TypeScript ESLint (代码检查)
+- Concurrently (并发运行)
+- Nodemon (开发热重载)
+- PNPM 9.0.0 (包管理器)
 
 ### 目录结构
 
@@ -93,7 +118,7 @@ npm run dev
 └── public/                # 静态资源
 ```
 
-## 🔄 v2.0 重构亮点
+## 🔄 v3.0 重构亮点
 
 ### 解决的核心问题
 
@@ -101,22 +126,25 @@ npm run dev
 2. **架构耦合**: 分析与存储混合 → 完全分离，职责清晰
 3. **性能问题**: 重复渲染和API调用 → 优化减少60%+重复调用
 4. **时间显示**: 时区问题 → 统一ISO时间戳和本地化显示
+5. **分析深度**: 基础解释不够详细 → AI增强的个性化分析
+6. **用户体验**: 术语难懂 → 详细的星曜强度和命宫位置解释
 
-### 架构对比
+### 版本对比
 
-| 方面 | v1.0 (重构前) | v2.0 (重构后) |
-|------|---------------|---------------|
-| 分析接口 | 分析+存储耦合 | 纯分析计算 |
-| 历史记录 | 自动存储 | 专门接口存储 |
-| 重复记录 | 3-5条/次 | 1条/次 |
-| API调用 | 频繁重复 | 去重优化 |
-| 错误处理 | 耦合失败 | 隔离容错 |
+| 方面 | v1.0 (初版) | v2.0 (重构) | v3.0 (当前) |
+|------|-------------|-------------|-------------|
+| 分析接口 | 分析+存储耦合 | 纯分析计算 | AI增强分析 |
+| 历史记录 | 自动存储 | 专门接口存储 | 优化存储 |
+| 重复记录 | 3-5条/次 | 1条/次 | 1条/次 |
+| API调用 | 频繁重复 | 去重优化 | 智能缓存 |
+| 错误处理 | 耦合失败 | 隔离容错 | 全面容错 |
+| 分析深度 | 基础解释 | 标准分析 | AI个性化 |
+| 用户体验 | 术语晦涩 | 改进显示 | 详细解释 |
 
 ## 📚 文档
 
 - [API文档](docs/API.md) - 详细的API接口说明
-- [开发指南](docs/DEVELOPMENT.md) - 开发环境设置和最佳实践
-- [部署指南](docs/DEPLOYMENT.md) - 生产环境部署说明
+- [本地部署指南](docs/LOCAL_DEPLOYMENT.md) - 本地化部署和运行说明
 - [更新日志](CHANGELOG.md) - 版本更新记录
 
 ## 🧪 测试
@@ -144,7 +172,7 @@ npm run build
 npm run start
 ```
 
-详细部署说明请参考 [部署指南](docs/DEPLOYMENT.md)。
+详细部署说明请参考 [本地部署指南](docs/LOCAL_DEPLOYMENT.md)。
 
 ## 🤝 贡献
 
@@ -170,10 +198,10 @@ npm run start
 
 ## 📞 联系我们
 
-- 项目主页: [GitHub Repository](https://github.com/your-repo/ai-numerology-refactored)
-- 问题反馈: [GitHub Issues](https://github.com/your-repo/ai-numerology-refactored/issues)
-- 邮箱: your-email@example.com
+- 项目主页: [GitHub Repository](https://github.com/your-repo/shenjige-numerology)
+- 问题反馈: [GitHub Issues](https://github.com/your-repo/shenjige-numerology/issues)
+- 邮箱: contact@shenjige.com
 
 ---
 
-**三算命** - 传承千年智慧，拥抱现代科技 🌟
+**神机阁** - 传承千年智慧，拥抱现代科技 🌟
