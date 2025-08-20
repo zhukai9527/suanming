@@ -97,37 +97,79 @@ class ZiweiAnalyzer {
     };
   }
 
-  // 计算五行局（紫微斗数核心算法）
+  // 计算五行局（紫微斗数核心算法）- 基于纳音五行
   calculateWuxingJu(baziInfo) {
     const { year, month, day, hour } = baziInfo;
     
-    // 提取年干和日干
+    // 提取年干支
     const yearStem = year.charAt(0);
-    const dayStem = day.charAt(0);
+    const yearBranch = year.charAt(1);
     
-    // 根据年干和日干计算五行局
-    const wuxingJuMap = {
-      '甲': { '甲': '水二局', '乙': '木三局', '丙': '火六局', '丁': '火六局', '戊': '土五局', '己': '土五局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '乙': { '甲': '木三局', '乙': '木三局', '丙': '火六局', '丁': '火六局', '戊': '土五局', '己': '土五局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '丙': { '甲': '火六局', '乙': '火六局', '丙': '火六局', '丁': '火六局', '戊': '土五局', '己': '土五局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '丁': { '甲': '火六局', '乙': '火六局', '丙': '火六局', '丁': '火六局', '戊': '土五局', '己': '土五局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '戊': { '甲': '土五局', '乙': '土五局', '丙': '土五局', '丁': '土五局', '戊': '土五局', '己': '土五局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '己': { '甲': '土五局', '乙': '土五局', '丙': '土五局', '丁': '土五局', '戊': '土五局', '己': '土五局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '庚': { '甲': '金四局', '乙': '金四局', '丙': '金四局', '丁': '金四局', '戊': '金四局', '己': '金四局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '辛': { '甲': '金四局', '乙': '金四局', '丙': '金四局', '丁': '金四局', '戊': '金四局', '己': '金四局', '庚': '金四局', '辛': '金四局', '壬': '水二局', '癸': '水二局' },
-      '壬': { '甲': '水二局', '乙': '水二局', '丙': '水二局', '丁': '水二局', '戊': '水二局', '己': '水二局', '庚': '水二局', '辛': '水二局', '壬': '水二局', '癸': '水二局' },
-      '癸': { '甲': '水二局', '乙': '水二局', '丙': '水二局', '丁': '水二局', '戊': '水二局', '己': '水二局', '庚': '水二局', '辛': '水二局', '壬': '水二局', '癸': '水二局' }
-    };
-    
-    const juType = wuxingJuMap[yearStem]?.[dayStem] || '土五局';
+    // 根据年干支计算纳音五行局
+    const nayin = this.calculateNayin(yearStem, yearBranch);
+    const juType = this.getNayinWuxingJu(nayin);
     const juNumber = this.wuxingJu[juType];
     
     return {
       type: juType,
       number: juNumber,
-      description: `${juType}，大限每${juNumber * 10}年一步`,
+      nayin: nayin,
+      description: `${juType}，纳音${nayin}，大限每${juNumber * 10}年一步`,
       start_age: this.calculateStartAge(juNumber, baziInfo.birth_info.gender || 'male')
     };
+  }
+  
+  // 计算纳音五行
+  calculateNayin(stem, branch) {
+    // 纳音五行对照表（60甲子纳音）
+    const nayinTable = {
+      '甲子': '海中金', '乙丑': '海中金', '丙寅': '炉中火', '丁卯': '炉中火',
+      '戊辰': '大林木', '己巳': '大林木', '庚午': '路旁土', '辛未': '路旁土',
+      '壬申': '剑锋金', '癸酉': '剑锋金', '甲戌': '山头火', '乙亥': '山头火',
+      '丙子': '涧下水', '丁丑': '涧下水', '戊寅': '城头土', '己卯': '城头土',
+      '庚辰': '白蜡金', '辛巳': '白蜡金', '壬午': '杨柳木', '癸未': '杨柳木',
+      '甲申': '泉中水', '乙酉': '泉中水', '丙戌': '屋上土', '丁亥': '屋上土',
+      '戊子': '霹雳火', '己丑': '霹雳火', '庚寅': '松柏木', '辛卯': '松柏木',
+      '壬辰': '长流水', '癸巳': '长流水', '甲午': '砂中金', '乙未': '砂中金',
+      '丙申': '山下火', '丁酉': '山下火', '戊戌': '平地木', '己亥': '平地木',
+      '庚子': '壁上土', '辛丑': '壁上土', '壬寅': '金箔金', '癸卯': '金箔金',
+      '甲辰': '覆灯火', '乙巳': '覆灯火', '丙午': '天河水', '丁未': '天河水',
+      '戊申': '大驿土', '己酉': '大驿土', '庚戌': '钗钏金', '辛亥': '钗钏金',
+      '壬子': '桑柘木', '癸丑': '桑柘木', '甲寅': '大溪水', '乙卯': '大溪水',
+      '丙辰': '沙中土', '丁巳': '沙中土', '戊午': '天上火', '己未': '天上火',
+      '庚申': '石榴木', '辛酉': '石榴木', '壬戌': '大海水', '癸亥': '大海水'
+    };
+    
+    const ganzhi = stem + branch;
+    return nayinTable[ganzhi] || '大林木';
+  }
+  
+  // 根据纳音确定五行局
+  getNayinWuxingJu(nayin) {
+    // 纳音五行局对照表
+    const nayinJuMap = {
+      // 金纳音 -> 金四局
+      '海中金': '金四局', '剑锋金': '金四局', '白蜡金': '金四局', 
+      '砂中金': '金四局', '金箔金': '金四局', '钗钏金': '金四局',
+      
+      // 木纳音 -> 木三局
+      '大林木': '木三局', '杨柳木': '木三局', '松柏木': '木三局',
+      '平地木': '木三局', '桑柘木': '木三局', '石榴木': '木三局',
+      
+      // 水纳音 -> 水二局
+      '涧下水': '水二局', '泉中水': '水二局', '长流水': '水二局',
+      '天河水': '水二局', '大溪水': '水二局', '大海水': '水二局',
+      
+      // 火纳音 -> 火六局
+      '炉中火': '火六局', '山头火': '火六局', '霹雳火': '火六局',
+      '山下火': '火六局', '覆灯火': '火六局', '天上火': '火六局',
+      
+      // 土纳音 -> 土五局
+      '路旁土': '土五局', '城头土': '土五局', '屋上土': '土五局',
+      '壁上土': '土五局', '大驿土': '土五局', '沙中土': '土五局'
+    };
+    
+    return nayinJuMap[nayin] || '土五局';
   }
 
   // 计算起运年龄
@@ -223,10 +265,32 @@ class ZiweiAnalyzer {
 
   // 计算紫微星位置（基于五行局）
   calculateZiweiStarPosition(day, juNumber) {
-    // 根据出生日和五行局数计算紫微星位置
-    const basePosition = (day - 1) % 12;
-    const adjustment = (juNumber - 2) * 2; // 五行局调整
-    return (basePosition + adjustment) % 12;
+    // 根据出生日和五行局数计算紫微星位置（传统算法）
+    // 紫微星定位：以寅宫起初一，顺数至生日，再根据五行局逆数
+    let position = (day - 1) % 12; // 寅宫起初一
+    
+    // 根据五行局逆数
+    switch (juNumber) {
+      case 2: // 水二局
+        position = (position - 1 + 12) % 12;
+        break;
+      case 3: // 木三局
+        position = (position - 2 + 12) % 12;
+        break;
+      case 4: // 金四局
+        position = (position - 3 + 12) % 12;
+        break;
+      case 5: // 土五局
+        position = (position - 4 + 12) % 12;
+        break;
+      case 6: // 火六局
+        position = (position - 5 + 12) % 12;
+        break;
+      default:
+        position = (position - 4 + 12) % 12; // 默认土五局
+    }
+    
+    return position;
   }
 
   // 计算真正的紫微斗数排盘
@@ -283,7 +347,7 @@ class ZiweiAnalyzer {
     return (mingGongIndex + ziweiBase) % 12;
   }
 
-  // 精确安排十四主星
+  // 精确安排十四主星（传统紫微斗数安星法）
   arrangeMainStars(ziweiPosition, mingGongIndex) {
     const starPositions = {};
     
@@ -292,26 +356,62 @@ class ZiweiAnalyzer {
       starPositions[i] = [];
     }
     
-    // 紫微星系（以紫微星为起点）
-    starPositions[ziweiPosition].push('紫微');
-    starPositions[(ziweiPosition + 1) % 12].push('天机');
-    starPositions[(ziweiPosition + 2) % 12].push('太阳');
-    starPositions[(ziweiPosition + 3) % 12].push('武曲');
-    starPositions[(ziweiPosition + 4) % 12].push('天同');
-    starPositions[(ziweiPosition + 5) % 12].push('廉贞');
+    // 紫微星系安星（北斗星系）
+    this.arrangeZiweiStarSystem(starPositions, ziweiPosition);
     
-    // 天府星系（紫微对宫起）
-    const tianfuPosition = (ziweiPosition + 6) % 12;
-    starPositions[tianfuPosition].push('天府');
-    starPositions[(tianfuPosition + 1) % 12].push('太阴');
-    starPositions[(tianfuPosition + 2) % 12].push('贪狼');
-    starPositions[(tianfuPosition + 3) % 12].push('巨门');
-    starPositions[(tianfuPosition + 4) % 12].push('天相');
-    starPositions[(tianfuPosition + 5) % 12].push('天梁');
-    starPositions[(tianfuPosition + 6) % 12].push('七杀');
-    starPositions[(tianfuPosition + 7) % 12].push('破军');
+    // 天府星系安星（南斗星系）
+    this.arrangeTianfuStarSystem(starPositions, ziweiPosition);
     
     return starPositions;
+  }
+  
+  // 安排紫微星系（北斗七星）
+  arrangeZiweiStarSystem(starPositions, ziweiPosition) {
+    // 紫微星固定位置
+    starPositions[ziweiPosition].push('紫微');
+    
+    // 天机星：紫微顺行一位
+    starPositions[(ziweiPosition + 1) % 12].push('天机');
+    
+    // 太阳星：紫微顺行二位
+    starPositions[(ziweiPosition + 2) % 12].push('太阳');
+    
+    // 武曲星：紫微顺行三位
+    starPositions[(ziweiPosition + 3) % 12].push('武曲');
+    
+    // 天同星：紫微顺行四位
+    starPositions[(ziweiPosition + 4) % 12].push('天同');
+    
+    // 廉贞星：紫微顺行五位
+    starPositions[(ziweiPosition + 5) % 12].push('廉贞');
+  }
+  
+  // 安排天府星系（南斗六星）
+  arrangeTianfuStarSystem(starPositions, ziweiPosition) {
+    // 天府星：紫微对宫（相对180度）
+    const tianfuPosition = (ziweiPosition + 6) % 12;
+    starPositions[tianfuPosition].push('天府');
+    
+    // 太阴星：天府逆行一位
+    starPositions[(tianfuPosition - 1 + 12) % 12].push('太阴');
+    
+    // 贪狼星：天府逆行二位
+    starPositions[(tianfuPosition - 2 + 12) % 12].push('贪狼');
+    
+    // 巨门星：天府逆行三位
+    starPositions[(tianfuPosition - 3 + 12) % 12].push('巨门');
+    
+    // 天相星：天府逆行四位
+    starPositions[(tianfuPosition - 4 + 12) % 12].push('天相');
+    
+    // 天梁星：天府逆行五位
+    starPositions[(tianfuPosition - 5 + 12) % 12].push('天梁');
+    
+    // 七杀星：天府逆行六位
+    starPositions[(tianfuPosition - 6 + 12) % 12].push('七杀');
+    
+    // 破军星：天府逆行七位
+    starPositions[(tianfuPosition - 7 + 12) % 12].push('破军');
   }
 
   // 安排六吉星
