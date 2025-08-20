@@ -15,6 +15,12 @@ const baziAnalyzer = new BaziAnalyzer();
 const yijingAnalyzer = new YijingAnalyzer();
 const ziweiAnalyzer = new ZiweiAnalyzer();
 
+// 导入AI增强分析服务
+const AIEnhancedAnalysis = require('../services/common/AIEnhancedAnalysis.cjs');
+
+// 初始化AI增强分析服务
+const aiEnhancedAnalysis = new AIEnhancedAnalysis();
+
 // 八字分析接口
 router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
   const { birth_data } = req.body;
@@ -428,5 +434,186 @@ router.post('/validate', (req, res) => {
     }
   });
 });
+
+// AI增强个性化推荐接口
+router.post('/ai-recommendations', authenticate, asyncHandler(async (req, res) => {
+  const { analysis_result, user_context } = req.body;
+  
+  if (!analysis_result) {
+    throw new AppError('缺少分析结果数据', 400, 'MISSING_ANALYSIS_RESULT');
+  }
+  
+  const { getDB } = require('../database/index.cjs');
+  const db = getDB();
+  
+  // 获取用户历史分析数据
+  const analysisHistory = db.prepare(`
+    SELECT reading_type, analysis, created_at
+    FROM readings 
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 20
+  `).all(req.user.id);
+  
+  // 获取用户交互数据（简化实现）
+  const interactionData = {
+    averageSessionDuration: 180,
+    averagePagesPerSession: 3,
+    returnVisits: analysisHistory.length,
+    featureUsage: { charts: 5, text: 8, comparisons: 2 },
+    averageScrollDepth: 0.7,
+    feedback: []
+  };
+  
+  // 分析用户行为模式
+  const behaviorProfile = aiEnhancedAnalysis.analyzeUserBehavior(
+    req.user.id,
+    analysisHistory,
+    interactionData
+  );
+  
+  // 生成个性化推荐
+  const recommendations = aiEnhancedAnalysis.generatePersonalizedRecommendations(
+    req.user.id,
+    analysis_result,
+    behaviorProfile
+  );
+  
+  res.json({
+    data: {
+      recommendations: recommendations,
+      behavior_profile: behaviorProfile,
+      personalization_level: 'high'
+    }
+  });
+}));
+
+// AI分析准确度优化接口
+router.post('/ai-optimize-accuracy', authenticate, asyncHandler(async (req, res) => {
+  const { analysis_result, user_context, feedback_data } = req.body;
+  
+  if (!analysis_result) {
+    throw new AppError('缺少分析结果数据', 400, 'MISSING_ANALYSIS_RESULT');
+  }
+  
+  const { getDB } = require('../database/index.cjs');
+  const db = getDB();
+  
+  // 获取历史反馈数据
+  const historicalFeedback = db.prepare(`
+    SELECT analysis, created_at
+    FROM readings 
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 10
+  `).all(req.user.id);
+  
+  // 构建用户上下文
+  const enhancedUserContext = {
+    userId: req.user.id,
+    currentSituation: user_context?.current_situation || 'general',
+    dataQuality: user_context?.data_quality || 0.8,
+    ...user_context
+  };
+  
+  // 优化分析准确度
+  const accuracyOptimization = aiEnhancedAnalysis.optimizeAnalysisAccuracy(
+    analysis_result,
+    enhancedUserContext,
+    historicalFeedback
+  );
+  
+  res.json({
+    data: accuracyOptimization
+  });
+}));
+
+// 用户行为预测接口
+router.get('/ai-predict-behavior', authenticate, asyncHandler(async (req, res) => {
+  const { context } = req.query;
+  
+  const currentContext = {
+    timestamp: new Date().toISOString(),
+    context: context || 'general'
+  };
+  
+  // 预测用户行为
+  const behaviorPrediction = aiEnhancedAnalysis.predictUserBehavior(
+    req.user.id,
+    currentContext
+  );
+  
+  res.json({
+    data: behaviorPrediction
+  });
+}));
+
+// AI模型训练接口（管理员专用）
+router.post('/ai-train-model', authenticate, asyncHandler(async (req, res) => {
+  // 简化的权限检查
+  if (req.user.role !== 'admin') {
+    throw new AppError('权限不足', 403, 'INSUFFICIENT_PERMISSIONS');
+  }
+  
+  const { training_data } = req.body;
+  
+  if (!training_data || !Array.isArray(training_data)) {
+    throw new AppError('无效的训练数据格式', 400, 'INVALID_TRAINING_DATA');
+  }
+  
+  // 训练模型
+  const trainingResult = aiEnhancedAnalysis.trainModel(training_data);
+  
+  res.json({
+    data: trainingResult
+  });
+}));
+
+// 获取AI分析统计信息
+router.get('/ai-stats', authenticate, asyncHandler(async (req, res) => {
+  const { getDB } = require('../database/index.cjs');
+  const db = getDB();
+  
+  // 获取用户分析统计
+  const userStats = db.prepare(`
+    SELECT 
+      reading_type,
+      COUNT(*) as count,
+      AVG(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as success_rate
+    FROM readings 
+    WHERE user_id = ?
+    GROUP BY reading_type
+  `).all(req.user.id);
+  
+  // 获取用户行为模式
+  const analysisHistory = db.prepare(`
+    SELECT reading_type, created_at
+    FROM readings 
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT 50
+  `).all(req.user.id);
+  
+  const interactionData = {
+    averageSessionDuration: 200,
+    returnVisits: analysisHistory.length,
+    featureUsage: { charts: 3, text: 7, comparisons: 1 }
+  };
+  
+  const behaviorProfile = aiEnhancedAnalysis.analyzeUserBehavior(
+    req.user.id,
+    analysisHistory,
+    interactionData
+  );
+  
+  res.json({
+    data: {
+      user_stats: userStats,
+      behavior_profile: behaviorProfile,
+      ai_model_version: '1.0',
+      personalization_enabled: true
+    }
+  });
+}));
 
 module.exports = router;

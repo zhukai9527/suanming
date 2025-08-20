@@ -398,6 +398,39 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
           </div>
         </ChineseCardHeader>
         <ChineseCardContent className="space-y-3">
+          {/* 星曜亮度分析 */}
+          {palace.brightness_analysis && (
+            <div className="mb-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+              <h5 className="text-label-lg font-semibold text-orange-700 mb-2 font-chinese flex items-center">
+                <Sun className="h-4 w-4 mr-1" />
+                星曜亮度：{palace.brightness_analysis.overall_brightness}
+              </h5>
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full ${
+                      palace.brightness_analysis.brightness_score >= 4 ? 'bg-green-500' :
+                      palace.brightness_analysis.brightness_score >= 3 ? 'bg-yellow-500' :
+                      palace.brightness_analysis.brightness_score >= 2 ? 'bg-orange-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${Math.min(palace.brightness_analysis.brightness_score * 20, 100)}%` }}
+                  ></div>
+                </div>
+                <span className="text-label-md font-medium text-orange-700 font-chinese">
+                  {palace.brightness_analysis.brightness_score?.toFixed(1)}
+                </span>
+              </div>
+              <p className="text-body-sm text-orange-800 font-chinese">
+                {palace.brightness_analysis.brightness_description}
+              </p>
+              {palace.brightness_analysis.combination_effect && (
+                <p className="text-body-sm text-orange-700 mt-1 font-chinese">
+                  组合效果：{palace.brightness_analysis.combination_effect}
+                </p>
+              )}
+            </div>
+          )}
+          
           {/* 主星 */}
           {palace.main_stars && palace.main_stars.length > 0 && (
             <div>
@@ -779,6 +812,83 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
                     </div>
                   </div>
                 </div>
+                
+                {/* 增强四化系统 */}
+                {analysisData.ziwei_analysis?.si_hua?.enhanced_sihua && (
+                  <div className="mt-6 space-y-4">
+                    <h4 className="font-bold text-purple-800 mb-3 flex items-center">
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      多层次四化分析
+                    </h4>
+                    
+                    {/* 四化互动分析 */}
+                    {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis && (
+                      <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                        <h5 className="font-semibold text-indigo-800 mb-3">四化互动效应</h5>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {/* 冲突分析 */}
+                          {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.conflicts?.length > 0 && (
+                            <div className="bg-red-50 p-3 rounded border border-red-200">
+                              <h6 className="font-medium text-red-800 mb-2 text-sm">四化冲突</h6>
+                              <div className="space-y-2">
+                                {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.conflicts.map((conflict: any, index: number) => (
+                                  <div key={index} className="text-xs text-red-700">
+                                    <span className="font-medium">{conflict.type}：</span>
+                                    <span>{conflict.impact}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* 增强分析 */}
+                          {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.enhancements?.length > 0 && (
+                            <div className="bg-green-50 p-3 rounded border border-green-200">
+                              <h6 className="font-medium text-green-800 mb-2 text-sm">四化增强</h6>
+                              <div className="space-y-2">
+                                {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.enhancements.map((enhancement: any, index: number) => (
+                                  <div key={index} className="text-xs text-green-700">
+                                    <span className="font-medium">{enhancement.type}：</span>
+                                    <span>{enhancement.impact}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* 整体和谐度 */}
+                        <div className="mt-3 p-3 bg-white rounded border">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-800">整体和谐度：</span>
+                            <span className={`text-sm font-bold ${
+                              analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.overall_harmony === '非常和谐' ? 'text-green-600' :
+                              analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.overall_harmony === '较为和谐' ? 'text-blue-600' :
+                              analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.overall_harmony === '基本和谐' ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.overall_harmony}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* 建议 */}
+                        {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.recommendations?.length > 0 && (
+                          <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                            <h6 className="font-medium text-blue-800 mb-2 text-sm">四化建议</h6>
+                            <ul className="space-y-1">
+                              {analysisData.ziwei_analysis.si_hua.enhanced_sihua.interaction_analysis.recommendations.map((rec: string, index: number) => (
+                                <li key={index} className="text-xs text-blue-700 flex items-start">
+                                  <span className="mr-1">•</span>
+                                  <span>{rec}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

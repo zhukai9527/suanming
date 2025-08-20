@@ -302,6 +302,25 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
               <div className="text-2xl font-bold text-red-800 mb-4">
                 八字：{analysisData.basic_info?.bazi_chart?.complete_chart}
               </div>
+              
+              {/* 节气调整提示 */}
+              {analysisData.basic_info?.solar_term_adjustment?.shouldAdjust && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-yellow-600">⚠️</span>
+                    <h4 className="font-semibold text-yellow-800">节气调整建议</h4>
+                  </div>
+                  <p className="text-yellow-700 text-sm mb-2">
+                    {analysisData.basic_info.solar_term_adjustment.recommendation}
+                  </p>
+                  {analysisData.basic_info.solar_term_adjustment.currentTerm && (
+                    <div className="text-xs text-yellow-600">
+                      当前节气：{analysisData.basic_info.solar_term_adjustment.currentTerm.name} 
+                      ({new Date(analysisData.basic_info.solar_term_adjustment.currentTerm.time).toLocaleString()})
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg border-l-4 border-red-500">
                   <h4 className="font-bold text-red-800 mb-2">日主信息</h4>

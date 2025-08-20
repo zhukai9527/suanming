@@ -2,8 +2,12 @@ const express = require('express');
 const { getDB } = require('../database/index.cjs');
 const { authenticate } = require('../middleware/auth.cjs');
 const { AppError, asyncHandler } = require('../middleware/errorHandler.cjs');
+const AnalysisComparison = require('../services/common/AnalysisComparison.cjs');
 
 const router = express.Router();
+
+// 初始化分析对比服务
+const analysisComparison = new AnalysisComparison();
 
 // 获取用户历史记录
 router.get('/', authenticate, asyncHandler(async (req, res) => {
@@ -354,6 +358,163 @@ router.get('/search/:query', authenticate, asyncHandler(async (req, res) => {
     search: {
       query: query,
       results_count: processedReadings.length
+    }
+  });
+}));
+
+// 对比两个分析结果
+router.post('/compare', authenticate, asyncHandler(async (req, res) => {
+  const { current_analysis_id, historical_analysis_id, analysis_type } = req.body;
+  
+  if (!current_analysis_id || !historical_analysis_id || !analysis_type) {
+    throw new AppError('缺少必要参数：current_analysis_id, historical_analysis_id, analysis_type', 400, 'MISSING_COMPARISON_PARAMS');
+  }
+  
+  const db = getDB();
+  
+  // 获取两个分析记录
+  const currentAnalysis = db.prepare(`
+    SELECT analysis, created_at as analysis_date
+    FROM readings 
+    WHERE id = ? AND user_id = ?
+  `).get(current_analysis_id, req.user.id);
+  
+  const historicalAnalysis = db.prepare(`
+    SELECT analysis, created_at as analysis_date
+    FROM readings 
+    WHERE id = ? AND user_id = ?
+  `).get(historical_analysis_id, req.user.id);
+  
+  if (!currentAnalysis || !historicalAnalysis) {
+    throw new AppError('找不到指定的分析记录', 404, 'ANALYSIS_NOT_FOUND');
+  }
+  
+  // 解析分析数据
+  const currentData = typeof currentAnalysis.analysis === 'string' 
+    ? JSON.parse(currentAnalysis.analysis) 
+    : currentAnalysis.analysis;
+  const historicalData = typeof historicalAnalysis.analysis === 'string' 
+    ? JSON.parse(historicalAnalysis.analysis) 
+    : historicalAnalysis.analysis;
+  
+  // 添加分析日期
+  currentData.analysis_date = currentAnalysis.analysis_date;
+  historicalData.analysis_date = historicalAnalysis.analysis_date;
+  
+  // 执行对比分析
+  const comparisonResult = analysisComparison.compareAnalysisResults(
+    currentData,
+    historicalData,
+    analysis_type
+  );
+  
+  res.json({
+    data: comparisonResult
+  });
+}));
+
+// 批量对比分析（趋势分析）
+router.post('/batch-compare', authenticate, asyncHandler(async (req, res) => {
+  const { analysis_type, limit = 10 } = req.body;
+  
+  if (!analysis_type) {
+    throw new AppError('缺少必要参数：analysis_type', 400, 'MISSING_ANALYSIS_TYPE');
+  }
+  
+  const db = getDB();
+  
+  // 获取用户最近的分析记录
+  const analysisHistory = db.prepare(`
+    SELECT analysis, created_at as analysis_date
+    FROM readings 
+    WHERE user_id = ? AND reading_type = ?
+    ORDER BY created_at DESC
+    LIMIT ?
+  `).all(req.user.id, analysis_type, limit);
+  
+  if (analysisHistory.length < 2) {
+    throw new AppError('历史数据不足，需要至少2次分析记录', 400, 'INSUFFICIENT_HISTORY');
+  }
+  
+  // 解析分析数据
+  const parsedHistory = analysisHistory.map(record => {
+    const data = typeof record.analysis === 'string' 
+      ? JSON.parse(record.analysis) 
+      : record.analysis;
+    data.analysis_date = record.analysis_date;
+    return data;
+  });
+  
+  // 执行批量对比分析
+  const batchComparisonResult = analysisComparison.batchCompareAnalysis(
+    parsedHistory,
+    analysis_type
+  );
+  
+  res.json({
+    data: batchComparisonResult
+  });
+}));
+
+// 获取分析趋势统计
+router.get('/trends/:analysis_type', authenticate, asyncHandler(async (req, res) => {
+  const { analysis_type } = req.params;
+  const { days = 365 } = req.query;
+  
+  const db = getDB();
+  
+  // 获取指定时间范围内的分析记录
+  const analysisRecords = db.prepare(`
+    SELECT 
+      DATE(created_at) as analysis_date,
+      COUNT(*) as count
+    FROM readings 
+    WHERE user_id = ? 
+      AND reading_type = ?
+      AND created_at >= datetime('now', '-' || ? || ' days')
+    GROUP BY DATE(created_at)
+    ORDER BY analysis_date DESC
+  `).all(req.user.id, analysis_type, days);
+  
+  // 计算统计信息
+  const totalAnalyses = analysisRecords.reduce((sum, record) => sum + record.count, 0);
+  const averagePerDay = totalAnalyses / Math.min(days, analysisRecords.length || 1);
+  
+  // 获取最近的分析记录用于趋势分析
+  const recentAnalyses = db.prepare(`
+    SELECT analysis, created_at
+    FROM readings 
+    WHERE user_id = ? AND reading_type = ?
+    ORDER BY created_at DESC
+    LIMIT 5
+  `).all(req.user.id, analysis_type);
+  
+  let trendAnalysis = null;
+  if (recentAnalyses.length >= 2) {
+    const parsedAnalyses = recentAnalyses.map(record => {
+      const data = typeof record.analysis === 'string' 
+        ? JSON.parse(record.analysis) 
+        : record.analysis;
+      data.analysis_date = record.created_at;
+      return data;
+    });
+    
+    trendAnalysis = analysisComparison.batchCompareAnalysis(
+      parsedAnalyses,
+      analysis_type
+    );
+  }
+  
+  res.json({
+    data: {
+      analysis_type: analysis_type,
+      time_range: `${days}天`,
+      statistics: {
+        total_analyses: totalAnalyses,
+        average_per_day: averagePerDay.toFixed(2),
+        analysis_frequency: analysisRecords
+      },
+      trend_analysis: trendAnalysis
     }
   });
 }));

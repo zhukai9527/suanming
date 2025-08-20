@@ -2,15 +2,28 @@
 // 基于传统紫微斗数理论的精确实现
 
 const BaziAnalyzer = require('./baziAnalyzer.cjs');
+const BaseData = require('./common/BaseData.cjs');
+const AnalysisCache = require('./common/AnalysisCache.cjs');
+const StarBrightness = require('./common/StarBrightness.cjs');
+const EnhancedSiHua = require('./common/EnhancedSiHua.cjs');
 
 class ZiweiAnalyzer {
   constructor() {
-    // 初始化八字分析器
+    // 初始化八字分析器和共享基础数据
     this.baziAnalyzer = new BaziAnalyzer();
+    this.baseData = new BaseData();
     
-    // 基础数据
-    this.heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-    this.earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    // 初始化缓存机制
+    this.cache = new AnalysisCache({
+      maxSize: 300,
+      defaultTTL: 2700000 // 45分钟
+    });
+    
+    // 初始化星曜亮度计算系统
+    this.starBrightness = new StarBrightness();
+    
+    // 初始化增强四化飞星系统
+    this.enhancedSiHua = new EnhancedSiHua();
     this.palaceNames = ['命宫', '兄弟宫', '夫妻宫', '子女宫', '财帛宫', '疾厄宫', '迁移宫', '交友宫', '事业宫', '田宅宫', '福德宫', '父母宫'];
     
     // 十四主星
@@ -221,8 +234,8 @@ class ZiweiAnalyzer {
     
     return {
       index: mingGongIndex,
-      branch: this.earthlyBranches[mingGongIndex],
-      description: `命宫在${this.earthlyBranches[mingGongIndex]}宫`
+      branch: this.baseData.getBranchByIndex(mingGongIndex),
+      description: `命宫在${this.baseData.getBranchByIndex(mingGongIndex)}宫`
     };
   }
 
@@ -254,7 +267,7 @@ class ZiweiAnalyzer {
     const majorPeriods = this.calculateMajorPeriods(mingGongIndex, gender, wuxingJu, birthDate.getFullYear());
     
     return {
-      mingGong: this.earthlyBranches[mingGongIndex],
+      mingGong: this.baseData.getBranchByIndex(mingGongIndex),
       mingGongStars: mainStarPositions[mingGongIndex] || [],
       twelvePalaces: twelvePalaces,
       siHua: siHua,
@@ -304,7 +317,7 @@ class ZiweiAnalyzer {
     
     // 根据出生时间计算命宫位置（真正的紫微斗数算法）
     const mingGongIndex = this.calculateMingGongIndex(month, hour);
-    const mingGong = this.earthlyBranches[mingGongIndex];
+    const mingGong = this.baseData.getBranchByIndex(mingGongIndex);
     
     // 计算紫微星位置
     const ziweiPosition = this.calculateZiweiPosition(day, mingGongIndex);
@@ -523,8 +536,12 @@ class ZiweiAnalyzer {
       const luckyStars = luckyStarPositions[palaceIndex] || [];
       const unluckyStars = unluckyStarPositions[palaceIndex] || [];
       
+      // 计算星曜亮度和组合效果
+      const position = this.baseData.getBranchByIndex(palaceIndex);
+      const brightnessAnalysis = this.starBrightness.analyzeStarCombination(allStars, position);
+      
       palaces[palaceName] = {
-        position: this.earthlyBranches[palaceIndex],
+        position: position,
         palace_index: palaceIndex,
         all_stars: allStars,
         main_stars: mainStars,
@@ -534,8 +551,16 @@ class ZiweiAnalyzer {
         interpretation: this.generatePalaceInterpretation(palaceName, mainStars, luckyStars, unluckyStars),
         strength: this.calculatePalaceStrength(mainStars, luckyStars, unluckyStars),
         palace_nature: this.determinePalaceNature(palaceName),
-        key_influences: this.analyzeKeyInfluences(mainStars, luckyStars, unluckyStars)
-      };
+        key_influences: this.analyzeKeyInfluences(mainStars, luckyStars, unluckyStars),
+        brightness_analysis: {
+           overall_brightness: brightnessAnalysis.level,
+           brightness_score: brightnessAnalysis.averageScore,
+           brightness_description: brightnessAnalysis.description,
+           combination_effect: brightnessAnalysis.combinationEffect,
+           star_details: brightnessAnalysis.starDetails,
+           recommendations: brightnessAnalysis.recommendations
+         }
+       };
     }
     
     return palaces;
@@ -643,17 +668,193 @@ class ZiweiAnalyzer {
   // 计算四化
   calculateSiHua(year) {
     const yearStemIndex = (year - 4) % 10;
-    const yearStem = this.heavenlyStems[yearStemIndex];
+    const yearStem = this.baseData.getStemByIndex(yearStemIndex);
     const siHua = this.sihuaTable[yearStem] || this.sihuaTable['甲'];
     
+    // 使用增强四化系统
+     const currentYear = new Date().getFullYear();
+     const currentMonth = new Date().getMonth() + 1;
+     const daxianStem = yearStem; // 简化处理，实际应该根据大限计算
+     
+     const enhancedSiHuaData = this.enhancedSiHua.calculateMultiLevelSiHua(
+       year, currentYear, currentMonth, daxianStem
+     );
+     
+     return {
+       year_stem: yearStem,
+       // 保持原有格式兼容性
+       hua_lu: { star: siHua.lu, meaning: '化禄主财禄，增强星曜的正面能量' },
+       hua_quan: { star: siHua.quan, meaning: '化权主权力，增强星曜的权威性' },
+       hua_ke: { star: siHua.ke, meaning: '化科主名声，增强星曜的声誉' },
+       hua_ji: { star: siHua.ji, meaning: '化忌主阻碍，需要特别注意的星曜' },
+       // 新增增强四化数据
+       enhanced_sihua: enhancedSiHuaData,
+       multi_level_analysis: {
+         birth_year_effects: enhancedSiHuaData.birth_sihua,
+         current_year_effects: enhancedSiHuaData.current_year_sihua,
+         interaction_summary: enhancedSiHuaData.interaction_analysis
+       }
+     };
+  }
+  
+  // 分析四化星的详细效果
+  analyzeSiHuaEffects(siHua) {
     return {
-      year_stem: yearStem,
-      hua_lu: { star: siHua.lu, meaning: '化禄主财禄，增强星曜的正面能量' },
-      hua_quan: { star: siHua.quan, meaning: '化权主权力，增强星曜的权威性' },
-      hua_ke: { star: siHua.ke, meaning: '化科主名声，增强星曜的声誉' },
-      hua_ji: { star: siHua.ji, meaning: '化忌主阻碍，需要特别注意的星曜' }
+      lu_effect: {
+        star: siHua.lu,
+        nature: '化禄',
+        primary_meaning: '财禄、贵人、机遇',
+        secondary_effects: ['增加收入机会', '遇贵人相助', '事业发展顺利'],
+        activation_conditions: '逢吉星加会，效果更佳'
+      },
+      quan_effect: {
+        star: siHua.quan,
+        nature: '化权',
+        primary_meaning: '权威、能力、成就',
+        secondary_effects: ['提升领导能力', '增强决策权', '获得权威地位'],
+        activation_conditions: '需要主动争取，方能发挥'
+      },
+      ke_effect: {
+        star: siHua.ke,
+        nature: '化科',
+        primary_meaning: '名声、学问、考试',
+        secondary_effects: ['学业进步', '考试顺利', '名声提升'],
+        activation_conditions: '需要持续学习和努力'
+      },
+      ji_effect: {
+        star: siHua.ji,
+        nature: '化忌',
+        primary_meaning: '阻碍、困扰、变化',
+        secondary_effects: ['遇到阻碍', '情绪波动', '需要调整策略'],
+        mitigation_methods: ['保持冷静', '寻求帮助', '调整心态']
+      }
     };
   }
+  
+  // 分析四化星的相互作用
+  analyzeSiHuaInteractions(siHua) {
+    const interactions = [];
+    
+    // 分析化禄与化权的配合
+    if (siHua.lu && siHua.quan) {
+      interactions.push({
+        type: '禄权配合',
+        description: `${siHua.lu}化禄与${siHua.quan}化权相配，财权并重，发展潜力大`,
+        effect: '正面'
+      });
+    }
+    
+    // 分析化忌的影响
+    if (siHua.ji) {
+      interactions.push({
+        type: '化忌影响',
+        description: `${siHua.ji}化忌需要特别注意，可能带来相关领域的挑战`,
+        effect: '需要注意',
+        suggestions: ['保持谨慎', '提前准备', '寻求化解方法']
+      });
+    }
+    
+    return interactions;
+   }
+   
+   // 提取关键互动效应
+   extractKeyInteractions(palaceInteractions) {
+     const keyInteractions = [];
+     
+     Object.entries(palaceInteractions).forEach(([palaceName, interaction]) => {
+       if (interaction.overall_interaction_strength > 0.7) {
+         keyInteractions.push({
+           palace: palaceName,
+           strength: interaction.overall_interaction_strength,
+           type: '强互动',
+           description: `${palaceName}与其他宫位形成强烈互动效应`
+         });
+       }
+     });
+     
+     return keyInteractions.sort((a, b) => b.strength - a.strength).slice(0, 5);
+   }
+   
+   // 生成互动建议
+   generateInteractionRecommendations(palaceInteractions, personName) {
+     const recommendations = [];
+     
+     Object.entries(palaceInteractions).forEach(([palaceName, interaction]) => {
+       const effects = interaction.interaction_effects;
+       
+       if (effects.opposite_palace.strength > 0.6) {
+         recommendations.push({
+           type: '对宫平衡',
+           palace: palaceName,
+           recommendation: `${personName}需要注意${palaceName}与${effects.opposite_palace.target_palace}的平衡发展`
+         });
+       }
+       
+       if (effects.triangle_palaces.average_strength > 0.7) {
+         recommendations.push({
+           type: '三合助力',
+           palace: palaceName,
+           recommendation: `${personName}可以善用${palaceName}的三合宫位带来的助力`
+         });
+       }
+     });
+     
+     return recommendations.slice(0, 8);
+   }
+   
+   // 分析动态效应
+   analyzeDynamicEffects(palaceInteractions, siHuaData) {
+     const dynamicEffects = {
+       current_active_palaces: [],
+       potential_conflicts: [],
+       enhancement_opportunities: [],
+       timing_suggestions: []
+     };
+     
+     // 分析当前活跃宫位
+     Object.entries(palaceInteractions).forEach(([palaceName, interaction]) => {
+       if (interaction.overall_interaction_strength > 0.6) {
+         dynamicEffects.current_active_palaces.push({
+           palace: palaceName,
+           activity_level: interaction.overall_interaction_strength,
+           main_effects: this.summarizePalaceEffects(interaction.interaction_effects)
+         });
+       }
+     });
+     
+     // 基于四化数据分析潜在冲突
+     if (siHuaData.enhanced_sihua?.interaction_analysis?.conflicts) {
+       dynamicEffects.potential_conflicts = siHuaData.enhanced_sihua.interaction_analysis.conflicts.map(conflict => ({
+         type: conflict.type,
+         description: conflict.impact,
+         affected_areas: this.mapConflictToPalaces(conflict)
+       }));
+     }
+     
+     return dynamicEffects;
+   }
+   
+   // 总结宫位效应
+   summarizePalaceEffects(effects) {
+     const summary = [];
+     
+     if (effects.opposite_palace.strength > 0.5) {
+       summary.push(`对宫${effects.opposite_palace.target_palace}影响较强`);
+     }
+     
+     if (effects.triangle_palaces.average_strength > 0.5) {
+       summary.push(`三合宫位${effects.triangle_palaces.target_palaces.join('、')}形成助力`);
+     }
+     
+     return summary;
+   }
+   
+   // 映射冲突到宫位
+   mapConflictToPalaces(conflict) {
+     // 简化映射，实际应该根据具体冲突类型进行详细分析
+     const affectedPalaces = ['命宫', '财帛宫', '事业宫', '夫妻宫'];
+     return affectedPalaces.slice(0, 2);
+   }
 
   // 计算大限（基于五行局）
   calculateMajorPeriods(mingGongIndex, gender, wuxingJu, birthYear) {
@@ -680,11 +881,11 @@ class ZiweiAnalyzer {
       periods.push({
         period_number: i + 1,
         age_range: `${ageStart}-${ageEnd}岁`,
-        palace_branch: this.earthlyBranches[palaceIndex],
+        palace_branch: this.baseData.getBranchByIndex(palaceIndex),
         palace_name: this.palaceNames[i],
         is_current: isCurrent,
         wuxing_ju: wuxingJu.type,
-        description: `第${i + 1}大限：${ageStart}-${ageEnd}岁，在${this.earthlyBranches[palaceIndex]}宫（${this.palaceNames[i]}）`
+        description: `第${i + 1}大限：${ageStart}-${ageEnd}岁，在${this.baseData.getBranchByIndex(palaceIndex)}宫（${this.palaceNames[i]}）`
       });
     }
     
@@ -886,6 +1087,9 @@ class ZiweiAnalyzer {
     const mainStar = mingGongStars[0] || '天机'; // 默认天机星
     const twelvePalaces = starChart.twelvePalaces;
     
+    // 计算宫位互动效应
+    const palaceInteractions = this.enhancedSiHua.analyzePalaceInteractions(twelvePalaces, starChart.siHua);
+    
     return {
       personality_analysis: this.generatePersonalityAnalysis(personName, personGender, twelvePalaces['命宫'], mainStar),
       career_analysis: this.generateCareerAnalysis(personName, twelvePalaces['事业宫'], twelvePalaces['命宫'], starChart.majorPeriods),
@@ -894,7 +1098,14 @@ class ZiweiAnalyzer {
       health_analysis: this.generateHealthAnalysis(personName, twelvePalaces['疾厄宫'], twelvePalaces['命宫']),
       family_analysis: this.generateFamilyAnalysis(personName, twelvePalaces, personGender),
       timing_analysis: this.generateTimingAnalysis(personName, starChart.majorPeriods, wuxingJu, birthYear),
-      life_guidance: this.generateLifeGuidance(personName, mainStar, twelvePalaces, starChart.siHua)
+      life_guidance: this.generateLifeGuidance(personName, mainStar, twelvePalaces, starChart.siHua),
+      // 新增宫位互动效应分析
+      palace_interactions: {
+        interaction_matrix: palaceInteractions,
+        key_interactions: this.extractKeyInteractions(palaceInteractions),
+        interaction_recommendations: this.generateInteractionRecommendations(palaceInteractions, personName),
+        dynamic_effects: this.analyzeDynamicEffects(palaceInteractions, starChart.siHua)
+      }
     };
   }
 
@@ -1227,8 +1438,8 @@ class ZiweiAnalyzer {
     
     return {
       current_age: age,
-      xiao_xian_position: this.earthlyBranches[xiaoXianIndex],
-      xiao_xian_meaning: `${age}岁小限在${this.earthlyBranches[xiaoXianIndex]}宫`,
+      xiao_xian_position: this.baseData.getBranchByIndex(xiaoXianIndex),
+      xiao_xian_meaning: `${age}岁小限在${this.baseData.getBranchByIndex(xiaoXianIndex)}宫`,
       xiao_xian_influence: this.analyzeXiaoXianInfluence(xiaoXianIndex, age),
       yearly_theme: this.getXiaoXianYearlyTheme(xiaoXianIndex)
     };
@@ -1238,8 +1449,8 @@ class ZiweiAnalyzer {
   calculateLiuNianAnalysis(currentYear, majorPeriods, xiaoXian) {
     const yearStemIndex = (currentYear - 4) % 10;
     const yearBranchIndex = (currentYear - 4) % 12;
-    const yearStem = this.heavenlyStems[yearStemIndex];
-    const yearBranch = this.earthlyBranches[yearBranchIndex];
+    const yearStem = this.baseData.getStemByIndex(yearStemIndex);
+    const yearBranch = this.baseData.getBranchByIndex(yearBranchIndex);
     
     // 流年四化
     const liuNianSiHua = this.sihuaTable[yearStem];
@@ -1266,7 +1477,7 @@ class ZiweiAnalyzer {
   // 计算流月分析
   calculateLiuYueAnalysis(currentYear, currentMonth) {
     const monthBranchIndex = (currentMonth + 1) % 12; // 寅月起正月
-    const monthBranch = this.earthlyBranches[monthBranchIndex];
+    const monthBranch = this.baseData.getBranchByIndex(monthBranchIndex);
     
     return {
       current_month: currentMonth,

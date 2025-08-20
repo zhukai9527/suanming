@@ -1,11 +1,23 @@
 // 专业易经分析服务模块
 // 基于传统易学理论的完整实现
 
+const AnalysisCache = require('./common/AnalysisCache.cjs');
+const EnhancedRandom = require('./common/EnhancedRandom.cjs');
+
 class YijingAnalyzer {
   constructor() {
     this.initializeHexagrams();
     this.initializeTrigramData();
     this.initializeNumerology();
+    
+    // 初始化缓存机制
+    this.cache = new AnalysisCache({
+      maxSize: 200,
+      defaultTTL: 1200000 // 20分钟（易经结果时效性较短）
+    });
+    
+    // 初始化增强随机数生成器
+    this.enhancedRandom = new EnhancedRandom();
   }
 
   // 初始化八卦基础数据
@@ -39,6 +51,12 @@ class YijingAnalyzer {
   // 专业易经分析主函数
   performYijingAnalysis(inputData) {
     try {
+      // 检查缓存（易经分析时效性较短，缓存时间较短）
+      const cachedResult = this.cache.get('yijing', inputData);
+      if (cachedResult) {
+        return cachedResult;
+      }
+      
       const { question, user_id, birth_data, divination_method = 'time' } = inputData;
       const currentTime = new Date();
       
@@ -99,6 +117,11 @@ class YijingAnalyzer {
           philosophical_insight: this.generatePhilosophicalInsight(mainHexagramInfo, changingHexagramInfo)
         }
       };
+      
+      // 存储到缓存
+      this.cache.set('yijing', inputData, result);
+      return result;
+      
     } catch (error) {
       console.error('易经分析详细错误:', error);
       throw error;
@@ -166,59 +189,42 @@ class YijingAnalyzer {
     };
   }
 
-  // 金钱卦起卦法（模拟）
+  // 增强金钱卦起卦法（使用高质量随机数）
   generateHexagramByCoin() {
-    const lines = [];
-    const changingLines = [];
-    
-    for (let i = 0; i < 6; i++) {
-      // 模拟投掷三枚硬币
-      const coin1 = Math.random() > 0.5 ? 3 : 2; // 正面3，反面2
-      const coin2 = Math.random() > 0.5 ? 3 : 2;
-      const coin3 = Math.random() > 0.5 ? 3 : 2;
-      const sum = coin1 + coin2 + coin3;
-      
-      if (sum === 6) { // 老阴，变阳
-        lines.push(0);
-        changingLines.push(i + 1);
-      } else if (sum === 7) { // 少阳
-        lines.push(1);
-      } else if (sum === 8) { // 少阴
-        lines.push(0);
-      } else if (sum === 9) { // 老阳，变阴
-        lines.push(1);
-        changingLines.push(i + 1);
-      }
-    }
-    
-    const binary = lines.join('');
-    const mainHexNumber = this.getHexagramByBinary(binary);
+    const hexagramData = this.enhancedRandom.generateFullHexagram();
+    const mainHexNumber = this.getHexagramByBinary(hexagramData.binary);
     
     return {
       mainHex: mainHexNumber,
-      changingLines: changingLines,
-      method: '金钱卦起卦法',
-      binary: binary
+      changingLines: hexagramData.changingLines,
+      method: hexagramData.method,
+      randomQuality: hexagramData.quality,
+       binary: hexagramData.binary
     };
   }
 
   // 数字起卦法
+  // 增强数字起卦法（结合高质量随机数）
   generateHexagramByNumber(currentTime, userId) {
     const timeNum = currentTime.getTime();
     const userNum = userId ? parseInt(String(userId).slice(-3)) || 123 : 123;
     
-    const upperTrigramNum = (Math.floor(timeNum / 1000) + userNum) % 8 || 8;
-    const lowerTrigramNum = (Math.floor(timeNum / 100) + userNum * 2) % 8 || 8;
-    const changingLinePos = (timeNum + userNum) % 6 + 1;
+    // 使用增强随机数生成器增加随机性
+    const randomFactor = Math.floor(this.enhancedRandom.getHighQualityRandom() * 1000);
+    
+    const upperTrigramNum = (Math.floor(timeNum / 1000) + userNum + randomFactor) % 8 || 8;
+    const lowerTrigramNum = (Math.floor(timeNum / 100) + userNum * 2 + randomFactor * 2) % 8 || 8;
+    const changingLinePos = (timeNum + userNum + randomFactor) % 6 + 1;
     
     const mainHexNumber = this.getHexagramNumber(upperTrigramNum, lowerTrigramNum);
     
     return {
       mainHex: mainHexNumber,
       changingLines: [changingLinePos],
-      method: '数字起卦法',
+      method: '增强数字起卦法',
       upperTrigram: upperTrigramNum,
-      lowerTrigram: lowerTrigramNum
+      lowerTrigram: lowerTrigramNum,
+      randomQuality: this.enhancedRandom.assessRandomQuality()
     };
   }
 

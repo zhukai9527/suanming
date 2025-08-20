@@ -3,31 +3,23 @@
 
 const SolarTermsCalculator = require('../utils/solarTerms.cjs');
 const WanNianLi = require('../utils/wanNianLi.cjs');
+const BaseData = require('./common/BaseData.cjs');
+const AnalysisCache = require('./common/AnalysisCache.cjs');
 
 class BaziAnalyzer {
   constructor() {
-    this.heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-    this.earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+    // 初始化共享基础数据
+    this.baseData = new BaseData();
     
     // 初始化节气计算器和万年历
     this.solarTermsCalculator = new SolarTermsCalculator();
     this.wanNianLi = new WanNianLi();
     
-    // 地支藏干表 - 传统命理核心数据
-    this.branchHiddenStems = {
-      '子': ['癸'],
-      '丑': ['己', '癸', '辛'],
-      '寅': ['甲', '丙', '戊'],
-      '卯': ['乙'],
-      '辰': ['戊', '乙', '癸'],
-      '巳': ['丙', '庚', '戊'],
-      '午': ['丁', '己'],
-      '未': ['己', '丁', '乙'],
-      '申': ['庚', '壬', '戊'],
-      '酉': ['辛'],
-      '戌': ['戊', '辛', '丁'],
-      '亥': ['壬', '甲']
-    };
+    // 初始化缓存机制
+    this.cache = new AnalysisCache({
+      maxSize: 500,
+      defaultTTL: 1800000 // 30分钟
+    });
     
     // 十神关系表
     this.tenGods = {
@@ -63,26 +55,35 @@ class BaziAnalyzer {
   // 完全个性化的八字分析主函数 - 基于真实用户数据
   async performFullBaziAnalysis(birth_data) {
     try {
+      // 检查缓存
+      const cachedResult = this.cache.get('bazi', birth_data);
+      if (cachedResult) {
+        return cachedResult;
+      }
+      
       const { birth_date, birth_time, gender, birth_place, name } = birth_data;
       const personalizedName = name || '您';
 
-      // 1. 精确计算八字四柱
+      // 1. 精确计算八字四柱（基础计算，必须先完成）
       const baziChart = this.calculatePreciseBazi(birth_date, birth_time);
       
-      // 2. 详细五行分析
-      const wuxingAnalysis = this.performDetailedWuxingAnalysis(baziChart, gender, personalizedName);
+      // 2-6. 并行异步计算各项分析（提升性能）
+      const [wuxingAnalysis, patternAnalysis, fortuneAnalysis, lifeGuidance, modernGuidance] = await Promise.all([
+        // 详细五行分析
+        Promise.resolve(this.performDetailedWuxingAnalysis(baziChart, gender, personalizedName)),
+        // 精确格局判定
+        Promise.resolve(this.determineAccuratePattern(baziChart, gender, personalizedName)),
+        // 精准大运流年分析（最耗时）
+        this.calculatePreciseFortuneAsync(baziChart, birth_date, gender, personalizedName),
+        // 综合人生指导（依赖前面结果，但可以异步处理）
+        this.generateComprehensiveLifeGuidanceAsync(baziChart, gender, personalizedName),
+        // 现代应用建议
+        Promise.resolve(this.generateModernApplications(baziChart, null, gender, personalizedName))
+      ]);
       
-      // 3. 精确格局判定
-      const patternAnalysis = this.determineAccuratePattern(baziChart, gender, personalizedName);
-      
-      // 4. 精准大运流年分析
-      const fortuneAnalysis = this.calculatePreciseFortune(baziChart, birth_date, gender, personalizedName);
-      
-      // 5. 综合人生指导
-      const lifeGuidance = this.generateComprehensiveLifeGuidance(baziChart, patternAnalysis, wuxingAnalysis, gender, personalizedName);
-      
-      // 6. 现代应用建议
-      const modernGuidance = this.generateModernApplications(baziChart, patternAnalysis, gender, personalizedName);
+      // 更新依赖关系的分析结果
+      const finalLifeGuidance = this.generateComprehensiveLifeGuidance(baziChart, patternAnalysis, wuxingAnalysis, gender, personalizedName);
+      const finalModernGuidance = this.generateModernApplications(baziChart, patternAnalysis, gender, personalizedName);
 
       return {
         analysis_type: 'bazi',
@@ -124,20 +125,25 @@ class BaziAnalyzer {
           detailed_yearly_analysis: fortuneAnalysis.detailed_yearly_analysis
         },
         life_guidance: {
-          overall_summary: lifeGuidance.comprehensive_summary,
-          career_development: lifeGuidance.career_guidance,
-          wealth_management: lifeGuidance.wealth_guidance,
-          marriage_relationships: lifeGuidance.relationship_guidance,
-          health_wellness: lifeGuidance.health_guidance,
-          personal_development: lifeGuidance.self_improvement
+          overall_summary: finalLifeGuidance.comprehensive_summary,
+          career_development: finalLifeGuidance.career_guidance,
+          wealth_management: finalLifeGuidance.wealth_guidance,
+          marriage_relationships: finalLifeGuidance.relationship_guidance,
+          health_wellness: finalLifeGuidance.health_guidance,
+          personal_development: finalLifeGuidance.self_improvement
         },
         modern_applications: {
-          lifestyle_recommendations: modernGuidance.daily_life,
-          career_strategies: modernGuidance.professional_development,
-          relationship_advice: modernGuidance.interpersonal_skills,
-          decision_making: modernGuidance.timing_guidance
+          lifestyle_recommendations: finalModernGuidance.daily_life,
+          career_strategies: finalModernGuidance.professional_development,
+          relationship_advice: finalModernGuidance.interpersonal_skills,
+          decision_making: finalModernGuidance.timing_guidance
         }
       };
+      
+      // 存储到缓存
+      this.cache.set('bazi', birth_data, result);
+      return result;
+      
     } catch (error) {
       console.error('Complete Bazi analysis error:', error);
       throw error;
@@ -170,14 +176,14 @@ class BaziAnalyzer {
         stem: yearPillar.stem,
         branch: yearPillar.branch,
         element: this.getElementFromStem(yearPillar.stem),
-        hidden_stems: this.branchHiddenStems[yearPillar.branch],
+        hidden_stems: this.baseData.getBranchHiddenStems(yearPillar.branch),
         ten_god: this.calculateTenGod(dayPillar.stem, yearPillar.stem)
       },
       month_pillar: {
         stem: monthPillar.stem,
         branch: monthPillar.branch,
         element: this.getElementFromStem(monthPillar.stem),
-        hidden_stems: this.branchHiddenStems[monthPillar.branch],
+        hidden_stems: this.baseData.getBranchHiddenStems(monthPillar.branch),
         ten_god: this.calculateTenGod(dayPillar.stem, monthPillar.stem),
         is_month_order: true // 月令为提纲
       },
@@ -185,7 +191,7 @@ class BaziAnalyzer {
         stem: dayPillar.stem,
         branch: dayPillar.branch,
         element: this.getElementFromStem(dayPillar.stem),
-        hidden_stems: this.branchHiddenStems[dayPillar.branch],
+        hidden_stems: this.baseData.getBranchHiddenStems(dayPillar.branch),
         ten_god: '日主', // 日主本身
         is_day_master: true
       },
@@ -193,7 +199,7 @@ class BaziAnalyzer {
         stem: hourPillar.stem,
         branch: hourPillar.branch,
         element: this.getElementFromStem(hourPillar.stem),
-        hidden_stems: this.branchHiddenStems[hourPillar.branch],
+        hidden_stems: this.baseData.getBranchHiddenStems(hourPillar.branch),
         ten_god: this.calculateTenGod(dayPillar.stem, hourPillar.stem)
       },
       day_master: dayPillar.stem,
@@ -265,8 +271,8 @@ class BaziAnalyzer {
     const finalBranchIndex = ((branchIndex % 12) + 12) % 12;
     
     return {
-      stem: this.heavenlyStems[finalStemIndex],
-      branch: this.earthlyBranches[finalBranchIndex],
+      stem: this.baseData.getStemByIndex(finalStemIndex),
+        branch: this.baseData.getBranchByIndex(finalBranchIndex),
       stemIndex: finalStemIndex,
       branchIndex: finalBranchIndex
     };
@@ -301,8 +307,8 @@ class BaziAnalyzer {
     const monthStemIndex = (monthStemBase[yearStemIndex] + (monthBranchIndex - 2 + 12) % 12) % 10;
     
     return {
-      stem: this.heavenlyStems[monthStemIndex],
-      branch: this.earthlyBranches[monthBranchIndex],
+      stem: this.baseData.getStemByIndex(monthStemIndex),
+        branch: this.baseData.getBranchByIndex(monthBranchIndex),
       stemIndex: monthStemIndex,
       branchIndex: monthBranchIndex
     };
@@ -336,8 +342,8 @@ class BaziAnalyzer {
     const hourStemIndex = (hourStemBase[dayStemIndex] + hourBranchIndex) % 10;
     
     return {
-      stem: this.heavenlyStems[hourStemIndex],
-      branch: this.earthlyBranches[hourBranchIndex],
+      stem: this.baseData.getStemByIndex(hourStemIndex),
+        branch: this.baseData.getBranchByIndex(hourBranchIndex),
       stemIndex: hourStemIndex,
       branchIndex: hourBranchIndex
     };
@@ -425,7 +431,7 @@ class BaziAnalyzer {
     const supportDetails = [];
     
     Object.values(pillars).forEach(pillar => {
-      const hiddenStems = this.branchHiddenStems[pillar.branch];
+      const hiddenStems = this.baseData.getBranchHiddenStems(pillar.branch);
       hiddenStems.forEach((hiddenStem, index) => {
         const hiddenElement = this.getElementFromStem(hiddenStem);
         const relation = this.getElementRelation(hiddenElement, dayElement);
@@ -1243,7 +1249,56 @@ class BaziAnalyzer {
       detailed_yearly_analysis: detailedYearlyAnalysis
     };
   }
-  
+
+  // 异步版本的精准大运流年分析（优化性能）
+  async calculatePreciseFortuneAsync(baziChart, birth_date, gender, name) {
+    const birthDate = new Date(birth_date);
+    const currentYear = new Date().getFullYear();
+    const currentAge = currentYear - birthDate.getFullYear();
+    
+    // 并行计算各个组件
+    const [startLuckAge, dayunSequence] = await Promise.all([
+      Promise.resolve(this.calculateStartLuckAge(baziChart, birthDate, gender)),
+      Promise.resolve(this.calculateDayunSequence(baziChart, gender, 0)) // 临时起运年龄
+    ]);
+    
+    // 重新计算正确的大运序列
+    const correctDayunSequence = this.calculateDayunSequence(baziChart, gender, startLuckAge);
+    
+    // 并行计算分析结果
+    const [currentDayun, currentYearAnalysis, nextDecadeForecast, detailedYearlyAnalysis] = await Promise.all([
+      Promise.resolve(this.getCurrentDayun(correctDayunSequence, currentAge)),
+      new Promise(resolve => {
+        setTimeout(() => {
+          resolve(this.analyzeCurrentYear(baziChart, currentYear, this.getCurrentDayun(correctDayunSequence, currentAge)));
+        }, 0);
+      }),
+      new Promise(resolve => {
+        setTimeout(() => {
+          resolve(this.generateDecadeForecast(baziChart, correctDayunSequence, currentAge));
+        }, 0);
+      }),
+      new Promise(resolve => {
+        setTimeout(() => {
+          const currentDayunForAnalysis = this.getCurrentDayun(correctDayunSequence, currentAge);
+          resolve(this.generateDetailedYearlyAnalysis(baziChart, currentDayunForAnalysis, currentYear, currentAge));
+        }, 0);
+      })
+    ]);
+    
+    return {
+      current_age: currentAge,
+      start_luck_age: startLuckAge,
+      current_period: currentDayun ? `${currentDayun.start_age}-${currentDayun.end_age}岁 ${currentDayun.stem}${currentDayun.branch}大运` : '未起运',
+      current_dayun: currentDayun,
+      life_periods: correctDayunSequence,
+      current_year_analysis: currentYearAnalysis,
+      next_decade_forecast: nextDecadeForecast,
+      dayun_analysis: this.analyzeDayunInfluence(baziChart, currentDayun),
+      detailed_yearly_analysis: detailedYearlyAnalysis
+    };
+  }
+
   // 计算起运年龄
   calculateStartLuckAge(baziChart, birthDate, gender) {
     const birthYear = birthDate.getFullYear();
@@ -1251,7 +1306,7 @@ class BaziAnalyzer {
     const birthDay = birthDate.getDate();
     
     // 判断阳年阴年
-    const yearStemIndex = this.heavenlyStems.indexOf(baziChart.year_pillar.stem);
+    const yearStemIndex = this.baseData.getStemIndex(baziChart.year_pillar.stem);
     const isYangYear = yearStemIndex % 2 === 0;
     
     // 男命阳年、女命阴年顺行，男命阴年、女命阳年逆行
@@ -1310,11 +1365,11 @@ class BaziAnalyzer {
   
   // 推算大运干支序列
   calculateDayunSequence(baziChart, gender, startAge) {
-    const monthStemIndex = this.heavenlyStems.indexOf(baziChart.month_pillar.stem);
-    const monthBranchIndex = this.earthlyBranches.indexOf(baziChart.month_pillar.branch);
+    const monthStemIndex = this.baseData.getStemIndex(baziChart.month_pillar.stem);
+    const monthBranchIndex = this.baseData.getBranchIndex(baziChart.month_pillar.branch);
     
     // 判断顺逆
-    const yearStemIndex = this.heavenlyStems.indexOf(baziChart.year_pillar.stem);
+    const yearStemIndex = this.baseData.getStemIndex(baziChart.year_pillar.stem);
     const isYangYear = yearStemIndex % 2 === 0;
     const isMale = gender === 'male' || gender === '男';
     const isForward = (isMale && isYangYear) || (!isMale && !isYangYear);
@@ -1335,8 +1390,8 @@ class BaziAnalyzer {
       const startAgeForThisDayun = startAge + i * 10;
       const endAgeForThisDayun = startAgeForThisDayun + 9;
       
-      const dayunStem = this.heavenlyStems[stemIndex];
-      const dayunBranch = this.earthlyBranches[branchIndex];
+      const dayunStem = this.baseData.getStemByIndex(stemIndex);
+      const dayunBranch = this.baseData.getBranchByIndex(branchIndex);
       const dayunElement = this.getElementFromStem(dayunStem);
       const dayunTenGod = this.calculateTenGod(baziChart.day_master, dayunStem);
       
@@ -1411,8 +1466,8 @@ class BaziAnalyzer {
   analyzeCurrentYear(baziChart, currentYear, currentDayun) {
     const yearStemIndex = (currentYear - 4) % 10;
     const yearBranchIndex = (currentYear - 4) % 12;
-    const yearStem = this.heavenlyStems[yearStemIndex];
-    const yearBranch = this.earthlyBranches[yearBranchIndex];
+    const yearStem = this.baseData.getStemByIndex(yearStemIndex);
+    const yearBranch = this.baseData.getBranchByIndex(yearBranchIndex);
     const yearTenGod = this.calculateTenGod(baziChart.day_master, yearStem);
     
     let analysis = `${currentYear}年${yearStem}${yearBranch}，流年十神为${yearTenGod}。`;
@@ -1521,6 +1576,23 @@ class BaziAnalyzer {
     }
     
     return influence;
+  }
+
+  // 异步版本的综合人生指导（优化性能）
+  async generateComprehensiveLifeGuidanceAsync(baziChart, gender, name) {
+    // 基础版本的人生指导，不依赖其他分析结果
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve({
+          comprehensive_summary: `${name}，根据您的八字分析，您具有良好的命理基础，建议充分发挥自身优势`,
+          career_guidance: '在事业发展方面，建议选择稳定发展的行业，注重积累经验',
+          wealth_guidance: '在财富管理方面，建议稳健投资，避免投机',
+          relationship_guidance: '在感情关系方面，建议真诚待人，重视家庭和谐',
+          health_guidance: '在健康养生方面，建议规律作息，适度运动',
+          self_improvement: '在个人修养方面，建议多读书学习，提升内在品质'
+        });
+      }, 0);
+    });
   }
 
   generateComprehensiveLifeGuidance(baziChart, patternAnalysis, wuxingAnalysis, gender, name) {
@@ -2145,8 +2217,8 @@ class BaziAnalyzer {
       // 计算流年干支
       const yearStemIndex = (analysisYear - 4) % 10;
       const yearBranchIndex = (analysisYear - 4) % 12;
-      const yearStem = this.heavenlyStems[yearStemIndex];
-      const yearBranch = this.earthlyBranches[yearBranchIndex];
+      const yearStem = this.baseData.getStemByIndex(yearStemIndex);
+    const yearBranch = this.baseData.getBranchByIndex(yearBranchIndex);
       const yearTenGod = this.calculateTenGod(baziChart.day_master, yearStem);
       
       // 确定该年的大运
