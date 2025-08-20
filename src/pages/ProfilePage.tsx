@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
@@ -24,11 +24,7 @@ const ProfilePage: React.FC = () => {
     username: ''
   });
 
-  useEffect(() => {
-    loadProfile();
-  }, [user]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -54,7 +50,11 @@ const ProfilePage: React.FC = () => {
       console.error('加载档案失败:', error);
       toast.error('加载档案失败');
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [user, loadProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

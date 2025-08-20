@@ -52,7 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Link to="/" className="flex items-center space-x-2 group" onClick={closeMobileMenu}>
                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border-2 border-yellow-600 group-hover:scale-110 transition-transform duration-300">
                   <img 
-                    src="/traditional-chinese-bagua-eight-trigrams-black-gold.jpg" 
+                    src="/traditional_chinese_gold_red_dragon_symbol.jpg" 
                     alt="神机阁"
                     className="w-7 h-7 rounded-full object-cover"
                   />

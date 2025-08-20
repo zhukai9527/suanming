@@ -71,8 +71,8 @@ const HomePage: React.FC = () => {
             {/* 太极符号装饰 */}
             <div className="w-12 h-12 md:w-14 md:h-14 mx-auto mb-4 md:mb-6 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center shadow-lg border-2 border-red-600">
               <img 
-                src="/traditional-chinese-bagua-eight-trigrams-black-gold.jpg" 
-                alt="太极八卦"
+                src="/traditional_chinese_gold_red_dragon_symbol.jpg" 
+                alt="神机阁"
                 className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover"
               />
             </div>

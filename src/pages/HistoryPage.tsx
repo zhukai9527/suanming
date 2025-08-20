@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
 import { ChineseButton } from '../components/ui/ChineseButton';
@@ -41,11 +41,7 @@ const HistoryPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadHistory();
-  }, [user]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -93,7 +89,11 @@ const HistoryPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [user, loadHistory]);
 
   const handleDeleteReading = async (readingId: string) => {
     if (!confirm('确定要删除这条分析记录吗？')) {
@@ -122,6 +122,8 @@ const HistoryPage: React.FC = () => {
   const handleViewReading = (reading: NumerologyReading) => {
     setSelectedReading(reading);
     setViewingResult(true);
+    // 滚动到页面顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getAnalysisTypeIcon = (type: string) => {

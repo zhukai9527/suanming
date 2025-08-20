@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { localApi } from '../lib/localApi';
 import { ChineseButton } from '../components/ui/ChineseButton';
@@ -42,16 +42,7 @@ const AnalysisPage: React.FC = () => {
     return undefined;
   }, [analysisType, formData.birth_date, formData.birth_time, formData.name, formData.gender]);
 
-  useEffect(() => {
-    loadProfile();
-  }, [user]);
-
-  // 切换分析类型时清空分析结果
-  useEffect(() => {
-    setAnalysisResult(null);
-  }, [analysisType]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -71,7 +62,16 @@ const AnalysisPage: React.FC = () => {
     } catch (error) {
       console.error('加载档案失败:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [user, loadProfile]);
+
+  // 切换分析类型时清空分析结果
+  useEffect(() => {
+    setAnalysisResult(null);
+  }, [analysisType]);
 
   const handleAnalysis = async () => {
     if (!user) return;
@@ -111,7 +111,7 @@ const AnalysisPage: React.FC = () => {
         case 'ziwei':
           response = await localApi.analysis.ziwei(birthData);
           break;
-        case 'yijing':
+        case 'yijing': {
           const yijingData = {
             question: formData.question,
             user_id: user.id,
@@ -121,6 +121,7 @@ const AnalysisPage: React.FC = () => {
           };
           response = await localApi.analysis.yijing(yijingData);
           break;
+        }
         default:
           throw new Error(`不支持的分析类型: ${analysisType}`);
       }
