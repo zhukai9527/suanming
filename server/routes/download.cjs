@@ -2,10 +2,9 @@ const express = require('express');
 const { authenticate } = require('../middleware/auth.cjs');
 const { dbManager } = require('../database/index.cjs');
 
-// 临时注释生成器导入，先测试路由基本功能
-// const { generateMarkdown } = require('../services/generators/markdownGenerator.cjs');
-// const { generatePDF } = require('../services/generators/pdfGenerator.cjs');
-// const { generatePNG } = require('../services/generators/pngGenerator.cjs');
+const { generateMarkdown } = require('../services/generators/markdownGenerator.cjs');
+const { generatePDF } = require('../services/generators/pdfGenerator.cjs');
+const { generatePNG } = require('../services/generators/pngGenerator.cjs');
 
 const router = express.Router();
 
@@ -50,43 +49,60 @@ router.post('/', authenticate, async (req, res) => {
     let fileExtension;
     let filename;
 
-    // 生成文件名
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-    const analysisTypeLabel = {
-      'bazi': '八字命理',
-      'ziwei': '紫微斗数',
-      'yijing': '易经占卜'
-    }[analysisType];
+    // 生成文件名 - 格式："分析类型_用户名_日期_时间"（使用分析记录创建时间）
+    // 优先使用分析记录的创建时间，如果没有则使用当前时间
+    let analysisDate;
+    if (analysisData.created_at) {
+      analysisDate = new Date(analysisData.created_at);
+    } else if (analysisData.basic_info?.created_at) {
+      analysisDate = new Date(analysisData.basic_info.created_at);
+    } else {
+      // 如果没有创建时间，使用当前时间作为备用
+      analysisDate = new Date();
+    }
     
-    const baseFilename = `${analysisTypeLabel}_${userName || 'user'}_${timestamp}`;
+    const year = analysisDate.getFullYear();
+    const month = String(analysisDate.getMonth() + 1).padStart(2, '0');
+    const day = String(analysisDate.getDate()).padStart(2, '0');
+    const hour = String(analysisDate.getHours()).padStart(2, '0');
+    const minute = String(analysisDate.getMinutes()).padStart(2, '0');
+    const second = String(analysisDate.getSeconds()).padStart(2, '0');
+    
+    const dateStr = `${year}-${month}-${day}`;
+    const timeStr = `${hour}${minute}${second}`;
+    
+    // 分析类型映射
+    const analysisTypeMap = {
+      'bazi': '八字命理',
+      'ziwei': '紫微斗数', 
+      'yijing': '易经占卜'
+    };
+    
+    const analysisTypeName = analysisTypeMap[analysisType] || analysisType;
+    const baseFilename = `${analysisTypeName}_${userName || 'user'}_${dateStr}_${timeStr}`;
+    // 文件名格式: 八字命理_午饭_2025-08-21_133105
 
     try {
       switch (format) {
         case 'markdown':
-          // 临时简单实现
-          const markdownContent = `# ${analysisTypeLabel}分析报告\n\n**姓名：** ${userName || '用户'}\n**生成时间：** ${new Date().toLocaleString('zh-CN')}\n\n## 分析结果\n\n这是一个测试文件。\n\n---\n\n*本报告由神机阁AI命理分析平台生成*`;
-          fileBuffer = Buffer.from(markdownContent, 'utf8');
+          fileBuffer = await generateMarkdown(analysisData, analysisType, userName);
           contentType = 'text/markdown';
           fileExtension = 'md';
           filename = `${baseFilename}.md`;
           break;
 
         case 'pdf':
-          // 临时返回HTML内容
-          const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${analysisTypeLabel}分析报告</title></head><body><h1>${analysisTypeLabel}分析报告</h1><p><strong>姓名：</strong>${userName || '用户'}</p><p><strong>生成时间：</strong>${new Date().toLocaleString('zh-CN')}</p><h2>分析结果</h2><p>这是一个测试文件。</p></body></html>`;
-          fileBuffer = Buffer.from(htmlContent, 'utf8');
-          contentType = 'text/html';
-          fileExtension = 'html';
-          filename = `${baseFilename}.html`;
+          fileBuffer = await generatePDF(analysisData, analysisType, userName);
+          contentType = 'application/pdf';
+          fileExtension = 'pdf';
+          filename = `${baseFilename}.pdf`;
           break;
 
         case 'png':
-          // 临时返回SVG内容
-          const svgContent = `<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="300" fill="#f9f9f9"/><text x="200" y="50" text-anchor="middle" font-size="24" fill="#dc2626">${analysisTypeLabel}分析报告</text><text x="200" y="100" text-anchor="middle" font-size="16" fill="#333">姓名：${userName || '用户'}</text><text x="200" y="130" text-anchor="middle" font-size="14" fill="#666">生成时间：${new Date().toLocaleString('zh-CN')}</text><text x="200" y="180" text-anchor="middle" font-size="16" fill="#333">这是一个测试文件</text></svg>`;
-          fileBuffer = Buffer.from(svgContent, 'utf8');
-          contentType = 'image/svg+xml';
-          fileExtension = 'svg';
-          filename = `${baseFilename}.svg`;
+          fileBuffer = await generatePNG(analysisData, analysisType, userName);
+          contentType = 'image/png';
+          fileExtension = 'png';
+          filename = `${baseFilename}.png`;
           break;
       }
     } catch (generationError) {

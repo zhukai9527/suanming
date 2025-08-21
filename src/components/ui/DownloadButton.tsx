@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, FileText, FileImage, File, Loader2, ChevronDown } from 'lucide-react';
 import { ChineseButton } from './ChineseButton';
 import { cn } from '../../lib/utils';
@@ -111,7 +112,28 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
       // 获取文件名（从响应头或生成默认名称）
       const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = `${getAnalysisTypeLabel()}_${userName || 'user'}_${new Date().toISOString().slice(0, 10)}.${format === 'markdown' ? 'md' : format}`;
+      // 生成与后端一致的文件名格式：分析类型_用户名_日期_时间（使用分析记录创建时间）
+      // 优先使用分析记录的创建时间，如果没有则使用当前时间
+      let analysisDate;
+      if (analysisData.created_at) {
+        analysisDate = new Date(analysisData.created_at);
+      } else if (analysisData.basic_info?.created_at) {
+        analysisDate = new Date(analysisData.basic_info.created_at);
+      } else {
+        // 如果没有创建时间，使用当前时间作为备用
+        analysisDate = new Date();
+      }
+      
+      const year = analysisDate.getFullYear();
+      const month = String(analysisDate.getMonth() + 1).padStart(2, '0');
+      const day = String(analysisDate.getDate()).padStart(2, '0');
+      const hour = String(analysisDate.getHours()).padStart(2, '0');
+      const minute = String(analysisDate.getMinutes()).padStart(2, '0');
+      const second = String(analysisDate.getSeconds()).padStart(2, '0');
+      
+      const dateStr = `${year}-${month}-${day}`;
+      const timeStr = `${hour}${minute}${second}`;
+      let filename = `${getAnalysisTypeLabel()}_${userName || 'user'}_${dateStr}_${timeStr}.${format === 'markdown' ? 'md' : format}`;
       
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=(['"]?)([^'"\n]*?)\1/);
@@ -182,89 +204,91 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
           className="flex items-center space-x-2 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white border-0 shadow-lg"
         >
           {isDownloading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <Download className="h-3 w-3 sm:h-4 sm:w-4" />
           )}
-          <span className="font-medium">
-            {isDownloading ? `正在生成${getFormatLabel(downloadingFormat!)}...` : '下载分析结果'}
+          <span className="font-medium hidden sm:inline">
+            {isDownloading ? `正在生成${getFormatLabel(downloadingFormat!)}...` : '下载'}
           </span>
           <ChevronDown className={cn(
-            'h-4 w-4 transition-transform duration-200',
+            'h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200',
             showDropdown ? 'rotate-180' : ''
           )} />
         </ChineseButton>
       </div>
 
-      {/* 下拉菜单 */}
-      {showDropdown && (
-        <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-          <div className="p-3 border-b border-gray-100">
-            <h3 className="font-bold text-gray-800 text-sm">选择下载格式</h3>
-            <p className="text-xs text-gray-600 mt-1">{getAnalysisTypeLabel()}分析结果</p>
-          </div>
+      {/* 使用Portal渲染弹出层到body，脱离父容器限制 */}
+      {showDropdown && createPortal(
+        <>
+          {/* 背景遮罩 */}
+          <div 
+            className="fixed inset-0 z-[999998] bg-black bg-opacity-20" 
+            onClick={() => setShowDropdown(false)}
+          />
           
-          <div className="p-2">
-            {formatOptions.map((option) => {
-              const Icon = option.icon;
-              const isCurrentlyDownloading = isDownloading && downloadingFormat === option.format;
-              
-              return (
-                <button
-                  key={option.format}
-                  onClick={() => handleDownload(option.format)}
-                  disabled={disabled || isDownloading}
-                  className={cn(
-                    'w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200',
-                    option.bgColor,
-                    'border border-transparent hover:border-gray-300',
-                    disabled || isDownloading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  )}
-                >
-                  <div className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center',
-                    option.bgColor.replace('hover:', '').replace('bg-', 'bg-').replace('-50', '-100')
-                  )}>
-                    {isCurrentlyDownloading ? (
-                      <Loader2 className={cn('h-5 w-5 animate-spin', option.color)} />
-                    ) : (
-                      <Icon className={cn('h-5 w-5', option.color)} />
+          {/* 弹出层 - 固定定位到屏幕中央 */}
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[999999] max-h-96 overflow-y-auto">
+            <div className="p-3 border-b border-gray-100">
+              <h3 className="font-bold text-gray-800 text-sm">选择下载格式</h3>
+              <p className="text-xs text-gray-600 mt-1">{getAnalysisTypeLabel()}分析结果</p>
+            </div>
+            
+            <div className="p-2">
+              {formatOptions.map((option) => {
+                const Icon = option.icon;
+                const isCurrentlyDownloading = isDownloading && downloadingFormat === option.format;
+                
+                return (
+                  <button
+                    key={option.format}
+                    onClick={() => handleDownload(option.format)}
+                    disabled={disabled || isDownloading}
+                    className={cn(
+                      'w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200',
+                      option.bgColor,
+                      'border border-transparent hover:border-gray-300',
+                      disabled || isDownloading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     )}
-                  </div>
-                  
-                  <div className="flex-1 text-left">
-                    <div className={cn('font-medium text-sm', option.color)}>
-                      {option.label}
+                  >
+                    <div className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      option.bgColor.replace('hover:', '').replace('bg-', 'bg-').replace('-50', '-100')
+                    )}>
+                      {isCurrentlyDownloading ? (
+                        <Loader2 className={cn('h-5 w-5 animate-spin', option.color)} />
+                      ) : (
+                        <Icon className={cn('h-5 w-5', option.color)} />
+                      )}
                     </div>
-                    <div className="text-xs text-gray-600 mt-1">
-                      {option.description}
+                    
+                    <div className="flex-1 text-left">
+                      <div className={cn('font-medium text-sm', option.color)}>
+                        {option.label}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {option.description}
+                      </div>
                     </div>
-                  </div>
-                  
-                  {isCurrentlyDownloading && (
-                    <div className="text-xs text-gray-500">
-                      生成中...
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+                    
+                    {isCurrentlyDownloading && (
+                      <div className="text-xs text-gray-500">
+                        生成中...
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <div className="p-3 border-t border-gray-100 bg-gray-50 rounded-b-lg">
+              <p className="text-xs text-gray-500 text-center">
+                💡 提示：PDF和PNG格式包含完整的视觉设计，Markdown格式便于编辑
+              </p>
+            </div>
           </div>
-          
-          <div className="p-3 border-t border-gray-100 bg-gray-50 rounded-b-lg">
-            <p className="text-xs text-gray-500 text-center">
-              💡 提示：PDF和PNG格式包含完整的视觉设计，Markdown格式便于编辑
-            </p>
-          </div>
-        </div>
-      )}
-      
-      {/* 点击外部关闭下拉菜单 */}
-      {showDropdown && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowDropdown(false)}
-        />
+        </>,
+        document.body
       )}
     </div>
   );

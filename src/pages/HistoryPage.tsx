@@ -6,8 +6,9 @@ import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } 
 import { ChineseEmpty } from '../components/ui/ChineseEmpty';
 import { ChineseLoading } from '../components/ui/ChineseLoading';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
+import DownloadButton from '../components/ui/DownloadButton';
 import { toast } from 'sonner';
-import { History, Calendar, User, Sparkles, Star, Compass, Eye, Trash2 } from 'lucide-react';
+import { History, Calendar, User, Sparkles, Star, Compass, Eye, Trash2, Download } from 'lucide-react';
 import { NumerologyReading } from '../types';
 import { cn } from '../lib/utils';
 
@@ -261,22 +262,32 @@ const HistoryPage: React.FC = () => {
                           </div>
                         </div>
                         
-                        <div className="flex items-center space-x-2 self-end sm:self-center">
+                        <div className="flex items-center space-x-1 sm:space-x-2 self-end sm:self-center">
                           <ChineseButton
                             variant="outline"
                             size="md"
                             onClick={() => handleViewReading(reading)}
+                            className="px-3 sm:px-6 text-xs sm:text-sm"
                           >
-                            <Eye className="mr-1 h-4 w-4" />
-                            查看
+                            <Eye className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">查看</span>
                           </ChineseButton>
+                          <DownloadButton
+                            analysisData={{
+                              ...(reading.analysis || reading.results),
+                              created_at: reading.created_at
+                            }}
+                            analysisType={reading.reading_type as 'bazi' | 'ziwei' | 'yijing'}
+                            userName={reading.name}
+                            className="min-h-[44px] px-3 sm:px-6 py-2.5 text-xs sm:text-sm"
+                          />
                           <ChineseButton
                             variant="ghost"
                             size="md"
                             onClick={() => handleDeleteReading(reading.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                           </ChineseButton>
                         </div>
                       </div>

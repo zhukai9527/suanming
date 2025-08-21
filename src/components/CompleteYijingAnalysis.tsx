@@ -266,6 +266,16 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-yellow-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
         
+        {/* 下载按钮 */}
+        <div className="flex justify-end">
+          <DownloadButton
+            analysisData={analysisData}
+            analysisType="yijing"
+            userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
+            className="sticky top-4 z-10"
+          />
+        </div>
+        
         {/* 标题和基本信息 */}
         <Card className="chinese-card-decoration dragon-corner border-2 border-yellow-400">
           <CardHeader className="text-center">
@@ -722,15 +732,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
           </CardContent>
         </Card>
 
-        {/* 下载按钮 */}
-         <div className="flex justify-end mb-8">
-           <DownloadButton
-             analysisData={analysisData}
-             analysisType="yijing"
-             userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
-             className="sticky top-4 z-10"
-           />
-         </div>
+
 
         {/* 免责声明 */}
         <Card className="chinese-card-decoration border-2 border-gray-300">

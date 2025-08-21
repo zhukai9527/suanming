@@ -1,42 +1,175 @@
 /**
  * PDF格式生成器
  * 将分析结果转换为PDF文档
- * 使用html-pdf库进行转换
+ * 使用puppeteer进行HTML到PDF的转换
  */
 
+const puppeteer = require('puppeteer');
+const { generateMarkdown } = require('./markdownGenerator.cjs');
+
 const generatePDF = async (analysisData, analysisType, userName) => {
+  let browser;
   try {
-    // 生成HTML内容
-    const htmlContent = generateHTML(analysisData, analysisType, userName);
+    // 生成Markdown内容
+    const markdownBuffer = await generateMarkdown(analysisData, analysisType, userName);
     
-    // 由于html-pdf库需要额外安装，这里先返回HTML转PDF的占位符
-    // 在实际部署时需要安装 html-pdf 或 puppeteer
+    // 将Buffer转换为字符串
+    const markdownString = Buffer.isBuffer(markdownBuffer) ? markdownBuffer.toString('utf8') : String(markdownBuffer);
     
-    // 临时解决方案：返回HTML内容作为PDF（实际应该转换为PDF）
-    const Buffer = require('buffer').Buffer;
-    return Buffer.from(htmlContent, 'utf8');
+    // 将Markdown转换为HTML
+    const htmlContent = convertMarkdownToHTML(markdownString, analysisType, userName);
     
-    // 正式实现应该是：
-    // const pdf = require('html-pdf');
-    // return new Promise((resolve, reject) => {
-    //   pdf.create(htmlContent, {
-    //     format: 'A4',
-    //     border: {
-    //       top: '0.5in',
-    //       right: '0.5in',
-    //       bottom: '0.5in',
-    //       left: '0.5in'
-    //     }
-    //   }).toBuffer((err, buffer) => {
-    //     if (err) reject(err);
-    //     else resolve(buffer);
-    //   });
-    // });
+    // 启动puppeteer浏览器
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-images',
+        '--disable-javascript',
+        '--run-all-compositor-stages-before-draw',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-ipc-flooding-protection'
+      ],
+      timeout: 30000
+    });
+    
+    const page = await browser.newPage();
+    
+    // 设置页面内容
+    await page.setContent(htmlContent, {
+      waitUntil: 'networkidle0'
+    });
+    
+    // 生成PDF
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: {
+        top: '20mm',
+        right: '15mm',
+        bottom: '20mm',
+        left: '15mm'
+      },
+      printBackground: true,
+      preferCSSPageSize: true
+    });
+    
+    return pdfBuffer;
     
   } catch (error) {
     console.error('生成PDF失败:', error);
     throw error;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
+};
+
+/**
+ * 将Markdown内容转换为适合PDF的HTML
+ */
+const convertMarkdownToHTML = (markdownContent, analysisType, userName) => {
+  // 预处理：分离表格
+  const lines = markdownContent.split('\n');
+  let html = '';
+  let inTable = false;
+  let tableRows = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // 检测表格开始
+    if (line.includes('|') && line.includes('---')) {
+      inTable = true;
+      // 添加表格头（前一行）
+      if (i > 0 && lines[i-1].includes('|')) {
+        const headerCells = lines[i-1].split('|').map(cell => cell.trim()).filter(cell => cell);
+        tableRows.push('<tr>' + headerCells.map(cell => `<th>${cell}</th>`).join('') + '</tr>');
+      }
+      continue;
+    }
+    
+    // 处理表格行
+    if (inTable && line.includes('|')) {
+      const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell);
+      if (cells.length > 0) {
+        tableRows.push('<tr>' + cells.map(cell => `<td>${cell}</td>`).join('') + '</tr>');
+      }
+      continue;
+    }
+    
+    // 表格结束
+    if (inTable && !line.includes('|')) {
+      html += '<table>' + tableRows.join('') + '</table>\n';
+      tableRows = [];
+      inTable = false;
+    }
+    
+    // 处理非表格行
+    if (!inTable) {
+      html += line + '\n';
+    }
+  }
+  
+  // 处理未结束的表格
+  if (tableRows.length > 0) {
+    html += '<table>' + tableRows.join('') + '</table>\n';
+  }
+  
+  // Markdown到HTML转换
+  html = html
+    // 标题转换
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    // 加粗文本
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // 处理列表
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    // 将连续的li包装在ul中
+    .replace(/(<li>.*<\/li>\s*)+/gs, (match) => {
+      return '<ul>' + match + '</ul>';
+    })
+    // 水平分割线
+    .replace(/^---$/gm, '<hr>')
+    // 段落处理
+    .replace(/\n\s*\n/g, '</p><p>')
+    .replace(/^(?!<[h1-6]|<ul|<table|<hr)(.+)$/gm, '<p>$1</p>')
+    // 清理多余的p标签
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>(<[^>]+>)/g, '$1')
+    .replace(/(<\/[^>]+>)<\/p>/g, '$1')
+    // 换行处理
+    .replace(/\n/g, '');
+  
+  // 包装在完整的HTML文档中
+  return `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${getAnalysisTypeLabel(analysisType)}分析报告</title>
+    <style>
+        ${getPDFCSS()}
+    </style>
+</head>
+<body>
+    <div class="container">
+        ${html}
+    </div>
+</body>
+</html>
+  `;
 };
 
 /**
@@ -617,7 +750,156 @@ const getAnalysisTypeLabel = (analysisType) => {
 };
 
 /**
- * 获取CSS样式
+ * 获取PDF专用CSS样式
+ */
+const getPDFCSS = () => {
+  return `
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Microsoft YaHei', '微软雅黑', 'SimSun', '宋体', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: white;
+      font-size: 12px;
+    }
+    
+    .container {
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    
+    h1 {
+      font-size: 24px;
+      color: #2c3e50;
+      text-align: center;
+      margin: 20px 0;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+    }
+    
+    h2 {
+      font-size: 18px;
+      color: #34495e;
+      margin: 20px 0 10px 0;
+      padding: 10px 0;
+      border-bottom: 2px solid #3498db;
+      page-break-after: avoid;
+    }
+    
+    h3 {
+      font-size: 16px;
+      color: #2980b9;
+      margin: 15px 0 8px 0;
+      padding-left: 10px;
+      border-left: 4px solid #3498db;
+      page-break-after: avoid;
+    }
+    
+    h4 {
+      font-size: 14px;
+      color: #27ae60;
+      margin: 12px 0 6px 0;
+      page-break-after: avoid;
+    }
+    
+    p {
+      margin: 8px 0;
+      line-height: 1.6;
+      text-align: justify;
+    }
+    
+    strong {
+      color: #2c3e50;
+      font-weight: bold;
+    }
+    
+    ul, ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    li {
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 11px;
+      page-break-inside: avoid;
+    }
+    
+    th, td {
+      border: 1px solid #bdc3c7;
+      padding: 8px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #ecf0f1;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    
+    .section {
+      margin: 20px 0;
+      page-break-inside: avoid;
+    }
+    
+    .page-break {
+      page-break-before: always;
+    }
+    
+    .no-break {
+      page-break-inside: avoid;
+    }
+    
+    /* 打印优化 */
+    @page {
+      margin: 20mm 15mm;
+      size: A4;
+    }
+    
+    @media print {
+      body {
+        font-size: 11px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+      
+      h2 {
+        font-size: 16px;
+      }
+      
+      h3 {
+        font-size: 14px;
+      }
+      
+      .section {
+        break-inside: avoid;
+      }
+    }
+  `;
+};
+
+/**
+ * 获取原有CSS样式（保持兼容性）
  */
 const getCSS = () => {
   return `
