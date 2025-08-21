@@ -61,6 +61,12 @@ const generatePDF = async (analysisData, analysisType, userName) => {
       preferCSSPageSize: true
     });
     
+    // 确保返回的是Buffer对象
+    if (!Buffer.isBuffer(pdfBuffer)) {
+      console.warn('Puppeteer返回的不是Buffer，正在转换:', typeof pdfBuffer);
+      return Buffer.from(pdfBuffer);
+    }
+    
     return pdfBuffer;
     
   } catch (error) {

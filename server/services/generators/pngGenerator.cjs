@@ -1,34 +1,80 @@
 /**
  * PNG图片生成器
  * 将分析结果转换为PNG图片格式
- * 使用canvas或html-to-image技术
+ * 使用Puppeteer将SVG转换为PNG
  */
 
+const puppeteer = require('puppeteer');
+
 const generatePNG = async (analysisData, analysisType, userName) => {
+  let browser;
   try {
-    // 生成图片内容
-    const imageData = await generateImageData(analysisData, analysisType, userName);
+    // 生成SVG内容
+    const svgContent = await generateImageData(analysisData, analysisType, userName);
     
-    // 由于canvas库需要额外安装，这里先返回占位符
-    // 在实际部署时需要安装 canvas 或 puppeteer
+    // 创建包含SVG的HTML页面
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { margin: 0; padding: 0; }
+    svg { display: block; }
+  </style>
+</head>
+<body>
+  ${svgContent}
+</body>
+</html>`;
     
-    // 临时解决方案：返回SVG内容作为PNG（实际应该转换为PNG）
-    const Buffer = require('buffer').Buffer;
-    return Buffer.from(imageData, 'utf8');
+    // 启动puppeteer浏览器
+    browser = await puppeteer.launch({
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--disable-extensions',
+        '--disable-plugins'
+      ],
+      timeout: 30000
+    });
     
-    // 正式实现应该是：
-    // const { createCanvas, loadImage } = require('canvas');
-    // const canvas = createCanvas(800, 1200);
-    // const ctx = canvas.getContext('2d');
-    // 
-    // // 绘制内容到canvas
-    // drawContent(ctx, analysisData, analysisType, userName);
-    // 
-    // return canvas.toBuffer('image/png');
+    const page = await browser.newPage();
+    
+    // 设置页面内容
+    await page.setContent(htmlContent, {
+      waitUntil: 'networkidle0'
+    });
+    
+    // 设置视口大小
+    await page.setViewport({ width: 800, height: 1200 });
+    
+    // 截图生成PNG
+    const pngBuffer = await page.screenshot({
+      type: 'png',
+      fullPage: true,
+      omitBackground: false
+    });
+    
+    // 确保返回的是Buffer对象
+    if (!Buffer.isBuffer(pngBuffer)) {
+      console.warn('Puppeteer返回的不是Buffer，正在转换:', typeof pngBuffer);
+      return Buffer.from(pngBuffer);
+    }
+    
+    return pngBuffer;
     
   } catch (error) {
     console.error('生成PNG失败:', error);
     throw error;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
 };
 
