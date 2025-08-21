@@ -3,6 +3,8 @@ import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, L
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { BackToTop } from './ui/BackToTop';
 import DownloadButton from './ui/DownloadButton';
+import AIInterpretationButton from './ui/AIInterpretationButton';
+import AIConfigModal from './ui/AIConfigModal';
 import { localApi } from '../lib/localApi';
 
 interface CompleteYijingAnalysisProps {
@@ -21,6 +23,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
   const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
+  const [showAIConfig, setShowAIConfig] = useState(false);
 
   // 卦象颜色配置
   const hexagramColors: { [key: string]: string } = {
@@ -266,15 +269,26 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-yellow-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8" id="yijing-analysis-content" data-export-content>
         
-        {/* 下载按钮 */}
-        <div className="flex justify-end no-export" data-no-export>
-          <DownloadButton
-            analysisData={analysisData}
-            analysisType="yijing"
-            userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
-            targetElementId="yijing-analysis-content"
-            className="sticky top-4 z-10"
-          />
+        {/* 下载和AI解读按钮 */}
+        <div className="flex justify-between items-start no-export" data-no-export>
+          <div className="flex-1">
+            <AIInterpretationButton
+              analysisData={analysisData}
+              analysisType="yijing"
+              analysisId={`yijing-${question || 'general'}-${Date.now()}`}
+              onConfigClick={() => setShowAIConfig(true)}
+              className="sticky top-4 z-10"
+            />
+          </div>
+          <div className="ml-4">
+            <DownloadButton
+              analysisData={analysisData}
+              analysisType="yijing"
+              userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
+              targetElementId="yijing-analysis-content"
+              className="sticky top-4 z-10"
+            />
+          </div>
         </div>
         
         {/* 标题和基本信息 */}
@@ -748,10 +762,22 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             </div>
           </CardContent>
         </Card>
+
+
       </div>
       
       {/* 返回顶部按钮 */}
       <BackToTop />
+      
+      {/* AI配置模态框 */}
+      <AIConfigModal
+        isOpen={showAIConfig}
+        onClose={() => setShowAIConfig(false)}
+        onConfigSaved={() => {
+          setShowAIConfig(false);
+          // 可以在这里添加配置保存后的逻辑
+        }}
+      />
     </div>
   );
 };

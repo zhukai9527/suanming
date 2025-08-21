@@ -170,6 +170,7 @@ const HistoryPage: React.FC = () => {
           </div>
         </div>
         
+
         <AnalysisResultDisplay 
           analysisResult={selectedReading.analysis}
           analysisType={selectedReading.reading_type as 'bazi' | 'ziwei' | 'yijing'}
@@ -186,6 +187,7 @@ const HistoryPage: React.FC = () => {
             getInputDataValue(selectedReading.input_data, 'divination_method', 'time') : undefined}
           preAnalysisData={selectedReading.analysis}
         />
+
       </div>
     );
   }
@@ -272,6 +274,7 @@ const HistoryPage: React.FC = () => {
                             <Eye className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                             <span className="hidden sm:inline">查看</span>
                           </ChineseButton>
+
                           <DownloadButton
                             analysisData={{
                               ...(reading.analysis || reading.results),
@@ -299,6 +302,8 @@ const HistoryPage: React.FC = () => {
           )}
         </ChineseCardContent>
       </ChineseCard>
+      
+      
     </div>
   );
 };

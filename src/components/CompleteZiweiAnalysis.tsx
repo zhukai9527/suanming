@@ -6,6 +6,8 @@ import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } 
 import { ChineseLoading } from './ui/ChineseLoading';
 import { BackToTop } from './ui/BackToTop';
 import DownloadButton from './ui/DownloadButton';
+import AIInterpretationButton from './ui/AIInterpretationButton';
+import AIConfigModal from './ui/AIConfigModal';
 import { localApi } from '../lib/localApi';
 import { cn } from '../lib/utils';
 
@@ -23,6 +25,7 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
   const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
+  const [showAIConfig, setShowAIConfig] = useState(false);
 
   // 四化飞星详细解释
   const sihuaExplanations = {
@@ -581,15 +584,26 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8" id="ziwei-analysis-content" data-export-content>
         
-        {/* 下载按钮 */}
-        <div className="flex justify-end no-export" data-no-export>
-          <DownloadButton
-            analysisData={analysisData}
-            analysisType="ziwei"
-            userName={birthDate.name}
-            targetElementId="ziwei-analysis-content"
-            className="sticky top-4 z-10"
-          />
+        {/* 下载和AI解读按钮 */}
+        <div className="flex justify-between items-start no-export" data-no-export>
+          <div className="flex-1">
+            <AIInterpretationButton
+              analysisData={analysisData}
+              analysisType="ziwei"
+              analysisId={`ziwei-${birthDate.date}-${birthDate.time}`}
+              onConfigClick={() => setShowAIConfig(true)}
+              className="sticky top-4 z-10"
+            />
+          </div>
+          <div className="ml-4">
+            <DownloadButton
+              analysisData={analysisData}
+              analysisType="ziwei"
+              userName={birthDate.name}
+              targetElementId="ziwei-analysis-content"
+              className="sticky top-4 z-10"
+            />
+          </div>
         </div>
         
         {/* 标题和基本信息 */}
@@ -1562,10 +1576,22 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
             </div>
           </CardContent>
         </Card>
+
+
       </div>
       
       {/* 回到顶部按钮 */}
       <BackToTop />
+      
+      {/* AI配置模态框 */}
+      <AIConfigModal
+        isOpen={showAIConfig}
+        onClose={() => setShowAIConfig(false)}
+        onConfigSaved={() => {
+          setShowAIConfig(false);
+          // 可以在这里添加配置保存后的逻辑
+        }}
+      />
     </div>
   );
 };
