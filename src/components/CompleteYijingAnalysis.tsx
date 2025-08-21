@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity, Crown, Compass, Moon, Sun, Hexagon, Layers, Eye, Shuffle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { BackToTop } from './ui/BackToTop';
+import DownloadButton from './ui/DownloadButton';
 import { localApi } from '../lib/localApi';
 
 interface CompleteYijingAnalysisProps {
@@ -720,6 +721,16 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* 下载按钮 */}
+         <div className="flex justify-end mb-8">
+           <DownloadButton
+             analysisData={analysisData}
+             analysisType="yijing"
+             userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
+             className="sticky top-4 z-10"
+           />
+         </div>
 
         {/* 免责声明 */}
         <Card className="chinese-card-decoration border-2 border-gray-300">

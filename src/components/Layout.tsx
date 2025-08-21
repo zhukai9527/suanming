@@ -1,7 +1,7 @@
 import React, { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Sparkles, User, History, LogOut, Home, Menu, X } from 'lucide-react';
+import { Sparkles, User, History, LogOut, Home, Menu, X, Github } from 'lucide-react';
 import { ChineseButton } from './ui/ChineseButton';
 import { toast } from 'sonner';
 import { cn } from '../lib/utils';
@@ -89,6 +89,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 );
               })}
               
+              {/* GitHub链接 */}
+              <a
+                href="https://github.com/patdelphi/suanming"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-1.5 px-3 py-2 rounded-lg font-medium transition-all duration-300 text-sm border border-transparent hover:border-yellow-400 text-white hover:text-yellow-100 hover:bg-white/10"
+                title="查看GitHub源码"
+              >
+                <Github className="h-4 w-4" />
+                <span className="whitespace-nowrap">GitHub</span>
+              </a>
+              
               {user ? (
                 <ChineseButton
                   onClick={handleSignOut}
@@ -166,6 +178,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               );
             })}
+            
+            {/* 移动端GitHub链接 */}
+            <a
+              href="https://github.com/patdelphi/suanming"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={closeMobileMenu}
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 border border-transparent text-white hover:text-yellow-100 hover:bg-white/10"
+            >
+              <Github className="h-5 w-5" />
+              <span>GitHub</span>
+            </a>
             
             <div className="pt-4 border-t border-white/20">
               {user ? (

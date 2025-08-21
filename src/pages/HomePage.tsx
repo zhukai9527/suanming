@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Star, Compass, Heart, BarChart3, BookOpen, Shield, Zap, Users, Award, Brain, TrendingUp } from 'lucide-react';
+import { Sparkles, Star, Compass, Heart, BarChart3, BookOpen, Shield, Zap, Users, Award, Brain, TrendingUp, Github } from 'lucide-react';
 import { ChineseButton } from '../components/ui/ChineseButton';
 import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from '../components/ui/ChineseCard';
 import { useAuth } from '../contexts/AuthContext';
@@ -332,6 +332,24 @@ const HomePage: React.FC = () => {
                 </ChineseButton>
               </Link>
             )}
+          </div>
+          
+          {/* GitHub链接 */}
+          <div className="mt-8 pt-6 border-t border-red-200">
+            <div className="flex justify-center">
+              <a
+                href="https://github.com/patdelphi/suanming"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors duration-200 shadow-md hover:shadow-lg"
+              >
+                <Github className="h-5 w-5" />
+                <span className="font-medium">查看GitHub源码</span>
+              </a>
+            </div>
+            <p className="text-center text-sm text-gray-600 mt-3 font-chinese">
+              开源项目，欢迎贡献代码和建议
+            </p>
           </div>
         </ChineseCardContent>
       </ChineseCard>

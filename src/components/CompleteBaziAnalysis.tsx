@@ -3,6 +3,7 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { BackToTop } from './ui/BackToTop';
+import DownloadButton from './ui/DownloadButton';
 import { localApi } from '../lib/localApi';
 
 interface CompleteBaziAnalysisProps {
@@ -276,6 +277,16 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-yellow-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
+        
+        {/* 下载按钮 */}
+        <div className="flex justify-end">
+          <DownloadButton
+            analysisData={analysisData}
+            analysisType="bazi"
+            userName={birthDate.name}
+            className="sticky top-4 z-10"
+          />
+        </div>
         
         {/* 标题和基本信息 */}
         <Card className="chinese-card-decoration dragon-corner border-2 border-yellow-400">
