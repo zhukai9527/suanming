@@ -4,7 +4,6 @@ const { dbManager } = require('../database/index.cjs');
 
 const { generateMarkdown } = require('../services/generators/markdownGenerator.cjs');
 const { generatePDF } = require('../services/generators/pdfGenerator.cjs');
-const { generatePNG } = require('../services/generators/pngGenerator.cjs');
 
 const router = express.Router();
 
@@ -68,7 +67,7 @@ router.post('/', authenticate, async (req, res) => {
     const minute = String(analysisDate.getMinutes()).padStart(2, '0');
     const second = String(analysisDate.getSeconds()).padStart(2, '0');
     
-    const dateStr = `${year}-${month}-${day}`;
+    const dateStr = `${year}${month}${day}`;
     const timeStr = `${hour}${minute}${second}`;
     
     // 分析类型映射
@@ -79,8 +78,9 @@ router.post('/', authenticate, async (req, res) => {
     };
     
     const analysisTypeName = analysisTypeMap[analysisType] || analysisType;
-    const baseFilename = `${analysisTypeName}_${userName || 'user'}_${dateStr}_${timeStr}`;
-    // 文件名格式: 八字命理_午饭_2025-08-21_133105
+    const exportMode = '服务器导出';
+    const baseFilename = `${analysisTypeName}_${userName || 'user'}_${exportMode}_${dateStr}_${timeStr}`;
+    // 文件名格式: 八字命理_午饭_服务器导出_20250821_133105
 
     try {
       switch (format) {
@@ -98,12 +98,7 @@ router.post('/', authenticate, async (req, res) => {
           filename = `${baseFilename}.pdf`;
           break;
 
-        case 'png':
-          fileBuffer = await generatePNG(analysisData, analysisType, userName);
-          contentType = 'image/png';
-          fileExtension = 'png';
-          filename = `${baseFilename}.png`;
-          break;
+
       }
     } catch (generationError) {
       console.error(`生成${format}文件失败:`, generationError);

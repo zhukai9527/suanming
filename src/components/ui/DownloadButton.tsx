@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, FileText, FileImage, File, Loader2, ChevronDown } from 'lucide-react';
+import { Download, FileText, FileImage, File, Loader2, ChevronDown, Printer, Camera } from 'lucide-react';
 import { ChineseButton } from './ChineseButton';
 import { cn } from '../../lib/utils';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 export type DownloadFormat = 'markdown' | 'pdf' | 'png';
+export type ExportMode = 'server' | 'frontend';
 
 interface DownloadButtonProps {
   analysisData: any;
@@ -13,6 +16,7 @@ interface DownloadButtonProps {
   onDownload?: (format: DownloadFormat) => Promise<void>;
   className?: string;
   disabled?: boolean;
+  targetElementId?: string; // 用于前端导出的目标元素ID
 }
 
 const DownloadButton: React.FC<DownloadButtonProps> = ({
@@ -21,40 +25,71 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
   userName,
   onDownload,
   className,
-  disabled = false
+  disabled = false,
+  targetElementId
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadingFormat, setDownloadingFormat] = useState<DownloadFormat | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const formatOptions = [
+  const allFormatOptions = [
     {
       format: 'markdown' as DownloadFormat,
       label: 'Markdown文档',
       icon: FileText,
       description: '结构化文本格式，便于编辑',
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50 hover:bg-blue-100'
+      bgColor: 'bg-blue-50 hover:bg-blue-100',
+      mode: 'server' as ExportMode
     },
     {
       format: 'pdf' as DownloadFormat,
-      label: 'PDF文档',
+      label: 'PDF文档（服务器生成）',
       icon: File,
-      description: '专业格式，便于打印和分享',
+      description: '服务器生成的PDF文档',
       color: 'text-red-600',
-      bgColor: 'bg-red-50 hover:bg-red-100'
+      bgColor: 'bg-red-50 hover:bg-red-100',
+      mode: 'server' as ExportMode
     },
     {
+      format: 'pdf' as DownloadFormat,
+      label: 'PDF文档（页面导出）',
+      icon: Printer,
+      description: '直接从页面生成PDF，分页格式',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50 hover:bg-purple-100',
+      mode: 'frontend' as ExportMode
+    },
+
+    {
       format: 'png' as DownloadFormat,
-      label: 'PNG图片',
-      icon: FileImage,
-      description: '高清图片格式，便于保存',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50 hover:bg-green-100'
+      label: 'PNG长图（页面导出）',
+      icon: Camera,
+      description: '直接从页面生成PNG长图',
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50 hover:bg-teal-100',
+      mode: 'frontend' as ExportMode
     }
   ];
 
-  const handleDownload = async (format: DownloadFormat) => {
+  // 根据是否有targetElementId来过滤选项
+  const formatOptions = allFormatOptions.filter(option => {
+    // 如果是前端导出模式，需要有targetElementId才显示
+    if (option.mode === 'frontend') {
+      return !!targetElementId;
+    }
+    // 服务器模式总是显示
+    return true;
+  });
+
+  console.log('DownloadButton配置:', {
+    targetElementId,
+    totalOptions: allFormatOptions.length,
+    availableOptions: formatOptions.length,
+    frontendOptionsAvailable: formatOptions.filter(o => o.mode === 'frontend').length
+  });
+
+  const handleDownload = async (format: DownloadFormat, mode: ExportMode = 'server') => {
     if (disabled || isDownloading) return;
 
     try {
@@ -62,20 +97,192 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       setDownloadingFormat(format);
       setShowDropdown(false);
 
-      if (onDownload) {
+      if (mode === 'frontend') {
+        // 前端导出逻辑
+        await frontendExport(format);
+      } else if (onDownload) {
         await onDownload(format);
       } else {
-        // 默认下载逻辑
+        // 默认服务器下载逻辑
         await defaultDownload(format);
       }
     } catch (error) {
       console.error('下载失败:', error);
-      // 这里可以添加错误提示
+      // 显示错误提示
+      if (typeof window !== 'undefined' && (window as any).toast) {
+        (window as any).toast.error(`下载失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      }
     } finally {
       setIsDownloading(false);
       setDownloadingFormat(null);
     }
   };
+
+  // 前端导出功能
+  const frontendExport = async (format: DownloadFormat) => {
+    console.log('开始前端导出，格式:', format, '目标元素ID:', targetElementId);
+    
+    if (!targetElementId) {
+      const error = '未指定导出目标元素ID，无法使用前端导出功能';
+      console.error(error);
+      throw new Error(error);
+    }
+
+    const element = document.getElementById(targetElementId);
+    console.log('查找目标元素:', targetElementId, '找到元素:', element);
+    
+    if (!element) {
+      const error = `未找到ID为"${targetElementId}"的元素，请确认页面已完全加载`;
+      console.error(error);
+      throw new Error(error);
+    }
+
+    console.log('目标元素尺寸:', {
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+      scrollWidth: element.scrollWidth,
+      scrollHeight: element.scrollHeight
+    });
+
+    if (format === 'png') {
+      await exportToPNG(element);
+    } else if (format === 'pdf') {
+      await exportToPDF(element);
+    }
+  };
+
+  // 导出为PNG
+  const exportToPNG = async (element: HTMLElement): Promise<void> => {
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
+      onclone: (clonedDoc) => {
+        const elementsToHide = clonedDoc.querySelectorAll(
+          '.no-export, [data-no-export], .fixed, .sticky, .floating'
+        );
+        elementsToHide.forEach(el => {
+          (el as HTMLElement).style.display = 'none';
+        });
+      }
+    });
+
+    const link = document.createElement('a');
+    const fileName = getFileName('png', 'frontend');
+    link.download = fileName;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+
+    // 显示成功提示
+    if (typeof window !== 'undefined' && (window as any).toast) {
+      (window as any).toast.success('PNG长图导出成功');
+    }
+  };
+
+  // 导出为PDF
+  const exportToPDF = async (element: HTMLElement): Promise<void> => {
+    const canvas = await html2canvas(element, {
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
+      onclone: (clonedDoc) => {
+        const elementsToHide = clonedDoc.querySelectorAll(
+          '.no-export, [data-no-export], .fixed, .sticky, .floating'
+        );
+        elementsToHide.forEach(el => {
+          (el as HTMLElement).style.display = 'none';
+        });
+      }
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pdfWidth = 210;
+    const pdfHeight = 297;
+    const margin = 10;
+    const contentWidth = pdfWidth - 2 * margin;
+    const contentHeight = pdfHeight - 2 * margin;
+
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    
+    // 优先填满宽度，让内容宽度占满页面
+    const widthRatio = contentWidth / (imgWidth * 0.264583);
+    const scaledWidth = contentWidth; // 直接使用全部可用宽度
+    const scaledHeight = imgHeight * 0.264583 * widthRatio;
+
+    const pageHeight = contentHeight;
+    const totalPages = Math.ceil(scaledHeight / pageHeight);
+
+    for (let i = 0; i < totalPages; i++) {
+      if (i > 0) {
+        pdf.addPage();
+      }
+
+      const yOffset = -i * pageHeight;
+      pdf.addImage(
+        imgData,
+        'PNG',
+        margin,
+        margin + yOffset,
+        scaledWidth,
+        scaledHeight
+      );
+    }
+
+    const fileName = getFileName('pdf', 'frontend');
+    pdf.save(fileName);
+
+    // 显示成功提示
+    if (typeof window !== 'undefined' && (window as any).toast) {
+      (window as any).toast.success('PDF文档导出成功');
+    }
+  };
+
+  // 生成文件名
+  const getFileName = (format: string, mode: ExportMode = 'server') => {
+    const typeLabel = getAnalysisTypeLabel();
+    const userPart = userName || 'user';
+    const exportMode = mode === 'frontend' ? '页面导出' : '服务器导出';
+    
+    // 获取分析报告生成时间
+    let analysisDate;
+    if (analysisData?.created_at) {
+      analysisDate = new Date(analysisData.created_at);
+    } else if (analysisData?.basic_info?.created_at) {
+      analysisDate = new Date(analysisData.basic_info.created_at);
+    } else if (analysisData?.metadata?.analysis_time) {
+      analysisDate = new Date(analysisData.metadata.analysis_time);
+    } else {
+      // 如果没有分析时间，使用当前时间作为备用
+      analysisDate = new Date();
+    }
+    
+    const year = analysisDate.getFullYear();
+    const month = String(analysisDate.getMonth() + 1).padStart(2, '0');
+    const day = String(analysisDate.getDate()).padStart(2, '0');
+    const hour = String(analysisDate.getHours()).padStart(2, '0');
+    const minute = String(analysisDate.getMinutes()).padStart(2, '0');
+    const second = String(analysisDate.getSeconds()).padStart(2, '0');
+    
+    const dateStr = `${year}${month}${day}`;
+    const timeStr = `${hour}${minute}${second}`;
+    
+    return `${typeLabel}_${userPart}_${exportMode}_${dateStr}_${timeStr}.${format}`;
+   };
 
   const defaultDownload = async (format: DownloadFormat) => {
     try {
@@ -131,9 +338,10 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       const minute = String(analysisDate.getMinutes()).padStart(2, '0');
       const second = String(analysisDate.getSeconds()).padStart(2, '0');
       
-      const dateStr = `${year}-${month}-${day}`;
+      const dateStr = `${year}${month}${day}`;
       const timeStr = `${hour}${minute}${second}`;
-      let filename = `${getAnalysisTypeLabel()}_${userName || 'user'}_${dateStr}_${timeStr}.${format === 'markdown' ? 'md' : format}`;
+      const exportMode = '服务器导出';
+      let filename = `${getAnalysisTypeLabel()}_${userName || 'user'}_${exportMode}_${dateStr}_${timeStr}.${format === 'markdown' ? 'md' : format}`;
       
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=(['"]?)([^'"\n]*?)\1/);
@@ -189,7 +397,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       case 'markdown': return 'Markdown';
       case 'pdf': return 'PDF';
       case 'png': return 'PNG';
-      default: return format.toUpperCase();
+      default: return '';
     }
   };
 
@@ -241,8 +449,8 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
                 
                 return (
                   <button
-                    key={option.format}
-                    onClick={() => handleDownload(option.format)}
+                    key={`${option.format}-${option.mode}`}
+                    onClick={() => handleDownload(option.format, option.mode)}
                     disabled={disabled || isDownloading}
                     className={cn(
                       'w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200',

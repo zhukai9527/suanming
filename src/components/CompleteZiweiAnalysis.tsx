@@ -579,14 +579,15 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 space-y-8" id="ziwei-analysis-content" data-export-content>
         
         {/* 下载按钮 */}
-        <div className="flex justify-end">
+        <div className="flex justify-end no-export" data-no-export>
           <DownloadButton
             analysisData={analysisData}
             analysisType="ziwei"
             userName={birthDate.name}
+            targetElementId="ziwei-analysis-content"
             className="sticky top-4 z-10"
           />
         </div>

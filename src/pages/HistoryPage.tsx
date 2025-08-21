@@ -156,8 +156,8 @@ const HistoryPage: React.FC = () => {
 
   if (viewingResult && selectedReading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6" id="history-analysis-content" data-export-content>
+        <div className="flex items-center justify-between no-export" data-no-export>
           <ChineseButton
             variant="outline"
             onClick={() => setViewingResult(false)}
