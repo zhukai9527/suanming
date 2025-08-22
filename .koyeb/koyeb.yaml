@@ -17,6 +17,14 @@ services:
         value: production
       - key: PORT
         value: "8000"
+      - key: DB_PATH
+        value: "/app/data/numerology.db"
+      - key: JWT_SECRET
+        value: "xVtKLcdGpYdtoEjEBE9hFTJgBCJrEIu9AjXtAJMtwTU="
+      - key: JWT_EXPIRES_IN
+        value: "7d"
+      - key: LOG_LEVEL
+        value: "info"
     volumes:
       - name: sqlite-data
         mount_path: /app/data

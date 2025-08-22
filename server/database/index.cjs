@@ -10,6 +10,11 @@ class DatabaseManager {
       ? '/app/data/numerology.db'
       : path.join(__dirname, '../../numerology.db');
     this.schemaPath = path.join(__dirname, 'schema.sql');
+    
+    // 输出数据库配置信息
+    console.log(`🗄️ 数据库路径: ${this.dbPath}`);
+    console.log(`🌍 运行环境: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 数据库文件: ${path.basename(this.dbPath)}`);
   }
 
   // 初始化数据库连接
@@ -19,6 +24,9 @@ class DatabaseManager {
       const dbDir = path.dirname(this.dbPath);
       if (!fs.existsSync(dbDir)) {
         fs.mkdirSync(dbDir, { recursive: true });
+        console.log(`📁 创建数据库目录: ${dbDir}`);
+      } else {
+        console.log(`📁 数据库目录已存在: ${dbDir}`);
       }
       
       // 创建或连接到SQLite数据库
