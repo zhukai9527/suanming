@@ -110,7 +110,7 @@ router.post('/', authenticate, async (req, res) => {
 
     // 记录下载历史（可选）
     try {
-      const db = dbManager.getDb();
+      const db = dbManager.getDatabase();
       const stmt = db.prepare(`
         INSERT INTO download_history (user_id, analysis_type, format, filename, created_at)
         VALUES (?, ?, ?, ?, datetime('now'))

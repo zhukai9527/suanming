@@ -33,7 +33,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const toggleMobileMenu = () => {
-    console.log('Toggle mobile menu:', !isMobileMenuOpen);
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 

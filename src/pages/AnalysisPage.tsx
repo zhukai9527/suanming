@@ -60,8 +60,8 @@ const AnalysisPage: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('加载档案失败:', error);
-    }
+        // 静默处理加载错误
+      }
   }, [user]);
 
   useEffect(() => {
@@ -167,15 +167,13 @@ const AnalysisPage: React.FC = () => {
           };
         
         await localApi.analysis.saveHistory(analysisType, analysisData, inputData);
-        console.log('历史记录保存成功');
+        // 历史记录保存成功
       } catch (historyError: any) {
-        console.error('保存历史记录失败:', historyError);
-        // 历史记录保存失败不影响分析结果显示
+        // 静默处理历史记录保存错误
       }
       
       toast.success('分析完成！');
     } catch (error: any) {
-      console.error('分析失败:', error);
       toast.error('分析失败：' + (error.message || '未知错误'));
     } finally {
       setLoading(false);

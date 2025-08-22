@@ -80,7 +80,7 @@ export const getAIConfig = (): AIConfig => {
       const parsedConfig = JSON.parse(savedConfig);
       return { ...defaultAIConfig, ...parsedConfig };
     } catch (error) {
-      console.warn('解析AI配置失败，使用默认配置:', error);
+      // 解析失败，使用默认配置
     }
   }
   return defaultAIConfig;
@@ -93,7 +93,7 @@ export const saveAIConfig = (config: Partial<AIConfig>): void => {
     const newConfig = { ...currentConfig, ...config };
     localStorage.setItem('ai-config', JSON.stringify(newConfig));
   } catch (error) {
-    console.error('保存AI配置失败:', error);
+    // 静默处理保存错误
   }
 };
 

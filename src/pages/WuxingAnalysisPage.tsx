@@ -89,7 +89,6 @@ const WuxingAnalysisPage: React.FC = () => {
         throw new Error('分析结果为空');
       }
     } catch (err: any) {
-      console.error('五行分析错误:', err);
       setError(err.message || '分析失败，请稍后重试');
       toast.error('分析失败，请稍后重试');
     } finally {

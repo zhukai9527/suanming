@@ -47,8 +47,7 @@ const ProfilePage: React.FC = () => {
         });
       }
     } catch (error: any) {
-      console.error('加载档案失败:', error);
-      toast.error('加载档案失败');
+      // 静默处理加载错误
     }
   }, [user]);
 
@@ -83,7 +82,6 @@ const ProfilePage: React.FC = () => {
         navigate('/analysis');
       }, 1500);
     } catch (error: any) {
-      console.error('保存档案失败:', error);
       toast.error('保存档案失败：' + error.message);
     } finally {
       setLoading(false);

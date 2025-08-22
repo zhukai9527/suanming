@@ -173,6 +173,7 @@ const ChineseCardContent = React.forwardRef<HTMLDivElement, ChineseCardContentPr
     return (
       <div
         className={cn(
+          'w-full',
           'text-ink-900',
           'leading-relaxed',
           className

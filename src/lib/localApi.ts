@@ -7,9 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
    (window.location.hostname.includes('koyeb.app') ? `${window.location.origin}/api` : `${window.location.origin}/api`));
 
 // 调试信息
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('import.meta.env.DEV:', import.meta.env.DEV);
-console.log('import.meta.env.PROD:', import.meta.env.PROD);
+
 
 interface ApiResponse<T> {
   data?: T;
@@ -114,7 +112,7 @@ class LocalApiClient {
 
       return { data: data.data || data };
     } catch (error) {
-      console.error('API请求错误:', error);
+      // API请求失败
       return {
         error: {
           code: 'NETWORK_ERROR',

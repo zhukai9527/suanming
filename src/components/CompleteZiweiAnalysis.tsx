@@ -292,7 +292,6 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
 
         setAnalysisData(analysisResult);
       } catch (err) {
-        console.error('获取分析数据出错:', err);
         setError(err instanceof Error ? err.message : '分析数据获取失败，请稍后重试');
       } finally {
         setIsLoading(false);
@@ -584,26 +583,25 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8" id="ziwei-analysis-content" data-export-content>
         
-        {/* 下载和AI解读按钮 */}
-        <div className="flex justify-between items-start no-export" data-no-export>
-          <div className="flex-1">
-            <AIInterpretationButton
-              analysisData={analysisData}
-              analysisType="ziwei"
-              analysisId={`ziwei-${birthDate.date}-${birthDate.time}`}
-              onConfigClick={() => setShowAIConfig(true)}
-              className="sticky top-4 z-10"
-            />
-          </div>
-          <div className="ml-4">
-            <DownloadButton
-              analysisData={analysisData}
-              analysisType="ziwei"
-              userName={birthDate.name}
-              targetElementId="ziwei-analysis-content"
-              className="sticky top-4 z-10"
-            />
-          </div>
+        {/* 下载按钮 */}
+        <div className="flex justify-end no-export" data-no-export>
+          <DownloadButton
+            analysisData={analysisData}
+            analysisType="ziwei"
+            userName={birthDate.name}
+            targetElementId="ziwei-analysis-content"
+            className="sticky top-4 z-10"
+          />
+        </div>
+        
+        {/* AI解读按钮 - 独立占用全宽 */}
+        <div className="w-full no-export" data-no-export>
+          <AIInterpretationButton
+            analysisData={analysisData}
+            analysisType="ziwei"
+            onConfigClick={() => setShowAIConfig(true)}
+            className="w-full"
+          />
         </div>
         
         {/* 标题和基本信息 */}

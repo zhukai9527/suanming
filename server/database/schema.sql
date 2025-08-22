@@ -77,6 +77,28 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token_hash);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at);
 
+-- AI解读结果表
+CREATE TABLE IF NOT EXISTS ai_interpretations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    analysis_id INTEGER NOT NULL, -- 关联到numerology_readings表的id
+    analysis_type TEXT NOT NULL CHECK (analysis_type IN ('bazi', 'ziwei', 'yijing')),
+    content TEXT NOT NULL, -- AI解读的完整内容
+    model TEXT, -- 使用的AI模型
+    tokens_used INTEGER, -- 消耗的token数量
+    success BOOLEAN DEFAULT 1,
+    error_message TEXT, -- 如果失败，记录错误信息
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (analysis_id) REFERENCES numerology_readings(id) ON DELETE CASCADE
+);
+
+-- 创建AI解读相关索引
+CREATE INDEX IF NOT EXISTS idx_ai_interpretations_user_id ON ai_interpretations(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_interpretations_analysis_id ON ai_interpretations(analysis_id);
+CREATE INDEX IF NOT EXISTS idx_ai_interpretations_created_at ON ai_interpretations(created_at DESC);
+
 -- 触发器：自动更新updated_at字段
 CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
     AFTER UPDATE ON users
@@ -97,6 +119,13 @@ CREATE TRIGGER IF NOT EXISTS update_numerology_readings_timestamp
     FOR EACH ROW
     BEGIN
         UPDATE numerology_readings SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    END;
+
+CREATE TRIGGER IF NOT EXISTS update_ai_interpretations_timestamp 
+    AFTER UPDATE ON ai_interpretations
+    FOR EACH ROW
+    BEGIN
+        UPDATE ai_interpretations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
     END;
 
 -- 清理过期会话的触发器

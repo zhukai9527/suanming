@@ -10,6 +10,7 @@ const analysisRoutes = require('./routes/analysis.cjs');
 const historyRoutes = require('./routes/history.cjs');
 const profileRoutes = require('./routes/profile.cjs');
 const downloadRoutes = require('./routes/download.cjs');
+const aiInterpretationRoutes = require('./routes/aiInterpretation.cjs');
 
 // 导入中间件
 const { errorHandler } = require('./middleware/errorHandler.cjs');
@@ -94,6 +95,7 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/download', downloadRoutes);
+app.use('/api/ai-interpretation', aiInterpretationRoutes);
 
 // 静态文件服务 (用于生产环境)
 // 强制在 Koyeb 部署时启用静态文件服务

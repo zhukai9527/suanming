@@ -21,9 +21,10 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
     apiKey: '',
     apiUrl: '',
     modelName: '',
-    maxTokens: 2000,
+    maxTokens: 4000,
     temperature: 0.7,
-    timeout: 30000
+    timeout: 30000,
+    stream: true
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -40,7 +41,7 @@ const AIConfigModal: React.FC<AIConfigModalProps> = ({
   }, [isOpen]);
 
   // 处理输入变化
-  const handleInputChange = (field: keyof AIConfig, value: string | number) => {
+  const handleInputChange = (field: keyof AIConfig, value: string | number | boolean) => {
     setConfig(prev => ({
       ...prev,
       [field]: value

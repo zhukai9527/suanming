@@ -234,7 +234,6 @@ const BaziAnalysisDisplay: React.FC<BaziAnalysisDisplayProps> = ({ birthDate }) 
           modern_applications: analysisResult.modern_applications || {}
         });
       } catch (err) {
-        console.error('获取分析数据出错:', err);
         setError(err instanceof Error ? err.message : '分析数据获取失败，请稍后重试');
       } finally {
         setIsLoading(false);

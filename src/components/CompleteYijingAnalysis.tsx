@@ -87,7 +87,6 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
 
         setAnalysisData(analysisResult);
       } catch (err) {
-        console.error('获取分析数据出错:', err);
         setError(err instanceof Error ? err.message : '分析数据获取失败，请稍后重试');
       } finally {
         setIsLoading(false);
@@ -269,26 +268,25 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-yellow-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8" id="yijing-analysis-content" data-export-content>
         
-        {/* 下载和AI解读按钮 */}
-        <div className="flex justify-between items-start no-export" data-no-export>
-          <div className="flex-1">
-            <AIInterpretationButton
-              analysisData={analysisData}
-              analysisType="yijing"
-              analysisId={`yijing-${question || 'general'}-${Date.now()}`}
-              onConfigClick={() => setShowAIConfig(true)}
-              className="sticky top-4 z-10"
-            />
-          </div>
-          <div className="ml-4">
-            <DownloadButton
-              analysisData={analysisData}
-              analysisType="yijing"
-              userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
-              targetElementId="yijing-analysis-content"
-              className="sticky top-4 z-10"
-            />
-          </div>
+        {/* 下载按钮 */}
+        <div className="flex justify-end no-export" data-no-export>
+          <DownloadButton
+            analysisData={analysisData}
+            analysisType="yijing"
+            userName={question ? `占卜_${question.substring(0, 10)}` : 'user'}
+            targetElementId="yijing-analysis-content"
+            className="sticky top-4 z-10"
+          />
+        </div>
+        
+        {/* AI解读按钮 - 独立占用全宽 */}
+        <div className="w-full no-export" data-no-export>
+          <AIInterpretationButton
+            analysisData={analysisData}
+            analysisType="yijing"
+            onConfigClick={() => setShowAIConfig(true)}
+            className="w-full"
+          />
         </div>
         
         {/* 标题和基本信息 */}

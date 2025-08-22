@@ -82,12 +82,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
     return true;
   });
 
-  console.log('DownloadButton配置:', {
-    targetElementId,
-    totalOptions: allFormatOptions.length,
-    availableOptions: formatOptions.length,
-    frontendOptionsAvailable: formatOptions.filter(o => o.mode === 'frontend').length
-  });
+
 
   const handleDownload = async (format: DownloadFormat, mode: ExportMode = 'server') => {
     if (disabled || isDownloading) return;
@@ -107,7 +102,6 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
         await defaultDownload(format);
       }
     } catch (error) {
-      console.error('下载失败:', error);
       // 显示错误提示
       if (typeof window !== 'undefined' && (window as any).toast) {
         (window as any).toast.error(`下载失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -120,29 +114,17 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
   // 前端导出功能
   const frontendExport = async (format: DownloadFormat) => {
-    console.log('开始前端导出，格式:', format, '目标元素ID:', targetElementId);
-    
     if (!targetElementId) {
       const error = '未指定导出目标元素ID，无法使用前端导出功能';
-      console.error(error);
       throw new Error(error);
     }
 
     const element = document.getElementById(targetElementId);
-    console.log('查找目标元素:', targetElementId, '找到元素:', element);
     
     if (!element) {
       const error = `未找到ID为"${targetElementId}"的元素，请确认页面已完全加载`;
-      console.error(error);
       throw new Error(error);
     }
-
-    console.log('目标元素尺寸:', {
-      width: element.offsetWidth,
-      height: element.offsetHeight,
-      scrollWidth: element.scrollWidth,
-      scrollHeight: element.scrollHeight
-    });
 
     if (format === 'png') {
       await exportToPNG(element);
@@ -372,8 +354,6 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       }
       
     } catch (error) {
-      console.error('下载失败:', error);
-      
       // 显示错误提示
       if (typeof window !== 'undefined' && (window as any).toast) {
         (window as any).toast.error(error instanceof Error ? error.message : '下载失败，请重试');
@@ -416,7 +396,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
           ) : (
             <Download className="h-3 w-3 sm:h-4 sm:w-4" />
           )}
-          <span className="font-medium hidden sm:inline">
+          <span className="font-medium text-xs sm:text-sm">
             {isDownloading ? `正在生成${getFormatLabel(downloadingFormat!)}...` : '下载'}
           </span>
           <ChevronDown className={cn(

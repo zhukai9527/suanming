@@ -6,8 +6,8 @@ services:
     type: web
     git:
       branch: master
-      build_command: npm install -g pnpm@9.0.0 && pnpm install --frozen-lockfile && pnpm run build
-      run_command: pnpm start
+      build_command: npm ci && npm run build
+      run_command: npm start
     instance_type: nano
     ports:
       - port: 8000

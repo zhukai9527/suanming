@@ -31,7 +31,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(null);
         }
       } catch (error) {
-        console.error('加载用户信息失败:', error);
+        // 静默处理用户信息加载错误
         setUser(null);
       } finally {
         setLoading(false);

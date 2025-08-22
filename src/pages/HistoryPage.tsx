@@ -8,7 +8,7 @@ import { ChineseLoading } from '../components/ui/ChineseLoading';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
 import DownloadButton from '../components/ui/DownloadButton';
 import { toast } from 'sonner';
-import { History, Calendar, User, Sparkles, Star, Compass, Eye, Trash2, Download } from 'lucide-react';
+import { History, Calendar, User, Sparkles, Star, Compass, Eye, Trash2, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NumerologyReading } from '../types';
 import { cn } from '../lib/utils';
 
@@ -18,6 +18,10 @@ const HistoryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReading, setSelectedReading] = useState<NumerologyReading | null>(null);
   const [viewingResult, setViewingResult] = useState(false);
+  
+  // 分页相关状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // 安全地从input_data中获取值的辅助函数
   const getInputDataValue = (inputData: string | any, key: string, defaultValue: any = null) => {
@@ -37,7 +41,7 @@ const HistoryPage: React.FC = () => {
       
       return defaultValue;
     } catch (error) {
-      console.warn('解析input_data失败:', error);
+      // 解析input_data失败
       return defaultValue;
     }
   };
@@ -47,7 +51,7 @@ const HistoryPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await localApi.history.getAll();
+      const response = await localApi.history.getAll({ limit: 1000 });
 
       if (response.error) {
         throw new Error(response.error.message);
@@ -85,7 +89,6 @@ const HistoryPage: React.FC = () => {
 
       setReadings(processedData);
     } catch (error: any) {
-      console.error('加载历史记录失败:', error);
       toast.error('加载历史记录失败：' + (error.message || '未知错误'));
     } finally {
       setLoading(false);
@@ -115,7 +118,6 @@ const HistoryPage: React.FC = () => {
       }
       toast.success('删除成功');
     } catch (error: any) {
-      console.error('删除失败:', error);
       toast.error('删除失败：' + (error.message || '未知错误'));
     }
   };
@@ -126,6 +128,8 @@ const HistoryPage: React.FC = () => {
     // 滚动到页面顶部
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+
 
   const getAnalysisTypeIcon = (type: string) => {
     switch (type) {
@@ -151,6 +155,30 @@ const HistoryPage: React.FC = () => {
       case 'ziwei': return '紫微斗数';
       case 'yijing': return '易经占卜';
       default: return '未知类型';
+    }
+  };
+
+  // 分页相关计算
+  const totalPages = Math.ceil(readings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentReadings = readings.slice(startIndex, endIndex);
+
+  // 分页处理函数
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      handlePageChange(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      handlePageChange(currentPage + 1);
     }
   };
 
@@ -196,7 +224,14 @@ const HistoryPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <div className="text-center">
         <h1 className="text-2xl md:text-3xl font-bold text-red-600 font-chinese mb-2">历史记录</h1>
-        <p className="text-gray-600 font-chinese">查看您之前的所有命理分析记录</p>
+        <p className="text-gray-600 font-chinese">
+          查看您之前的所有命理分析记录
+          {readings.length > 0 && (
+            <span className="ml-2 text-sm">
+              （共 {readings.length} 条记录{totalPages > 1 && `，第 ${currentPage}/${totalPages} 页`}）
+            </span>
+          )}
+        </p>
       </div>
       
       <ChineseCard variant="elevated">
@@ -231,7 +266,7 @@ const HistoryPage: React.FC = () => {
             />
           ) : (
             <div className="grid gap-4">
-              {readings.map((reading) => {
+              {currentReadings.map((reading) => {
                 const Icon = getAnalysisTypeIcon(reading.reading_type);
                 const colorClass = getAnalysisTypeColor(reading.reading_type);
                 
@@ -264,15 +299,15 @@ const HistoryPage: React.FC = () => {
                           </div>
                         </div>
                         
-                        <div className="flex items-center space-x-1 sm:space-x-2 self-end sm:self-center">
+                        <div className="flex items-center space-x-1 sm:space-x-2 self-end sm:self-center flex-wrap gap-2">
                           <ChineseButton
                             variant="outline"
                             size="md"
                             onClick={() => handleViewReading(reading)}
-                            className="px-3 sm:px-6 text-xs sm:text-sm"
+                            className="min-h-[40px] px-2 sm:px-6 text-xs sm:text-sm flex-shrink-0"
                           >
                             <Eye className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="hidden sm:inline">查看</span>
+                            <span className="text-xs sm:text-sm">查看</span>
                           </ChineseButton>
 
                           <DownloadButton
@@ -282,15 +317,17 @@ const HistoryPage: React.FC = () => {
                             }}
                             analysisType={reading.reading_type as 'bazi' | 'ziwei' | 'yijing'}
                             userName={reading.name}
-                            className="min-h-[44px] px-3 sm:px-6 py-2.5 text-xs sm:text-sm"
+                            className="min-h-[40px] px-2 sm:px-6 py-2.5 text-xs sm:text-sm flex-shrink-0"
                           />
+
                           <ChineseButton
                             variant="ghost"
                             size="md"
                             onClick={() => handleDeleteReading(reading.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3"
+                            className="min-h-[40px] text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3 flex-shrink-0"
                           >
                             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                            <span className="text-xs sm:text-sm ml-1">删除</span>
                           </ChineseButton>
                         </div>
                       </div>
@@ -298,6 +335,69 @@ const HistoryPage: React.FC = () => {
                   </ChineseCard>
                 );
               })}
+            </div>
+          )}
+          
+          {/* 分页组件 */}
+          {readings.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-2 mt-6 pt-6 border-t border-gray-200">
+              <ChineseButton
+                variant="outline"
+                size="sm"
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className="flex items-center space-x-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>上一页</span>
+              </ChineseButton>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // 显示逻辑：始终显示第1页、最后一页、当前页及其前后各1页
+                  const showPage = 
+                    page === 1 || 
+                    page === totalPages || 
+                    Math.abs(page - currentPage) <= 1;
+                  
+                  if (!showPage) {
+                    // 显示省略号
+                    if (page === 2 && currentPage > 4) {
+                      return <span key={page} className="px-2 text-gray-400">...</span>;
+                    }
+                    if (page === totalPages - 1 && currentPage < totalPages - 3) {
+                      return <span key={page} className="px-2 text-gray-400">...</span>;
+                    }
+                    return null;
+                  }
+                  
+                  return (
+                    <ChineseButton
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className={cn(
+                        "min-w-[40px] h-10",
+                        currentPage === page && "bg-red-600 text-white hover:bg-red-700"
+                      )}
+                    >
+                      {page}
+                    </ChineseButton>
+                  );
+                })}
+              </div>
+              
+              <ChineseButton
+                variant="outline"
+                size="sm"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="flex items-center space-x-1"
+              >
+                <span>下一页</span>
+                <ChevronRight className="h-4 w-4" />
+              </ChineseButton>
             </div>
           )}
         </ChineseCardContent>
