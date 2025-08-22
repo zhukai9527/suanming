@@ -135,22 +135,78 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
   // 导出为PNG
   const exportToPNG = async (element: HTMLElement): Promise<void> => {
+    // 确保页面完全加载和渲染
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      scrollX: 0,
-      scrollY: 0,
-      logging: false,
-      onclone: (clonedDoc) => {
-        const elementsToHide = clonedDoc.querySelectorAll(
-          '.no-export, [data-no-export], .fixed, .sticky, .floating'
-        );
-        elementsToHide.forEach(el => {
-          (el as HTMLElement).style.display = 'none';
-        });
-      }
+       scale: 2,
+       useCORS: true,
+       allowTaint: true,
+       backgroundColor: '#ffffff',
+       scrollX: 0,
+       scrollY: 0,
+       logging: true, // 启用日志以调试
+       // 移除固定尺寸限制，让html2canvas自动计算
+       // width: 640,
+       // height: element.scrollHeight + 100,
+       windowWidth: 640,
+       // windowHeight: element.scrollHeight + 100,
+       onclone: (clonedDoc) => {
+         // 隐藏不需要导出的元素
+         const elementsToHide = clonedDoc.querySelectorAll(
+           '.no-export, [data-no-export], .fixed, .sticky, .floating'
+         );
+         elementsToHide.forEach(el => {
+           (el as HTMLElement).style.display = 'none';
+         });
+
+         // 模拟移动端视口
+          const viewport = clonedDoc.createElement('meta');
+          viewport.name = 'viewport';
+          viewport.content = 'width=640, initial-scale=1';
+          clonedDoc.head.appendChild(viewport);
+
+          // 添加移动端样式
+          const style = clonedDoc.createElement('style');
+          style.textContent = `
+            /* 模拟移动端视口 */
+            body {
+              width: 640px !important;
+              max-width: 640px !important;
+              margin: 0 !important;
+              padding: 16px !important;
+              font-size: 16px !important;
+              line-height: 1.6 !important;
+            }
+          
+          /* 移除所有边框 */
+          * {
+            border-left: none !important;
+            border-right: none !important;
+          }
+          
+          /* 确保移动端布局 */
+          .grid {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .flex {
+            flex-direction: column !important;
+          }
+          
+          /* 移动端响应式类生效 */
+          .sm\\:grid-cols-1,
+          .sm\\:grid-cols-2,
+          .sm\\:grid-cols-3 {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .sm\\:flex-col {
+            flex-direction: column !important;
+          }
+        `;
+        clonedDoc.head.appendChild(style);
+       }
     });
 
     const link = document.createElement('a');
@@ -167,22 +223,78 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
 
   // 导出为PDF
   const exportToPDF = async (element: HTMLElement): Promise<void> => {
+    // 确保页面完全加载和渲染
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const canvas = await html2canvas(element, {
-      scale: 1.5,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      scrollX: 0,
-      scrollY: 0,
-      logging: false,
-      onclone: (clonedDoc) => {
-        const elementsToHide = clonedDoc.querySelectorAll(
-          '.no-export, [data-no-export], .fixed, .sticky, .floating'
-        );
-        elementsToHide.forEach(el => {
-          (el as HTMLElement).style.display = 'none';
-        });
-      }
+       scale: 1.5,
+       useCORS: true,
+       allowTaint: true,
+       backgroundColor: '#ffffff',
+       scrollX: 0,
+       scrollY: 0,
+       logging: true, // 启用日志以调试
+       // 移除固定尺寸限制，让html2canvas自动计算
+       // width: 640,
+       // height: element.scrollHeight + 100,
+       windowWidth: 640,
+       // windowHeight: element.scrollHeight + 100,
+        onclone: (clonedDoc) => {
+          // 隐藏不需要导出的元素
+          const elementsToHide = clonedDoc.querySelectorAll(
+            '.no-export, [data-no-export], .fixed, .sticky, .floating'
+          );
+          elementsToHide.forEach(el => {
+            (el as HTMLElement).style.display = 'none';
+          });
+
+          // 模拟移动端视口
+          const viewport = clonedDoc.createElement('meta');
+          viewport.name = 'viewport';
+          viewport.content = 'width=640, initial-scale=1';
+          clonedDoc.head.appendChild(viewport);
+
+          // 添加移动端样式
+          const style = clonedDoc.createElement('style');
+          style.textContent = `
+            /* 模拟移动端视口 */
+            body {
+              width: 640px !important;
+              max-width: 640px !important;
+              margin: 0 !important;
+              padding: 16px !important;
+              font-size: 16px !important;
+              line-height: 1.6 !important;
+            }
+          
+          /* 移除所有边框 */
+          * {
+            border-left: none !important;
+            border-right: none !important;
+          }
+          
+          /* 确保移动端布局 */
+          .grid {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .flex {
+            flex-direction: column !important;
+          }
+          
+          /* 移动端响应式类生效 */
+          .sm\\:grid-cols-1,
+          .sm\\:grid-cols-2,
+          .sm\\:grid-cols-3 {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .sm\\:flex-col {
+            flex-direction: column !important;
+          }
+        `;
+        clonedDoc.head.appendChild(style);
+       }
     });
 
     const imgData = canvas.toDataURL('image/png');

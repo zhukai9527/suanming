@@ -771,7 +771,7 @@ const getPDFCSS = () => {
       line-height: 1.6;
       color: #333;
       background-color: white;
-      font-size: 12px;
+      font-size: 16px;
     }
     
     .container {
@@ -781,7 +781,7 @@ const getPDFCSS = () => {
     }
     
     h1 {
-      font-size: 24px;
+      font-size: 32px;
       color: #2c3e50;
       text-align: center;
       margin: 20px 0;
@@ -792,7 +792,7 @@ const getPDFCSS = () => {
     }
     
     h2 {
-      font-size: 18px;
+      font-size: 24px;
       color: #34495e;
       margin: 20px 0 10px 0;
       padding: 10px 0;
@@ -801,16 +801,15 @@ const getPDFCSS = () => {
     }
     
     h3 {
-      font-size: 16px;
+      font-size: 20px;
       color: #2980b9;
       margin: 15px 0 8px 0;
       padding-left: 10px;
-      border-left: 4px solid #3498db;
       page-break-after: avoid;
     }
     
     h4 {
-      font-size: 14px;
+      font-size: 18px;
       color: #27ae60;
       margin: 12px 0 6px 0;
       page-break-after: avoid;
@@ -841,7 +840,7 @@ const getPDFCSS = () => {
       width: 100%;
       border-collapse: collapse;
       margin: 15px 0;
-      font-size: 11px;
+      font-size: 14px;
       page-break-inside: avoid;
     }
     
@@ -987,8 +986,8 @@ const getCSS = () => {
         }
         
         .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -1055,8 +1054,7 @@ const getCSS = () => {
             margin: 20px 0;
             padding: 20px;
             background: #f8f9fa;
-            border-left: 4px solid #dc2626;
-            border-radius: 0 5px 5px 0;
+            border-radius: 5px;
         }
         
         .guidance-item {
@@ -1076,8 +1074,8 @@ const getCSS = () => {
         }
         
         .star-analysis {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
         
