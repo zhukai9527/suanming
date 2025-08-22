@@ -36,6 +36,14 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: [
+        "'self'",
+        "https://api.openai.com",
+        "https://open.bigmodel.cn",
+        "https://*.openai.azure.com",
+        "https://api.anthropic.com",
+        "https://generativelanguage.googleapis.com"
+      ],
     },
   },
   crossOriginEmbedderPolicy: false
