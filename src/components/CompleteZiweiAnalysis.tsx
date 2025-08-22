@@ -583,25 +583,24 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 py-8">
       <div className="max-w-7xl mx-auto px-4 space-y-8" id="ziwei-analysis-content" data-export-content>
         
-        {/* 下载按钮 */}
-        <div className="flex justify-end no-export" data-no-export>
-          <DownloadButton
-            analysisData={analysisData}
-            analysisType="ziwei"
-            userName={birthDate.name}
-            targetElementId="ziwei-analysis-content"
-            className="sticky top-4 z-10"
-          />
-        </div>
-        
-        {/* AI解读按钮 - 独立占用全宽 */}
-        <div className="w-full no-export" data-no-export>
-          <AIInterpretationButton
-            analysisData={analysisData}
-            analysisType="ziwei"
-            onConfigClick={() => setShowAIConfig(true)}
-            className="w-full"
-          />
+        {/* 下载按钮和AI解读按钮 */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 no-export" data-no-export>
+          <div className="flex-1">
+            <AIInterpretationButton
+              analysisData={analysisData}
+              analysisType="ziwei"
+              onConfigClick={() => setShowAIConfig(true)}
+            />
+          </div>
+          <div className="flex-shrink-0">
+            <DownloadButton
+              analysisData={analysisData}
+              analysisType="ziwei"
+              userName={birthDate.name}
+              targetElementId="ziwei-analysis-content"
+              className="sticky top-4 z-10"
+            />
+          </div>
         </div>
         
         {/* 标题和基本信息 */}

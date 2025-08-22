@@ -199,7 +199,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
   return (
     <div className={cn('w-full space-y-4', className)}>
       {/* AI解读按钮区域 */}
-      <div className="flex items-center space-x-2 flex-wrap gap-2">
+      <div className="flex items-center justify-start space-x-2 sm:space-x-3 overflow-x-auto pb-2">
         <ChineseButton
           variant="outline"
           size="md"
@@ -215,7 +215,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
           }}
           disabled={isLoading || (!isConfigValid && !interpretation)}
           className={cn(
-            'min-h-[40px] px-3 sm:px-6 text-xs sm:text-sm flex-shrink-0',
+            'min-h-[40px] min-w-[100px] px-3 sm:px-6 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap',
             !isConfigValid && !interpretation && 'opacity-50 cursor-not-allowed'
           )}
         >
@@ -241,7 +241,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
             size="md"
             onClick={handleReinterpret}
             disabled={isLoading}
-            className="min-h-[40px] px-3 sm:px-4 flex items-center space-x-1 flex-shrink-0"
+            className="min-h-[40px] min-w-[100px] px-3 sm:px-4 flex items-center justify-center space-x-1 flex-shrink-0 whitespace-nowrap"
           >
             <RefreshCw className={cn('h-3 w-3 sm:h-4 sm:w-4', isLoading && 'animate-spin')} />
             <span className="text-xs sm:text-sm">重新解读</span>
@@ -254,7 +254,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
             variant="ghost"
             size="md"
             onClick={onConfigClick}
-            className="min-h-[40px] px-3 sm:px-4 flex items-center space-x-1 text-gray-500 hover:text-gray-700 flex-shrink-0"
+            className="min-h-[40px] min-w-[80px] px-3 sm:px-4 flex items-center justify-center space-x-1 text-gray-500 hover:text-gray-700 flex-shrink-0 whitespace-nowrap"
           >
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="text-xs sm:text-sm">配置</span>
