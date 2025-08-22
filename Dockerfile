@@ -29,5 +29,5 @@ ENV PORT=8000
 # 暴露端口
 EXPOSE 8000
 
-# 初始化数据库并启动应用
-CMD ["sh", "-c", "node server/scripts/initDatabase.cjs && node server/index.cjs"]
+# 启动应用（数据库初始化在应用启动时自动进行）
+CMD ["node", "server/index.cjs"]

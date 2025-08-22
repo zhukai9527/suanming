@@ -23,6 +23,31 @@ const PORT = process.env.PORT || 3001;
 try {
   dbManager.init();
   console.log('数据库连接成功');
+  
+  // 在生产环境中，确保管理员用户存在
+  if (process.env.NODE_ENV === 'production') {
+    const db = dbManager.getDatabase();
+    const adminExists = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@localhost');
+    
+    if (!adminExists) {
+      const bcrypt = require('bcryptjs');
+      const adminPassword = bcrypt.hashSync('admin123', 12);
+      
+      // 创建管理员用户
+      const insertAdmin = db.prepare(
+        'INSERT INTO users (email, password_hash) VALUES (?, ?)'
+      );
+      const adminResult = insertAdmin.run('admin@localhost', adminPassword);
+      
+      // 创建管理员档案
+      const insertAdminProfile = db.prepare(
+        'INSERT INTO user_profiles (user_id, full_name, username) VALUES (?, ?, ?)'
+      );
+      insertAdminProfile.run(adminResult.lastInsertRowid, '系统管理员', 'admin');
+      
+      console.log('✅ 管理员用户创建成功');
+    }
+  }
 } catch (error) {
   console.error('数据库连接失败:', error);
   process.exit(1);

@@ -38,8 +38,12 @@ async function initializeDatabase() {
       console.log('ℹ️  管理员用户已存在');
     }
     
-    // 创建示例数据（可选）
-    await createSampleData(db);
+    // 仅在开发环境创建示例数据
+    if (process.env.NODE_ENV !== 'production') {
+      await createSampleData(db);
+    } else {
+      console.log('ℹ️  生产环境，跳过示例数据创建');
+    }
     
     console.log('🎉 数据库初始化完成！');
     console.log(`📍 数据库文件位置: ${path.resolve('./numerology.db')}`);
