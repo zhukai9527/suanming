@@ -374,7 +374,7 @@ const HistoryPage: React.FC = () => {
                   return (
                     <ChineseButton
                       key={page}
-                      variant={currentPage === page ? "default" : "outline"}
+                      variant={currentPage === page ? "primary" : "outline"}
                       size="sm"
                       onClick={() => handlePageChange(page)}
                       className={cn(
