@@ -5,6 +5,31 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [3.1.1] - 2025-08-22
+
+### 🔧 修复
+- **Koyeb Volume挂载路径修复**: 解决数据库持久化问题
+  - 修正Koyeb实际挂载路径从 `/app/data` 到 `/workspace/data`
+  - 添加智能环境检测逻辑，自动适配不同部署环境
+  - 更新 `.koyeb/koyeb.yaml` 配置文件中的挂载路径
+  - 增强数据库初始化日志，显示环境状态和路径信息
+  - 确保数据库文件正确存储在持久化Volume中
+- **数据库配置优化**: 改进多环境数据库路径管理
+  - Koyeb环境：自动使用 `/workspace/data/numerology.db`
+  - Docker环境：继续使用 `/app/data/numerology.db`
+  - 本地开发：使用相对路径 `./numerology.db`
+  - 添加环境检测日志：`🏢 Koyeb环境: Yes/No`
+
+### 📚 文档更新
+- **KOYEB_DEPLOYMENT.md**: 更新部署指南
+  - 修正Volume挂载路径说明
+  - 更新环境变量配置示例
+  - 添加故障排除和日志验证指南
+  - 新增Volume挂载路径问题专门说明
+- **系统配置文档**: 完善部署配置说明
+  - 明确不同环境的数据库路径配置
+  - 添加环境检测和自动适配机制说明
+
 ## [3.1.0] - 2025-08-22
 
 ### 🆕 新增功能

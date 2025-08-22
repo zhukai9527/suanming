@@ -41,16 +41,24 @@
 ```
 NODE_ENV=production
 PORT=8000
-JWT_SECRET=your-super-secret-jwt-key-here
+DB_PATH=/workspace/data/numerology.db
+JWT_SECRET=xVtKLcdGpYdtoEjEBE9hFTJgBCJrEIu9AjXtAJMtwTU=
+JWT_EXPIRES_IN=7d
+LOG_LEVEL=info
 ```
 
-**重要**: 请将 `JWT_SECRET` 替换为一个安全的随机字符串！
+**重要**: 
+- `DB_PATH` 必须设置为 `/workspace/data/numerology.db` 以匹配 Koyeb 的实际挂载路径
+- `JWT_SECRET` 已设置为安全的随机字符串，生产环境可继续使用
+- `NODE_ENV=production` 确保应用使用生产环境配置
 
 #### 持久化存储
 1. 在 "Volumes" 部分添加存储卷
 2. **Name**: `sqlite-data`
-3. **Mount Path**: `/app/data`
+3. **Mount Path**: `/workspace/data` ⚠️ **重要**: 必须使用 `/workspace/data`，这是 Koyeb 的实际挂载路径
 4. **Size**: `1GB`
+
+**注意**: Koyeb 实际将 Volume 挂载到 `/workspace/data` 而不是 `/app/data`。应用已自动检测并适配此路径。
 
 ### 5. 部署应用
 
@@ -95,8 +103,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
 
 #### 2. 数据库连接问题
 - 确保持久化存储卷已正确配置
-- 检查 `/app/data` 目录权限
+- **重要**: 检查 `/workspace/data` 目录权限（不是 `/app/data`）
 - 查看数据库初始化日志
+- 确认日志中显示：`🗄️ 数据库路径: /workspace/data/numerology.db`
+- 确认日志中显示：`🏢 Koyeb环境: Yes`
 
 #### 3. CORS 错误
 - 在服务器配置中添加您的前端域名到 CORS 白名单
@@ -123,7 +133,8 @@ Koyeb 会自动监控您的应用健康状态：
 定期备份您的 SQLite 数据库：
 1. 在 Koyeb 控制台中访问您的应用
 2. 使用 "Terminal" 功能连接到容器
-3. 复制 `/app/data/numerology.db` 文件
+3. 复制 `/workspace/data/numerology.db` 文件
+4. 使用命令：`cp /workspace/data/numerology.db /tmp/backup-$(date +%Y%m%d).db`
 
 ### 扩展和升级
 
@@ -147,6 +158,33 @@ Koyeb 会自动监控您的应用健康状态：
 - [Koyeb 文档](https://www.koyeb.com/docs)
 - [Koyeb 定价](https://www.koyeb.com/pricing)
 - [Koyeb 支持](https://www.koyeb.com/support)
+
+## ⚠️ 重要更新：Volume 挂载路径修复
+
+**2024年更新**: 经过实际部署测试发现，Koyeb 将 Volume 挂载到 `/workspace/data` 而不是文档中的 `/app/data`。
+
+### 问题症状
+如果您看到以下日志输出，说明路径配置有问题：
+```
+🗄️ 数据库路径: /workspace/numerology.db  ❌ 错误
+🌍 运行环境: development                  ❌ 错误
+🏢 Koyeb环境: No                          ❌ 错误
+```
+
+### 正确的日志输出
+修复后应该看到：
+```
+🗄️ 数据库路径: /workspace/data/numerology.db  ✅ 正确
+🌍 运行环境: development                      ✅ 正常
+🏢 Koyeb环境: Yes                            ✅ 正确
+📁 数据库目录已存在: /workspace/data          ✅ 正确
+```
+
+### 解决方案
+应用已自动检测 Koyeb 环境并使用正确路径。确保：
+1. Volume 挂载路径设置为 `/workspace/data`
+2. 环境变量 `DB_PATH=/workspace/data/numerology.db`
+3. 应用会自动检测并适配正确路径
 
 ## 🆘 获取帮助
 
