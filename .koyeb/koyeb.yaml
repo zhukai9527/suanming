@@ -18,7 +18,7 @@ services:
       - key: PORT
         value: "8000"
       - key: DB_PATH
-        value: "/app/data/numerology.db"
+        value: "/workspace/data/numerology.db"
       - key: JWT_SECRET
         value: "xVtKLcdGpYdtoEjEBE9hFTJgBCJrEIu9AjXtAJMtwTU="
       - key: JWT_EXPIRES_IN
@@ -27,7 +27,7 @@ services:
         value: "info"
     volumes:
       - name: sqlite-data
-        mount_path: /app/data
+        mount_path: /workspace/data
         size: 1GB
     health_check:
       http:

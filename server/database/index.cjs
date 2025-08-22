@@ -5,16 +5,29 @@ const fs = require('fs');
 class DatabaseManager {
   constructor() {
     this.db = null;
-    // 生产环境使用持久化存储路径，开发环境使用本地路径
-    this.dbPath = process.env.NODE_ENV === 'production' 
-      ? '/app/data/numerology.db'
-      : path.join(__dirname, '../../numerology.db');
+    
+    // 检测Koyeb环境并使用正确的挂载路径
+    const isKoyeb = process.env.KOYEB_APP_NAME || process.env.KOYEB_SERVICE_NAME || fs.existsSync('/workspace/data');
+    
+    if (isKoyeb) {
+      // Koyeb环境：Volume挂载到/workspace/data
+      this.dbPath = '/workspace/data/numerology.db';
+    } else if (process.env.NODE_ENV === 'production') {
+      // 其他生产环境：使用/app/data
+      this.dbPath = '/app/data/numerology.db';
+    } else {
+      // 开发环境：使用本地路径
+      this.dbPath = path.join(__dirname, '../../numerology.db');
+    }
+    
     this.schemaPath = path.join(__dirname, 'schema.sql');
     
     // 输出数据库配置信息
     console.log(`🗄️ 数据库路径: ${this.dbPath}`);
     console.log(`🌍 运行环境: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📊 数据库文件: ${path.basename(this.dbPath)}`);
+    console.log(`🏢 Koyeb环境: ${isKoyeb ? 'Yes' : 'No'}`);
+    console.log(`📁 工作目录: ${process.cwd()}`);
   }
 
   // 初始化数据库连接
