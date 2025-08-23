@@ -277,19 +277,19 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
 
       {/* AI解读结果显示 */}
       {(interpretation || streamingContent) && showResult && (
-        <ChineseCard className="w-full border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
-          <ChineseCardHeader>
-            <ChineseCardTitle className="flex items-center space-x-2 text-purple-800">
+        <div className="w-full border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg shadow-sm" style={{transform: 'none', animation: 'none', transition: 'none'}}>
+          <div className="p-4 border-b border-purple-200">
+            <div className="flex items-center space-x-2 text-purple-800">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <Sparkles className="h-5 w-5" />
               )}
-              <span>AI智能解读 - {getAnalysisTypeName(analysisType)}</span>
+              <span className="text-lg font-semibold">AI智能解读 - {getAnalysisTypeName(analysisType)}</span>
               {isLoading && streamingContent && (
                 <span className="ml-2 text-sm font-normal text-purple-600">正在生成中...</span>
               )}
-            </ChineseCardTitle>
+            </div>
             {interpretation && (
               <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
                 <span>解读时间: {new Date(interpretation.timestamp).toLocaleString('zh-CN')}</span>
@@ -297,8 +297,8 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
                 {interpretation.tokensUsed && <span>消耗Token: {interpretation.tokensUsed}</span>}
               </div>
             )}
-          </ChineseCardHeader>
-          <ChineseCardContent>
+          </div>
+          <div className="p-4">
             {interpretation && !interpretation.success ? (
               <div className="flex items-center space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
@@ -371,11 +371,10 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
                 </ReactMarkdown>
                 {isLoading && streamingContent && (
                   <span className="inline-block w-2 h-5 bg-purple-600 animate-pulse ml-1"></span>
-                )}
-              </div>
+                )}              </div>
             )}
-          </ChineseCardContent>
-        </ChineseCard>
+          </div>
+        </div>
       )}
     </div>
   );

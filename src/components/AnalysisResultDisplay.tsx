@@ -17,6 +17,7 @@ interface AnalysisResultDisplayProps {
   userId?: string;
   divinationMethod?: string;
   preAnalysisData?: any; // 预先分析的数据，用于历史记录
+  recordId?: number; // 历史记录ID，用于AI解读
 }
 
 const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({ 
@@ -26,7 +27,8 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   question, 
   userId, 
   divinationMethod,
-  preAnalysisData 
+  preAnalysisData,
+  recordId 
 }) => {
   // 安全地获取数据的辅助函数
   const safeGet = (obj: any, path: string, defaultValue: any = '暂无数据') => {
@@ -62,7 +64,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   const renderBaziAnalysis = () => {
     // 如果有 birthDate，使用新的 CompleteBaziAnalysis 组件
     if (birthDate) {
-      return <CompleteBaziAnalysis birthDate={birthDate} analysisData={preAnalysisData} />;
+      return <CompleteBaziAnalysis birthDate={birthDate} analysisData={preAnalysisData} recordId={recordId} />;
     }
     // 如果有分析结果但没有 birthDate，尝试从结果中提取出生信息
     if (analysisResult && analysisResult.data) {
@@ -74,7 +76,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
           name: basicInfo.personal_data.name || '',
           gender: basicInfo.personal_data.gender === '男性' ? 'male' : 'female'
         };
-        return <CompleteBaziAnalysis birthDate={extractedBirthDate} analysisData={preAnalysisData} />;
+        return <CompleteBaziAnalysis birthDate={extractedBirthDate} analysisData={preAnalysisData} recordId={recordId} />;
       }
     }
     // 如果没有足够的数据，返回错误提示
@@ -89,7 +91,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   const renderZiweiAnalysis = () => {
     // 如果有 birthDate，使用新的 CompleteZiweiAnalysis 组件
     if (birthDate) {
-      return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} />;
+      return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} recordId={recordId} />;
     }
     // 如果有分析结果但没有 birthDate，尝试从结果中提取出生信息
     if (analysisResult && analysisResult.data) {
@@ -101,7 +103,7 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
           name: basicInfo.personal_data.name || '',
           gender: basicInfo.personal_data.gender === '男性' ? 'male' : 'female'
         };
-        return <CompleteZiweiAnalysis birthDate={extractedBirthDate} analysisData={preAnalysisData} />;
+        return <CompleteZiweiAnalysis birthDate={extractedBirthDate} analysisData={preAnalysisData} recordId={recordId} />;
       }
     }
     
@@ -261,6 +263,8 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
           question={question}
           userId={userId}
           divinationMethod={divinationMethod}
+          analysisData={preAnalysisData}
+          recordId={recordId}
         />
       );
     }
@@ -274,6 +278,8 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
             question={basicInfo.divination_data.question || '综合运势如何？'}
             userId={userId || 'user123'}
             divinationMethod={divinationMethod || 'time'}
+            analysisData={preAnalysisData}
+            recordId={recordId}
           />
         );
       }

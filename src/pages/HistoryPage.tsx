@@ -21,6 +21,7 @@ const HistoryPage: React.FC = () => {
   
   // 分页相关状态
   const [currentPage, setCurrentPage] = useState(1);
+  const [aiInterpretations, setAiInterpretations] = useState<{[key: number]: boolean}>({});
   const itemsPerPage = 10;
 
   // 安全地从input_data中获取值的辅助函数
@@ -88,6 +89,20 @@ const HistoryPage: React.FC = () => {
       });
 
       setReadings(processedData);
+      
+      // 检查每个记录的AI解读状态
+      const aiStatus: {[key: number]: boolean} = {};
+      for (const reading of processedData) {
+        try {
+          const aiResponse = await localApi.request(`/ai-interpretation/get/${reading.id}`, {
+            method: 'GET'
+          });
+          aiStatus[reading.id] = aiResponse.success && aiResponse.data;
+        } catch {
+          aiStatus[reading.id] = false;
+        }
+      }
+      setAiInterpretations(aiStatus);
     } catch (error: any) {
       toast.error('加载历史记录失败：' + (error.message || '未知错误'));
     } finally {
@@ -214,6 +229,7 @@ const HistoryPage: React.FC = () => {
           divinationMethod={selectedReading.reading_type === 'yijing' ? 
             getInputDataValue(selectedReading.input_data, 'divination_method', 'time') : undefined}
           preAnalysisData={selectedReading.analysis}
+          recordId={selectedReading.id}
         />
 
       </div>
@@ -279,9 +295,17 @@ const HistoryPage: React.FC = () => {
                             <Icon className="h-5 w-5" />
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 font-chinese">
-                              {reading.name || '未知姓名'} - {getAnalysisTypeName(reading.reading_type)}
-                            </h3>
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-semibold text-gray-900 font-chinese">
+                                {reading.name || '未知姓名'} - {getAnalysisTypeName(reading.reading_type)}
+                              </h3>
+                              {aiInterpretations[reading.id] && (
+                                <div className="flex items-center space-x-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
+                                  <Sparkles className="h-3 w-3" />
+                                  <span>已有AI解读</span>
+                                </div>
+                              )}
+                            </div>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-600 mt-1 space-y-1 sm:space-y-0">
                               <div className="flex items-center space-x-1">
                                 <Calendar className="h-3 w-3" />

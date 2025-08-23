@@ -5,6 +5,7 @@ import { ChineseButton } from '../components/ui/ChineseButton';
 import { ChineseInput } from '../components/ui/ChineseInput';
 import { ChineseSelect } from '../components/ui/ChineseSelect';
 import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from '../components/ui/ChineseCard';
+import YijingQuestionSelector from '../components/ui/YijingQuestionSelector';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
 import { toast } from 'sonner';
 import { Sparkles, Star, Compass, Calendar, MapPin, User, Loader2 } from 'lucide-react';
@@ -24,7 +25,7 @@ const AnalysisPage: React.FC = () => {
     birth_time: '',
     gender: 'male' as 'male' | 'female',
     birth_place: '',
-    question: '财运'
+    question: ''
   });
   const [loading, setLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -56,7 +57,7 @@ const AnalysisPage: React.FC = () => {
           birth_time: data.birth_time || '',
           gender: data.gender || 'male',
           birth_place: data.birth_location || '',
-          question: '财运'
+          question: ''
         });
       }
     } catch (error) {
@@ -139,10 +140,38 @@ const AnalysisPage: React.FC = () => {
       // 后端返回格式: { data: { analysis } }
       const analysisData = data.analysis;
       
-      setAnalysisResult({
-        type: analysisType,
-        data: analysisData
-      });
+      // 保存历史记录
+      try {
+        const saveResponse = await localApi.request('/analysis/save-history', {
+          method: 'POST',
+          body: JSON.stringify({
+            analysis_type: analysisType,
+            analysis_data: analysisData,
+            input_data: analysisType === 'yijing' ? { question: formData.question } : birthData
+          })
+        });
+        
+        if (saveResponse.data?.record_id) {
+          // 将record_id添加到分析结果中，用于AI解读
+          setAnalysisResult({
+            type: analysisType,
+            data: analysisData,
+            recordId: saveResponse.data.record_id
+          });
+        } else {
+          setAnalysisResult({
+            type: analysisType,
+            data: analysisData
+          });
+        }
+      } catch (saveError) {
+        console.error('保存历史记录失败:', saveError);
+        // 即使保存失败，也显示分析结果
+        setAnalysisResult({
+          type: analysisType,
+          data: analysisData
+        });
+      }
       
       // 分析完成后，滚动到结果区域
       setTimeout(() => {
@@ -278,14 +307,9 @@ const AnalysisPage: React.FC = () => {
           {analysisType === 'yijing' ? (
             // 易经占卜表单
             <div className="mb-6">
-              <ChineseInput
-                label="占卜问题"
+              <YijingQuestionSelector
                 value={formData.question}
-                onChange={(e) => setFormData(prev => ({ ...prev, question: e.target.value }))}
-                placeholder="请输入您希望占卜的具体问题，如：我的事业发展如何？"
-                required
-                variant="filled"
-                helperText="💡 提示：问题越具体，占卜结果越准确。可以询问事业、感情、财运、健康等方面的问题。"
+                onChange={(value) => setFormData(prev => ({ ...prev, question: value }))}
               />
             </div>
           ) : (
@@ -402,6 +426,7 @@ const AnalysisPage: React.FC = () => {
             question={analysisType === 'yijing' ? formData.question : undefined}
             userId={user?.id?.toString()}
             divinationMethod="time"
+            recordId={analysisResult.recordId}
           />
         </div>
       )}

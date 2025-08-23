@@ -19,9 +19,10 @@ interface CompleteZiweiAnalysisProps {
     gender?: string;
   };
   analysisData?: any; // 可选的预先分析的数据
+  recordId?: number; // 历史记录ID，用于AI解读
 }
 
-const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate, analysisData: propAnalysisData }) => {
+const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate, analysisData: propAnalysisData, recordId }) => {
   const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
@@ -589,6 +590,7 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
             <AIInterpretationButton
               analysisData={analysisData}
               analysisType="ziwei"
+              analysisId={recordId?.toString()}
               onConfigClick={() => setShowAIConfig(true)}
             />
           </div>

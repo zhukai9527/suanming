@@ -16,9 +16,10 @@ interface CompleteBaziAnalysisProps {
     gender?: string;
   };
   analysisData?: any; // 可选的预先分析的数据
+  recordId?: number; // 历史记录ID，用于AI解读
 }
 
-const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, analysisData: propAnalysisData }) => {
+const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, analysisData: propAnalysisData, recordId }) => {
   const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
@@ -286,6 +287,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
             <AIInterpretationButton
               analysisData={analysisData}
               analysisType="bazi"
+              analysisId={recordId?.toString()}
               onConfigClick={() => setShowAIConfig(true)}
             />
           </div>

@@ -12,13 +12,15 @@ interface CompleteYijingAnalysisProps {
   userId?: string;
   divinationMethod?: string;
   analysisData?: any; // 可选的预先分析的数据
+  recordId?: number; // 历史记录ID，用于AI解读
 }
 
 const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({ 
   question, 
   userId = 'user123', 
   divinationMethod = 'time',
-  analysisData: propAnalysisData
+  analysisData: propAnalysisData,
+  recordId
 }) => {
   const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
@@ -274,6 +276,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             <AIInterpretationButton
               analysisData={analysisData}
               analysisType="yijing"
+              analysisId={recordId?.toString()}
               onConfigClick={() => setShowAIConfig(true)}
             />
           </div>
