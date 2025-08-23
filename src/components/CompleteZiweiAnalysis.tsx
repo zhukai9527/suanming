@@ -643,6 +643,70 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
                 </div>
               </div>
               
+              {/* 农历信息显示 */}
+              {analysisData.basic_info?.lunar_info && (
+                <div className="bg-gradient-to-r from-pink-50 to-rose-50 p-4 rounded-lg border border-pink-200">
+                  <h4 className="font-bold text-pink-800 mb-3 flex items-center">
+                    <Moon className="h-5 w-5 mr-2" />
+                    农历信息
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div className="text-center">
+                      <div className="text-pink-700 font-semibold mb-1">农历日期</div>
+                      <div className="text-pink-800 font-bold">{analysisData.basic_info.lunar_info.lunar_date}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-pink-700 font-semibold mb-1">干支年</div>
+                      <div className="text-pink-800 font-bold">{analysisData.basic_info.lunar_info.ganzhi_year}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-pink-700 font-semibold mb-1">生肖</div>
+                      <div className="text-pink-800 font-bold">{analysisData.basic_info.lunar_info.zodiac}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-pink-700 font-semibold mb-1">节气</div>
+                      <div className="text-pink-800 font-bold">{analysisData.basic_info.lunar_info.solar_term}</div>
+                    </div>
+                  </div>
+                  {analysisData.basic_info.lunar_info.note && (
+                    <p className="text-pink-600 text-xs mt-3 text-center">
+                      {analysisData.basic_info.lunar_info.note}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* 子时计算说明 */}
+              {analysisData.basic_info?.zishi_calculation_note && (
+                <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-4 rounded-lg border border-cyan-200">
+                  <h4 className="font-bold text-cyan-800 mb-3 flex items-center">
+                    <Clock className="h-5 w-5 mr-2" />
+                    子时计算说明
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="bg-white p-3 rounded-lg border border-cyan-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-cyan-700 font-semibold">子时类型</span>
+                        <span className="text-cyan-800 font-bold px-2 py-1 bg-cyan-100 rounded">
+                          {analysisData.basic_info.zishi_calculation_note.zishi_type}
+                        </span>
+                      </div>
+                      <div className="text-cyan-700 text-sm mb-2">
+                        <strong>计算方法：</strong>{analysisData.basic_info.zishi_calculation_note.calculation_method}
+                      </div>
+                      <div className="text-cyan-600 text-sm mb-2">
+                        {analysisData.basic_info.zishi_calculation_note.explanation}
+                      </div>
+                      {analysisData.basic_info.zishi_calculation_note.ziwei_impact && (
+                        <div className="text-cyan-600 text-sm">
+                          <strong>紫微影响：</strong>{analysisData.basic_info.zishi_calculation_note.ziwei_impact}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* 五行局和命宫 */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-white p-4 rounded-lg border-l-4 border-indigo-500">

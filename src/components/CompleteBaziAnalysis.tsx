@@ -327,6 +327,65 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
                 八字：{analysisData.basic_info?.bazi_chart?.complete_chart}
               </div>
               
+              {/* 农历信息显示 */}
+              {analysisData.basic_info?.lunar_info && (
+                <div className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                  <h4 className="font-bold text-purple-800 mb-3 flex items-center">
+                    <span className="mr-2">🌙</span>
+                    农历信息
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div className="text-center">
+                      <div className="text-purple-700 font-semibold mb-1">农历日期</div>
+                      <div className="text-purple-800 font-bold">{analysisData.basic_info.lunar_info.lunar_date}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-purple-700 font-semibold mb-1">干支年</div>
+                      <div className="text-purple-800 font-bold">{analysisData.basic_info.lunar_info.ganzhi_year}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-purple-700 font-semibold mb-1">生肖</div>
+                      <div className="text-purple-800 font-bold">{analysisData.basic_info.lunar_info.zodiac}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-purple-700 font-semibold mb-1">节气</div>
+                      <div className="text-purple-800 font-bold">{analysisData.basic_info.lunar_info.solar_term}</div>
+                    </div>
+                  </div>
+                  {analysisData.basic_info.lunar_info.note && (
+                    <p className="text-purple-600 text-xs mt-3 text-center">
+                      {analysisData.basic_info.lunar_info.note}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* 子时计算说明 */}
+              {analysisData.basic_info?.zishi_calculation_note && (
+                <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <h4 className="font-bold text-blue-800 mb-3 flex items-center">
+                    <span className="mr-2">⏰</span>
+                    子时计算说明
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="bg-white p-3 rounded-lg border border-blue-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-blue-700 font-semibold">子时类型</span>
+                        <span className="text-blue-800 font-bold px-2 py-1 bg-blue-100 rounded">
+                          {analysisData.basic_info.zishi_calculation_note.zishi_type}
+                        </span>
+                      </div>
+                      <div className="text-blue-700 text-sm mb-2">
+                        <strong>计算方法：</strong>{analysisData.basic_info.zishi_calculation_note.calculation_method}
+                      </div>
+                      <div className="text-blue-600 text-sm">
+                        {analysisData.basic_info.zishi_calculation_note.explanation}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* 节气调整提示 */}
               {analysisData.basic_info?.solar_term_adjustment?.shouldAdjust && (
                 <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
