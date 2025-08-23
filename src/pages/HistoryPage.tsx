@@ -94,10 +94,8 @@ const HistoryPage: React.FC = () => {
       const aiStatus: {[key: number]: boolean} = {};
       for (const reading of processedData) {
         try {
-          const aiResponse = await localApi.request(`/ai-interpretation/get/${reading.id}`, {
-            method: 'GET'
-          });
-          aiStatus[reading.id] = aiResponse.success && aiResponse.data;
+          const aiResponse = await localApi.aiInterpretation.get(reading.id);
+          aiStatus[reading.id] = !aiResponse.error && !!aiResponse.data;
         } catch {
           aiStatus[reading.id] = false;
         }
@@ -229,7 +227,7 @@ const HistoryPage: React.FC = () => {
           divinationMethod={selectedReading.reading_type === 'yijing' ? 
             getInputDataValue(selectedReading.input_data, 'divination_method', 'time') : undefined}
           preAnalysisData={selectedReading.analysis}
-          recordId={selectedReading.id}
+          recordId={parseInt(selectedReading.id)}
         />
 
       </div>

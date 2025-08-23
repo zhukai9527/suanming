@@ -142,14 +142,11 @@ const AnalysisPage: React.FC = () => {
       
       // 保存历史记录
       try {
-        const saveResponse = await localApi.request('/analysis/save-history', {
-          method: 'POST',
-          body: JSON.stringify({
-            analysis_type: analysisType,
-            analysis_data: analysisData,
-            input_data: analysisType === 'yijing' ? { question: formData.question } : birthData
-          })
-        });
+        const saveResponse = await localApi.analysis.saveHistory(
+          analysisType,
+          analysisData,
+          analysisType === 'yijing' ? { question: formData.question } : birthData
+        );
         
         if (saveResponse.data?.record_id) {
           // 将record_id添加到分析结果中，用于AI解读

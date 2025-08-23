@@ -351,6 +351,40 @@ class LocalApiClient {
     },
   };
 
+  // AI解读相关方法
+  aiInterpretation = {
+    // 获取AI解读状态
+    get: async (analysisId: number): Promise<ApiResponse<any>> => {
+      return this.request<any>(`/ai-interpretation/get/${analysisId}`);
+    },
+
+    // 保存AI解读结果
+    save: async (analysisId: number, content: string, analysisType: string, model?: string, tokensUsed?: number): Promise<ApiResponse<any>> => {
+      return this.request<any>('/ai-interpretation/save', {
+        method: 'POST',
+        body: JSON.stringify({
+          analysis_id: analysisId,
+          analysis_type: analysisType,
+          content,
+          model,
+          tokens_used: tokensUsed,
+          success: true
+        })
+      });
+    },
+
+    // 获取用户的所有AI解读记录
+    list: async (params?: { page?: number; limit?: number; analysis_type?: string }): Promise<ApiResponse<any[]>> => {
+      const queryParams = new URLSearchParams();
+      if (params?.page) queryParams.append('page', params.page.toString());
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.analysis_type) queryParams.append('analysis_type', params.analysis_type);
+      
+      const endpoint = `/ai-interpretation/list${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      return this.request<any[]>(endpoint);
+    },
+  };
+
   // 兼容Supabase的functions.invoke方法
   functions = {
     invoke: async (functionName: string, options: { body: any }): Promise<ApiResponse<any>> => {
