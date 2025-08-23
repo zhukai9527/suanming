@@ -1,6 +1,6 @@
 export interface UserProfile {
-  id: string;
-  user_id: string;
+  id: number;
+  user_id: number;
   username?: string;
   full_name: string;
   birth_date: string;
@@ -13,8 +13,8 @@ export interface UserProfile {
 }
 
 export interface AnalysisRecord {
-  id: string;
-  user_id: string;
+  id: number;
+  user_id: number;
   analysis_type: 'bazi' | 'ziwei' | 'yijing';
   name: string;
   birth_date: string;
@@ -29,8 +29,8 @@ export interface AnalysisRecord {
 }
 
 export interface NumerologyReading {
-  id: string;
-  user_id: string;
+  id: number;
+  user_id: number;
   profile_id?: string;
   reading_type: 'bazi' | 'ziwei' | 'yijing' | 'comprehensive';
   name: string;
@@ -56,7 +56,7 @@ export interface NumerologyReading {
 }
 
 export interface AnalysisRequest {
-  user_id: string;
+  user_id: number;
   birth_data: {
     name: string;
     birth_date: string;

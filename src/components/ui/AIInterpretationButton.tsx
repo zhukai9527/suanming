@@ -20,7 +20,7 @@ interface AIInterpretationButtonProps {
   analysisData?: any; // 分析数据对象（可选）
   analysisMarkdown?: string; // 直接传递的MD内容（可选）
   analysisType: 'bazi' | 'ziwei' | 'yijing';
-  analysisId?: string; // 用于缓存解读结果
+  recordId?: number; // 分析记录ID，用于AI解读
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
@@ -33,7 +33,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
   analysisData,
   analysisMarkdown,
   analysisType,
-  analysisId,
+  recordId,
   className,
   variant = 'default',
   size = 'md',
@@ -55,56 +55,14 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
     setIsConfigValid(validateAIConfig(config));
   }, []);
 
-  // 生成唯一的分析ID，包含分析数据的时间戳
-  const generateAnalysisId = () => {
-    if (analysisId) {
-      return analysisId;
-    }
-    
-    // 尝试从分析数据中提取时间戳
-    let timestamp = '';
-    if (analysisData) {
-      // 检查多种可能的时间戳字段
-      const timeFields = [
-        analysisData.created_at,
-        analysisData.timestamp,
-        analysisData.analysis_time,
-        analysisData.basic_info?.created_at,
-        analysisData.basic_info?.timestamp,
-        analysisData.basic_info?.analysis_time
-      ];
-      
-      for (const field of timeFields) {
-        if (field) {
-          timestamp = new Date(field).getTime().toString();
-          break;
-        }
-      }
-      
-      // 如果没有找到时间戳，使用数据的哈希值作为标识
-      if (!timestamp) {
-        const dataString = JSON.stringify(analysisData);
-        // 使用简单的哈希算法替代btoa，避免Unicode字符问题
-        let hash = 0;
-        for (let i = 0; i < dataString.length; i++) {
-          const char = dataString.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash; // 转换为32位整数
-        }
-        timestamp = Math.abs(hash).toString(36).slice(0, 16); // 使用36进制表示
-      }
-    }
-    
-    return `${analysisType}-${timestamp || Date.now()}`;
-  };
-  
-  const uniqueAnalysisId = generateAnalysisId();
+  // 如果没有recordId，则无法进行AI解读
+  const canPerformAI = !!recordId;
 
   // 加载已保存的解读结果
   useEffect(() => {
     const loadSavedInterpretation = async () => {
-      if (uniqueAnalysisId) {
-        const savedInterpretation = await getAIInterpretation(uniqueAnalysisId);
+      if (recordId) {
+        const savedInterpretation = await getAIInterpretation(recordId);
         if (savedInterpretation) {
           setInterpretation(savedInterpretation);
         }
@@ -112,7 +70,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
     };
     
     loadSavedInterpretation();
-  }, [uniqueAnalysisId]);
+  }, [recordId]);
 
   // 处理AI解读请求
   const handleAIInterpretation = async () => {
@@ -157,9 +115,9 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
         setStreamingContent(''); // 清空流式内容，使用最终结果
         
         // 保存解读结果
-        if (uniqueAnalysisId) {
+        if (recordId) {
           try {
-            await saveAIInterpretation(uniqueAnalysisId, result, analysisType);
+            await saveAIInterpretation(recordId, result);
           } catch (saveError) {
             // 保存失败不影响用户体验，静默处理
           }
@@ -213,7 +171,7 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
               handleAIInterpretation();
             }
           }}
-          disabled={isLoading || (!isConfigValid && !interpretation)}
+          disabled={isLoading || !canPerformAI || (!isConfigValid && !interpretation)}
           className={cn(
             'min-h-[40px] min-w-[100px] px-3 sm:px-6 text-xs sm:text-sm flex-shrink-0 whitespace-nowrap',
             !isConfigValid && !interpretation && 'opacity-50 cursor-not-allowed'
@@ -263,7 +221,17 @@ const AIInterpretationButton: React.FC<AIInterpretationButtonProps> = ({
       </div>
 
       {/* 配置提示 */}
-      {!isConfigValid && !interpretation && (
+      {!canPerformAI && (
+        <div className="flex items-center space-x-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />
+          <div className="text-sm text-red-800">
+            <p className="font-medium">无法使用AI解读</p>
+            <p className="text-xs mt-1">此分析记录没有有效的ID，无法保存AI解读结果</p>
+          </div>
+        </div>
+      )}
+      
+      {canPerformAI && !isConfigValid && !interpretation && (
         <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
           <div className="text-sm text-yellow-800">

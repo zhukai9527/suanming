@@ -875,7 +875,7 @@ export const requestAIInterpretation = async (request: AIInterpretationRequest):
 };
 
 // 保存AI解读结果到数据库
-export const saveAIInterpretation = async (analysisId: string, result: AIInterpretationResult, analysisType: string): Promise<void> => {
+export const saveAIInterpretation = async (readingId: number, result: AIInterpretationResult): Promise<void> => {
   try {
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -893,8 +893,7 @@ export const saveAIInterpretation = async (analysisId: string, result: AIInterpr
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        analysis_id: parseInt(analysisId),
-        analysis_type: analysisType,
+        reading_id: readingId,
         content: result.content,
         model: result.model,
         tokens_used: result.tokensUsed,
@@ -908,12 +907,12 @@ export const saveAIInterpretation = async (analysisId: string, result: AIInterpr
     }
 
     // 同时保存到localStorage作为备份
-    const key = `ai-interpretation-${analysisId}`;
+    const key = `ai-interpretation-${readingId}`;
     localStorage.setItem(key, JSON.stringify(result));
   } catch (error) {
     // 如果数据库保存失败，至少保存到localStorage
     try {
-      const key = `ai-interpretation-${analysisId}`;
+      const key = `ai-interpretation-${readingId}`;
       localStorage.setItem(key, JSON.stringify(result));
     } catch (localError) {
       // 静默处理存储错误
@@ -922,7 +921,7 @@ export const saveAIInterpretation = async (analysisId: string, result: AIInterpr
 };
 
 // 从数据库或本地存储获取AI解读结果
-export const getAIInterpretation = async (analysisId: string): Promise<AIInterpretationResult | null> => {
+export const getAIInterpretation = async (readingId: number): Promise<AIInterpretationResult | null> => {
   try {
     const token = localStorage.getItem('auth_token');
     if (token) {
@@ -931,7 +930,7 @@ export const getAIInterpretation = async (analysisId: string): Promise<AIInterpr
         (import.meta.env.DEV ? 'http://localhost:3001/api' : 
           (window.location.hostname.includes('koyeb.app') ? `${window.location.origin}/api` : `${window.location.origin}/api`));
 
-      const response = await fetch(`${API_BASE_URL}/ai-interpretation/get/${analysisId}`, {
+      const response = await fetch(`${API_BASE_URL}/ai-interpretation/get/${readingId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -953,7 +952,7 @@ export const getAIInterpretation = async (analysisId: string): Promise<AIInterpr
     }
 
     // 如果数据库获取失败，尝试从localStorage获取
-    const key = `ai-interpretation-${analysisId}`;
+    const key = `ai-interpretation-${readingId}`;
     const saved = localStorage.getItem(key);
     if (saved) {
       return JSON.parse(saved);
@@ -961,7 +960,7 @@ export const getAIInterpretation = async (analysisId: string): Promise<AIInterpr
   } catch (error) {
     // 如果数据库获取失败，尝试从localStorage获取
     try {
-      const key = `ai-interpretation-${analysisId}`;
+      const key = `ai-interpretation-${readingId}`;
       const saved = localStorage.getItem(key);
       if (saved) {
         return JSON.parse(saved);

@@ -451,13 +451,14 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
         userId={userId}
         divinationMethod={divinationMethod}
         analysisData={preAnalysisData}
+        recordId={recordId}
       />
     );
   }
   
   // 对于紫微斗数，如果有 birthDate 参数，直接返回 CompleteZiweiAnalysis 组件（不添加额外容器）
   if (analysisType === 'ziwei' && birthDate) {
-    return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} />;
+    return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} recordId={recordId} />;
   }
   
   // 如果没有分析结果数据

@@ -590,7 +590,7 @@ const CompleteZiweiAnalysis: React.FC<CompleteZiweiAnalysisProps> = ({ birthDate
             <AIInterpretationButton
               analysisData={analysisData}
               analysisType="ziwei"
-              analysisId={recordId?.toString()}
+              recordId={recordId}
               onConfigClick={() => setShowAIConfig(true)}
             />
           </div>

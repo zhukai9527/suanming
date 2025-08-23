@@ -287,7 +287,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
             <AIInterpretationButton
               analysisData={analysisData}
               analysisType="bazi"
-              analysisId={recordId?.toString()}
+              recordId={recordId}
               onConfigClick={() => setShowAIConfig(true)}
             />
           </div>

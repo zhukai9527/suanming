@@ -26,28 +26,30 @@ router.get('/', authenticate, asyncHandler(async (req, res) => {
   }
   
   // 获取总数
-  const countQuery = `SELECT COUNT(*) as total FROM numerology_readings ${whereClause}`;
+  const countQuery = `SELECT COUNT(*) as total FROM numerology_readings nr ${whereClause.replace('WHERE', 'WHERE nr.')}`;
   const { total } = db.prepare(countQuery).get(...params);
   
-  // 获取分页数据
+  // 获取分页数据，包含AI解读状态
   const dataQuery = `
     SELECT 
-      id,
-      reading_type,
-      name,
-      birth_date,
-      birth_time,
-      birth_place,
-      gender,
-      input_data,
-      results,
-      analysis,
-      status,
-      created_at,
-      updated_at
-    FROM numerology_readings 
-    ${whereClause}
-    ORDER BY created_at DESC
+      nr.id,
+      nr.reading_type,
+      nr.name,
+      nr.birth_date,
+      nr.birth_time,
+      nr.birth_place,
+      nr.gender,
+      nr.input_data,
+      nr.results,
+      nr.analysis,
+      nr.status,
+      nr.created_at,
+      nr.updated_at,
+      CASE WHEN ai.id IS NOT NULL THEN 1 ELSE 0 END as has_ai_interpretation
+    FROM numerology_readings nr
+    LEFT JOIN ai_interpretations ai ON (ai.reading_id = nr.id AND ai.user_id = nr.user_id)
+    ${whereClause.replace('WHERE', 'WHERE nr.')}
+    ORDER BY nr.created_at DESC
     LIMIT ? OFFSET ?
   `;
   

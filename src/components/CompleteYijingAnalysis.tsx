@@ -276,7 +276,7 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
             <AIInterpretationButton
               analysisData={analysisData}
               analysisType="yijing"
-              analysisId={recordId?.toString()}
+              recordId={recordId}
               onConfigClick={() => setShowAIConfig(true)}
             />
           </div>

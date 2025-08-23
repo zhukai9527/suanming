@@ -6,32 +6,32 @@ const router = express.Router();
 // 保存AI解读结果
 router.post('/save', authenticate, async (req, res) => {
   try {
-    const { analysis_id, analysis_type, content, model, tokens_used, success, error_message } = req.body;
+    const { reading_id, content, model, tokens_used, success, error_message } = req.body;
     const user_id = req.user.id;
 
     // 验证必需参数
-    if (!analysis_id || !analysis_type || (!content && success !== false)) {
+    if (!reading_id || (!content && success !== false)) {
       return res.status(400).json({
-        error: '缺少必需参数：analysis_id, analysis_type, content'
+        error: '缺少必需参数：reading_id, content'
       });
     }
 
-    // 验证analysis_id是否属于当前用户
+    // 验证reading_id是否属于当前用户
     const db = getDB();
-    const analysisExists = db.prepare(
+    const readingExists = db.prepare(
       'SELECT id FROM numerology_readings WHERE id = ? AND user_id = ?'
-    ).get(analysis_id, user_id);
-
-    if (!analysisExists) {
+    ).get(reading_id, user_id);
+    
+    if (!readingExists) {
       return res.status(404).json({
         error: '分析记录不存在或无权限访问'
       });
     }
 
-    // 检查是否已存在AI解读记录
+    // 检查是否已存在AI解读记录（1对1关系）
     const existingInterpretation = db.prepare(
-      'SELECT id FROM ai_interpretations WHERE analysis_id = ? AND user_id = ?'
-    ).get(analysis_id, user_id);
+      'SELECT id FROM ai_interpretations WHERE reading_id = ? AND user_id = ?'
+    ).get(reading_id, user_id);
 
     if (existingInterpretation) {
       // 更新现有记录
@@ -50,10 +50,10 @@ router.post('/save', authenticate, async (req, res) => {
     } else {
       // 创建新记录
       const insertStmt = db.prepare(`
-        INSERT INTO ai_interpretations (user_id, analysis_id, analysis_type, content, model, tokens_used, success, error_message)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO ai_interpretations (user_id, reading_id, content, model, tokens_used, success, error_message)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      const result = insertStmt.run(user_id, analysis_id, analysis_type, content, model, tokens_used, success ? 1 : 0, error_message);
+      const result = insertStmt.run(user_id, reading_id, content, model, tokens_used, success ? 1 : 0, error_message);
 
       res.json({
         success: true,
@@ -71,21 +71,22 @@ router.post('/save', authenticate, async (req, res) => {
 });
 
 // 获取AI解读结果
-router.get('/get/:analysis_id', authenticate, async (req, res) => {
+router.get('/get/:reading_id', authenticate, async (req, res) => {
   try {
-    const { analysis_id } = req.params;
+    const { reading_id } = req.params;
     const user_id = req.user.id;
     const db = getDB();
 
+    // 获取AI解读记录及关联的分析记录信息
     const interpretation = db.prepare(`
       SELECT ai.*, nr.name, nr.reading_type, nr.created_at as analysis_created_at
       FROM ai_interpretations ai
-      JOIN numerology_readings nr ON ai.analysis_id = nr.id
-      WHERE ai.analysis_id = ? AND ai.user_id = ?
+      JOIN numerology_readings nr ON ai.reading_id = nr.id
+      WHERE ai.reading_id = ? AND ai.user_id = ?
       ORDER BY ai.created_at DESC
       LIMIT 1
-    `).get(analysis_id, user_id);
-
+    `).get(reading_id, user_id);
+    
     if (!interpretation) {
       return res.status(404).json({
         error: 'AI解读结果不存在'
@@ -96,8 +97,7 @@ router.get('/get/:analysis_id', authenticate, async (req, res) => {
       success: true,
       data: {
         id: interpretation.id,
-        analysis_id: interpretation.analysis_id,
-        analysis_type: interpretation.analysis_type,
+        reading_id: interpretation.reading_id,
         content: interpretation.content,
         model: interpretation.model,
         tokens_used: interpretation.tokens_used,
@@ -106,6 +106,7 @@ router.get('/get/:analysis_id', authenticate, async (req, res) => {
         created_at: interpretation.created_at,
         updated_at: interpretation.updated_at,
         analysis_name: interpretation.name,
+        analysis_type: interpretation.reading_type,
         analysis_created_at: interpretation.analysis_created_at
       }
     });
@@ -122,22 +123,22 @@ router.get('/get/:analysis_id', authenticate, async (req, res) => {
 router.get('/list', authenticate, async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { page = 1, limit = 20, analysis_type } = req.query;
+    const { page = 1, limit = 20, reading_type } = req.query;
     const offset = (page - 1) * limit;
     const db = getDB();
 
     let whereClause = 'WHERE ai.user_id = ?';
     let params = [user_id];
 
-    if (analysis_type) {
-      whereClause += ' AND ai.analysis_type = ?';
-      params.push(analysis_type);
+    if (reading_type) {
+      whereClause += ' AND nr.reading_type = ?';
+      params.push(reading_type);
     }
 
     const interpretations = db.prepare(`
       SELECT ai.*, nr.name, nr.birth_date, nr.reading_type, nr.created_at as analysis_created_at
       FROM ai_interpretations ai
-      JOIN numerology_readings nr ON ai.analysis_id = nr.id
+      JOIN numerology_readings nr ON ai.reading_id = nr.id
       ${whereClause}
       ORDER BY ai.created_at DESC
       LIMIT ? OFFSET ?
@@ -147,7 +148,7 @@ router.get('/list', authenticate, async (req, res) => {
     const totalResult = db.prepare(`
       SELECT COUNT(*) as count
       FROM ai_interpretations ai
-      JOIN numerology_readings nr ON ai.analysis_id = nr.id
+      JOIN numerology_readings nr ON ai.reading_id = nr.id
       ${whereClause}
     `).get(...params);
     const total = totalResult.count;
@@ -156,8 +157,8 @@ router.get('/list', authenticate, async (req, res) => {
       success: true,
       data: interpretations.map(item => ({
         id: item.id,
-        analysis_id: item.analysis_id,
-        analysis_type: item.analysis_type,
+        reading_id: item.reading_id,
+        analysis_type: item.reading_type,
         content: item.content,
         model: item.model,
         tokens_used: item.tokens_used,
@@ -186,16 +187,16 @@ router.get('/list', authenticate, async (req, res) => {
 });
 
 // 删除AI解读结果
-router.delete('/delete/:analysis_id', authenticate, async (req, res) => {
+router.delete('/delete/:reading_id', authenticate, async (req, res) => {
   try {
-    const { analysis_id } = req.params;
+    const { reading_id } = req.params;
     const user_id = req.user.id;
     const db = getDB();
 
     const deleteStmt = db.prepare(
-      'DELETE FROM ai_interpretations WHERE analysis_id = ? AND user_id = ?'
+      'DELETE FROM ai_interpretations WHERE reading_id = ? AND user_id = ?'
     );
-    const result = deleteStmt.run(analysis_id, user_id);
+    const result = deleteStmt.run(reading_id, user_id);
 
     if (result.changes === 0) {
       return res.status(404).json({

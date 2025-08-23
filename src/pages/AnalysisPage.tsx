@@ -180,24 +180,6 @@ const AnalysisPage: React.FC = () => {
         }
       }, 100);
       
-      // 分析完成后，保存历史记录
-      try {
-        const inputData = analysisType === 'yijing' ? 
-          { question: formData.question, divination_method: 'time' } :
-          {
-            name: formData.name,
-            birth_date: formData.birth_date,
-            birth_time: formData.birth_time,
-            birth_place: formData.birth_place,
-            gender: formData.gender
-          };
-        
-        await localApi.analysis.saveHistory(analysisType, analysisData, inputData);
-        // 历史记录保存成功
-      } catch (historyError: any) {
-        // 静默处理历史记录保存错误
-      }
-      
       toast.success('分析完成！');
     } catch (error: any) {
       toast.error('分析失败：' + (error.message || '未知错误'));

@@ -90,15 +90,11 @@ const HistoryPage: React.FC = () => {
 
       setReadings(processedData);
       
-      // 检查每个记录的AI解读状态
+      // 从后端返回的数据中提取AI解读状态
       const aiStatus: {[key: number]: boolean} = {};
       for (const reading of processedData) {
-        try {
-          const aiResponse = await localApi.aiInterpretation.get(reading.id);
-          aiStatus[reading.id] = !aiResponse.error && !!aiResponse.data;
-        } catch {
-          aiStatus[reading.id] = false;
-        }
+        // 使用后端返回的has_ai_interpretation字段
+        aiStatus[reading.id] = !!(reading as any).has_ai_interpretation;
       }
       setAiInterpretations(aiStatus);
     } catch (error: any) {
@@ -124,8 +120,8 @@ const HistoryPage: React.FC = () => {
         throw new Error(response.error.message);
       }
 
-      setReadings(prev => prev.filter(r => r.id !== readingId));
-      if (selectedReading?.id === readingId) {
+      setReadings(prev => prev.filter(r => r.id !== parseInt(readingId)));
+      if (selectedReading?.id === parseInt(readingId)) {
         setSelectedReading(null);
         setViewingResult(false);
       }
@@ -227,7 +223,7 @@ const HistoryPage: React.FC = () => {
           divinationMethod={selectedReading.reading_type === 'yijing' ? 
             getInputDataValue(selectedReading.input_data, 'divination_method', 'time') : undefined}
           preAnalysisData={selectedReading.analysis}
-          recordId={parseInt(selectedReading.id)}
+          recordId={selectedReading.id}
         />
 
       </div>
@@ -345,7 +341,7 @@ const HistoryPage: React.FC = () => {
                           <ChineseButton
                             variant="ghost"
                             size="md"
-                            onClick={() => handleDeleteReading(reading.id)}
+                            onClick={() => handleDeleteReading(reading.id.toString())}
                             className="min-h-[40px] text-red-600 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3 flex-shrink-0"
                           >
                             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
