@@ -65,6 +65,9 @@ class DatabaseManager {
   // 初始化数据库结构
   initializeSchema() {
     try {
+      // 首先检查是否需要迁移ai_interpretations表
+      this.migrateAiInterpretationsTable();
+      
       const schema = fs.readFileSync(this.schemaPath, 'utf8');
       
       // 直接执行整个schema文件
@@ -74,6 +77,73 @@ class DatabaseManager {
     } catch (error) {
       console.error('数据库结构初始化失败:', error);
       throw error;
+    }
+  }
+  
+  // 迁移ai_interpretations表结构
+  migrateAiInterpretationsTable() {
+    try {
+      // 检查ai_interpretations表是否存在且使用旧的analysis_id字段
+      const tableInfo = this.db.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name='ai_interpretations'
+      `).get();
+      
+      if (tableInfo) {
+        // 检查是否有analysis_id字段（旧结构）
+        const columnInfo = this.db.prepare(`
+          PRAGMA table_info(ai_interpretations)
+        `).all();
+        
+        const hasAnalysisId = columnInfo.some(col => col.name === 'analysis_id');
+        const hasReadingId = columnInfo.some(col => col.name === 'reading_id');
+        
+        if (hasAnalysisId && !hasReadingId) {
+          console.log('检测到旧的ai_interpretations表结构，开始迁移...');
+          
+          // 创建新表结构
+          this.db.exec(`
+            CREATE TABLE ai_interpretations_new (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER NOT NULL,
+              reading_id INTEGER NOT NULL,
+              content TEXT NOT NULL,
+              model TEXT,
+              tokens_used INTEGER,
+              success BOOLEAN DEFAULT 1,
+              error_message TEXT,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+              FOREIGN KEY (reading_id) REFERENCES numerology_readings(id) ON DELETE CASCADE,
+              UNIQUE(reading_id)
+            )
+          `);
+          
+          // 迁移数据（只迁移数字ID的记录）
+          this.db.exec(`
+            INSERT INTO ai_interpretations_new 
+            (user_id, reading_id, content, model, tokens_used, success, error_message, created_at, updated_at)
+            SELECT user_id, CAST(analysis_id AS INTEGER), content, model, tokens_used, success, error_message, created_at, updated_at
+            FROM ai_interpretations 
+            WHERE analysis_id GLOB '[0-9]*'
+          `);
+          
+          // 删除旧表，重命名新表
+          this.db.exec('DROP TABLE ai_interpretations');
+          this.db.exec('ALTER TABLE ai_interpretations_new RENAME TO ai_interpretations');
+          
+          // 重新创建索引
+          this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_user_id ON ai_interpretations(user_id)');
+          this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_reading_id ON ai_interpretations(reading_id)');
+          this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_created_at ON ai_interpretations(created_at DESC)');
+          
+          console.log('ai_interpretations表迁移完成');
+        }
+      }
+    } catch (error) {
+      console.error('ai_interpretations表迁移失败:', error);
+      // 迁移失败不应该阻止应用启动，只记录错误
     }
   }
 
