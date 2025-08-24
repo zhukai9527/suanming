@@ -48,16 +48,49 @@ class YijingAnalyzer {
     };
   }
 
-  // 专业易经分析主函数
+  /**
+   * 专业易经分析主函数
+   * @param {Object} inputData - 输入数据
+   * @param {string} inputData.question - 占卜问题
+   * @param {number} inputData.user_id - 用户ID
+   * @param {Object} inputData.birth_data - 出生数据（可选）
+   * @param {string} inputData.divination_method - 起卦方法
+   * @returns {Object} 易经分析结果
+   */
   performYijingAnalysis(inputData) {
     try {
+      // 输入参数验证
+      if (!inputData || typeof inputData !== 'object') {
+        throw new Error('输入数据无效：必须提供有效的输入对象');
+      }
+      
+      const { question, user_id, birth_data, divination_method = 'time' } = inputData;
+      
+      // 验证必要参数
+      if (!question || typeof question !== 'string' || question.trim().length === 0) {
+        throw new Error('输入数据无效：问题不能为空');
+      }
+      
+      if (question.length > 200) {
+        throw new Error('输入数据无效：问题长度不能超过200个字符');
+      }
+      
+      if (user_id !== undefined && (!Number.isInteger(user_id) || user_id <= 0)) {
+        throw new Error('输入数据无效：用户ID必须是正整数');
+      }
+      
+      // 验证起卦方法
+      const validMethods = ['time', 'plum_blossom', 'coin', 'number'];
+      if (!validMethods.includes(divination_method)) {
+        throw new Error(`输入数据无效：不支持的起卦方法 ${divination_method}`);
+      }
+      
       // 检查缓存（易经分析时效性较短，缓存时间较短）
       const cachedResult = this.cache.get('yijing', inputData);
       if (cachedResult) {
         return cachedResult;
       }
       
-      const { question, user_id, birth_data, divination_method = 'time' } = inputData;
       const currentTime = new Date();
       
       // 根据不同方法起卦
@@ -74,12 +107,12 @@ class YijingAnalyzer {
       // 象数分析
       const numerologyAnalysis = this.performNumerologyAnalysis(hexagramData, currentTime, question);
 
-      return {
+      const result = {
         analysis_type: 'yijing',
         analysis_date: currentTime.toISOString(),
         basic_info: {
           divination_data: {
-            question: question,
+            question: question.trim(),
             divination_time: currentTime.toISOString(),
             method: this.getMethodName(divination_method),
             lunar_info: this.calculateLunarInfo(currentTime)

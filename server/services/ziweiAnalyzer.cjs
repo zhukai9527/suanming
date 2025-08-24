@@ -310,11 +310,75 @@ class ZiweiAnalyzer {
     return null;
    }
 
-  // 专业紫微斗数分析主函数
+  /**
+   * 专业紫微斗数分析主函数
+   * @param {Object} birth_data - 出生数据
+   * @param {string} birth_data.birth_date - 出生日期 (YYYY-MM-DD)
+   * @param {string} birth_data.birth_time - 出生时间 (HH:MM)
+   * @param {string} birth_data.gender - 性别 ('male'/'female' 或 '男'/'女')
+   * @param {string} birth_data.name - 姓名（可选）
+   * @returns {Object} 紫微斗数分析结果
+   */
   performRealZiweiAnalysis(birth_data) {
-    const { name, birth_date, birth_time, gender } = birth_data;
-    const personName = name || '您';
-    const personGender = gender === 'male' || gender === '男' ? '男性' : '女性';
+    try {
+      // 输入参数验证
+      if (!birth_data || typeof birth_data !== 'object') {
+        throw new Error('输入数据无效：必须提供有效的出生数据对象');
+      }
+      
+      const { name, birth_date, birth_time, gender } = birth_data;
+      
+      // 验证出生日期
+      if (!birth_date || typeof birth_date !== 'string') {
+        throw new Error('输入数据无效：出生日期不能为空');
+      }
+      
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(birth_date)) {
+        throw new Error('输入数据无效：出生日期格式必须为 YYYY-MM-DD');
+      }
+      
+      const birthDateObj = new Date(birth_date);
+      if (isNaN(birthDateObj.getTime())) {
+        throw new Error('输入数据无效：出生日期无效');
+      }
+      
+      const currentDate = new Date();
+      const minDate = new Date('1900-01-01');
+      if (birthDateObj < minDate || birthDateObj > currentDate) {
+        throw new Error('输入数据无效：出生日期必须在1900年至今之间');
+      }
+      
+      // 验证出生时间
+      if (birth_time && typeof birth_time === 'string') {
+        const timeRegex = /^\d{2}:\d{2}$/;
+        if (!timeRegex.test(birth_time)) {
+          throw new Error('输入数据无效：出生时间格式必须为 HH:MM');
+        }
+        
+        const [hours, minutes] = birth_time.split(':').map(Number);
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+          throw new Error('输入数据无效：出生时间无效');
+        }
+      }
+      
+      // 验证性别
+      if (!gender || typeof gender !== 'string') {
+        throw new Error('输入数据无效：性别不能为空');
+      }
+      
+      const validGenders = ['male', 'female', '男', '女', '男性', '女性'];
+      if (!validGenders.includes(gender)) {
+        throw new Error('输入数据无效：性别必须是 male/female 或 男/女');
+      }
+      
+      // 验证姓名长度
+      if (name && (typeof name !== 'string' || name.length > 50)) {
+        throw new Error('输入数据无效：姓名长度不能超过50个字符');
+      }
+      
+      const personName = (name && name.trim()) || '您';
+      const personGender = gender === 'male' || gender === '男' ? '男性' : '女性';
     
     // 计算精确的八字信息
     const baziInfo = this.calculatePreciseBazi(birth_date, birth_time);
@@ -359,6 +423,11 @@ class ZiweiAnalyzer {
       },
       detailed_analysis: analysis
     };
+    
+    } catch (error) {
+      console.error('紫微斗数分析详细错误:', error);
+      throw error;
+    }
   }
 
   // 计算五行局（紫微斗数核心算法）- 基于纳音五行

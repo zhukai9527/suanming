@@ -80,8 +80,12 @@ class DatabaseManager {
     }
   }
   
-  // 迁移ai_interpretations表结构
+  /**
+   * 迁移ai_interpretations表结构
+   * 将旧的analysis_id字段迁移为reading_id字段，建立正确的外键关系
+   */
   migrateAiInterpretationsTable() {
+    let transaction;
     try {
       // 检查ai_interpretations表是否存在且使用旧的analysis_id字段
       const tableInfo = this.db.prepare(`
@@ -89,60 +93,100 @@ class DatabaseManager {
         WHERE type='table' AND name='ai_interpretations'
       `).get();
       
-      if (tableInfo) {
-        // 检查是否有analysis_id字段（旧结构）
-        const columnInfo = this.db.prepare(`
-          PRAGMA table_info(ai_interpretations)
-        `).all();
-        
-        const hasAnalysisId = columnInfo.some(col => col.name === 'analysis_id');
-        const hasReadingId = columnInfo.some(col => col.name === 'reading_id');
-        
-        if (hasAnalysisId && !hasReadingId) {
-          console.log('检测到旧的ai_interpretations表结构，开始迁移...');
-          
-          // 创建新表结构
-          this.db.exec(`
-            CREATE TABLE ai_interpretations_new (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              user_id INTEGER NOT NULL,
-              reading_id INTEGER NOT NULL,
-              content TEXT NOT NULL,
-              model TEXT,
-              tokens_used INTEGER,
-              success BOOLEAN DEFAULT 1,
-              error_message TEXT,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-              FOREIGN KEY (reading_id) REFERENCES numerology_readings(id) ON DELETE CASCADE,
-              UNIQUE(reading_id)
-            )
-          `);
-          
-          // 迁移数据（只迁移数字ID的记录）
-          this.db.exec(`
-            INSERT INTO ai_interpretations_new 
-            (user_id, reading_id, content, model, tokens_used, success, error_message, created_at, updated_at)
-            SELECT user_id, CAST(analysis_id AS INTEGER), content, model, tokens_used, success, error_message, created_at, updated_at
-            FROM ai_interpretations 
-            WHERE analysis_id GLOB '[0-9]*'
-          `);
-          
-          // 删除旧表，重命名新表
-          this.db.exec('DROP TABLE ai_interpretations');
-          this.db.exec('ALTER TABLE ai_interpretations_new RENAME TO ai_interpretations');
-          
-          // 重新创建索引
-          this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_user_id ON ai_interpretations(user_id)');
-          this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_reading_id ON ai_interpretations(reading_id)');
-          this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_created_at ON ai_interpretations(created_at DESC)');
-          
-          console.log('ai_interpretations表迁移完成');
-        }
+      if (!tableInfo) {
+        console.log('ai_interpretations表不存在，跳过迁移');
+        return;
       }
+      
+      // 检查是否有analysis_id字段（旧结构）
+      const columnInfo = this.db.prepare(`
+        PRAGMA table_info(ai_interpretations)
+      `).all();
+      
+      const hasAnalysisId = columnInfo.some(col => col.name === 'analysis_id');
+      const hasReadingId = columnInfo.some(col => col.name === 'reading_id');
+      
+      if (!hasAnalysisId || hasReadingId) {
+        console.log('ai_interpretations表结构已是最新，跳过迁移');
+        return;
+      }
+      
+      console.log('检测到旧的ai_interpretations表结构，开始迁移...');
+      
+      // 开始事务
+      transaction = this.db.transaction(() => {
+        // 创建新表结构
+        this.db.exec(`
+          CREATE TABLE ai_interpretations_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            reading_id INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            model TEXT,
+            tokens_used INTEGER,
+            success BOOLEAN DEFAULT 1,
+            error_message TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (reading_id) REFERENCES numerology_readings(id) ON DELETE CASCADE,
+            UNIQUE(reading_id)
+          )
+        `);
+        
+        // 检查有多少条记录需要迁移
+        const countStmt = this.db.prepare(`
+          SELECT COUNT(*) as count FROM ai_interpretations 
+          WHERE analysis_id GLOB '[0-9]*'
+        `);
+        const { count } = countStmt.get();
+        console.log(`准备迁移 ${count} 条有效记录`);
+        
+        // 迁移数据（只迁移数字ID的记录）
+        const migrateStmt = this.db.prepare(`
+          INSERT INTO ai_interpretations_new 
+          (user_id, reading_id, content, model, tokens_used, success, error_message, created_at, updated_at)
+          SELECT user_id, CAST(analysis_id AS INTEGER), content, model, tokens_used, success, error_message, created_at, updated_at
+          FROM ai_interpretations 
+          WHERE analysis_id GLOB '[0-9]*'
+        `);
+        const migrateResult = migrateStmt.run();
+        console.log(`成功迁移 ${migrateResult.changes} 条记录`);
+        
+        // 删除旧表，重命名新表
+        this.db.exec('DROP TABLE ai_interpretations');
+        this.db.exec('ALTER TABLE ai_interpretations_new RENAME TO ai_interpretations');
+        
+        // 重新创建索引
+        this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_user_id ON ai_interpretations(user_id)');
+        this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_reading_id ON ai_interpretations(reading_id)');
+        this.db.exec('CREATE INDEX IF NOT EXISTS idx_ai_interpretations_created_at ON ai_interpretations(created_at DESC)');
+      });
+      
+      // 执行事务
+      transaction();
+      console.log('ai_interpretations表迁移完成');
+      
     } catch (error) {
       console.error('ai_interpretations表迁移失败:', error);
+      console.error('错误详情:', error.message);
+      
+      // 如果事务失败，尝试回滚（SQLite会自动回滚失败的事务）
+      try {
+        // 检查是否存在临时表，如果存在则清理
+        const tempTableCheck = this.db.prepare(`
+          SELECT name FROM sqlite_master 
+          WHERE type='table' AND name='ai_interpretations_new'
+        `).get();
+        
+        if (tempTableCheck) {
+          this.db.exec('DROP TABLE ai_interpretations_new');
+          console.log('已清理临时表');
+        }
+      } catch (cleanupError) {
+        console.error('清理临时表失败:', cleanupError);
+      }
+      
       // 迁移失败不应该阻止应用启动，只记录错误
     }
   }

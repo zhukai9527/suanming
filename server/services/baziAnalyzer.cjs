@@ -52,17 +52,86 @@ class BaziAnalyzer {
     };
   }
 
-  // 完全个性化的八字分析主函数 - 基于真实用户数据
+  /**
+   * 完全个性化的八字分析主函数 - 基于真实用户数据
+   * @param {Object} birth_data - 出生数据
+   * @param {string} birth_data.birth_date - 出生日期 (YYYY-MM-DD)
+   * @param {string} birth_data.birth_time - 出生时间 (HH:MM)
+   * @param {string} birth_data.gender - 性别 ('male'/'female' 或 '男'/'女')
+   * @param {string} birth_data.birth_place - 出生地点（可选）
+   * @param {string} birth_data.name - 姓名（可选）
+   * @returns {Promise<Object>} 八字分析结果
+   */
   async performFullBaziAnalysis(birth_data) {
     try {
+      // 输入参数验证
+      if (!birth_data || typeof birth_data !== 'object') {
+        throw new Error('输入数据无效：必须提供有效的出生数据对象');
+      }
+      
+      const { birth_date, birth_time, gender, birth_place, name } = birth_data;
+      
+      // 验证出生日期
+      if (!birth_date || typeof birth_date !== 'string') {
+        throw new Error('输入数据无效：出生日期不能为空');
+      }
+      
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(birth_date)) {
+        throw new Error('输入数据无效：出生日期格式必须为 YYYY-MM-DD');
+      }
+      
+      const birthDateObj = new Date(birth_date);
+      if (isNaN(birthDateObj.getTime())) {
+        throw new Error('输入数据无效：出生日期无效');
+      }
+      
+      const currentDate = new Date();
+      const minDate = new Date('1900-01-01');
+      if (birthDateObj < minDate || birthDateObj > currentDate) {
+        throw new Error('输入数据无效：出生日期必须在1900年至今之间');
+      }
+      
+      // 验证出生时间
+      if (birth_time && typeof birth_time === 'string') {
+        const timeRegex = /^\d{2}:\d{2}$/;
+        if (!timeRegex.test(birth_time)) {
+          throw new Error('输入数据无效：出生时间格式必须为 HH:MM');
+        }
+        
+        const [hours, minutes] = birth_time.split(':').map(Number);
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+          throw new Error('输入数据无效：出生时间无效');
+        }
+      }
+      
+      // 验证性别
+      if (!gender || typeof gender !== 'string') {
+        throw new Error('输入数据无效：性别不能为空');
+      }
+      
+      const validGenders = ['male', 'female', '男', '女', '男性', '女性'];
+      if (!validGenders.includes(gender)) {
+        throw new Error('输入数据无效：性别必须是 male/female 或 男/女');
+      }
+      
+      // 验证姓名长度
+      if (name && (typeof name !== 'string' || name.length > 50)) {
+        throw new Error('输入数据无效：姓名长度不能超过50个字符');
+      }
+      
+      // 验证出生地点长度
+      if (birth_place && (typeof birth_place !== 'string' || birth_place.length > 100)) {
+        throw new Error('输入数据无效：出生地点长度不能超过100个字符');
+      }
+      
       // 检查缓存
       const cachedResult = this.cache.get('bazi', birth_data);
       if (cachedResult) {
         return cachedResult;
       }
       
-      const { birth_date, birth_time, gender, birth_place, name } = birth_data;
-      const personalizedName = name || '您';
+      const personalizedName = (name && name.trim()) || '您';
 
       // 1. 精确计算八字四柱（基础计算，必须先完成）
       const baziChart = this.calculatePreciseBazi(birth_date, birth_time);

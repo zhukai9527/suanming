@@ -21,13 +21,26 @@ const AIEnhancedAnalysis = require('../services/common/AIEnhancedAnalysis.cjs');
 // 初始化AI增强分析服务
 const aiEnhancedAnalysis = new AIEnhancedAnalysis();
 
-// 八字分析接口
-router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
-  const { birth_data } = req.body;
+/**
+ * 通用输入验证函数
+ * @param {Object} birth_data - 出生数据
+ * @throws {AppError} 验证失败时抛出错误
+ */
+function validateBirthData(birth_data) {
+  if (!birth_data || typeof birth_data !== 'object') {
+    throw new AppError('缺少必要参数：出生数据', 400, 'MISSING_BIRTH_DATA');
+  }
   
-  // 输入验证
-  if (!birth_data || !birth_data.name || !birth_data.birth_date) {
-    throw new AppError('缺少必要参数：姓名和出生日期', 400, 'MISSING_BIRTH_DATA');
+  if (!birth_data.name || typeof birth_data.name !== 'string' || birth_data.name.trim().length === 0) {
+    throw new AppError('缺少必要参数：姓名不能为空', 400, 'MISSING_NAME');
+  }
+  
+  if (birth_data.name.length > 50) {
+    throw new AppError('姓名长度不能超过50个字符', 400, 'NAME_TOO_LONG');
+  }
+  
+  if (!birth_data.birth_date || typeof birth_data.birth_date !== 'string') {
+    throw new AppError('缺少必要参数：出生日期', 400, 'MISSING_BIRTH_DATE');
   }
   
   // 验证出生日期格式
@@ -36,55 +49,127 @@ router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
     throw new AppError('出生日期格式应为 YYYY-MM-DD', 400, 'INVALID_DATE_FORMAT');
   }
   
+  // 验证日期有效性
+  const birthDate = new Date(birth_data.birth_date);
+  if (isNaN(birthDate.getTime())) {
+    throw new AppError('出生日期无效', 400, 'INVALID_DATE');
+  }
+  
+  // 验证日期范围
+  const currentDate = new Date();
+  const minDate = new Date('1900-01-01');
+  if (birthDate < minDate || birthDate > currentDate) {
+    throw new AppError('出生日期必须在1900年至今之间', 400, 'DATE_OUT_OF_RANGE');
+  }
+  
   // 验证出生时间格式（如果提供）
   if (birth_data.birth_time) {
+    if (typeof birth_data.birth_time !== 'string') {
+      throw new AppError('出生时间格式无效', 400, 'INVALID_TIME_TYPE');
+    }
+    
     const timeRegex = /^\d{2}:\d{2}$/;
     if (!timeRegex.test(birth_data.birth_time)) {
       throw new AppError('出生时间格式应为 HH:MM', 400, 'INVALID_TIME_FORMAT');
     }
+    
+    const [hours, minutes] = birth_data.birth_time.split(':').map(Number);
+    if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+      throw new AppError('出生时间无效', 400, 'INVALID_TIME');
+    }
   }
+  
+  // 验证性别（如果提供）
+  if (birth_data.gender) {
+    const validGenders = ['male', 'female', '男', '女', '男性', '女性'];
+    if (!validGenders.includes(birth_data.gender)) {
+      throw new AppError('性别必须是 male/female 或 男/女', 400, 'INVALID_GENDER');
+    }
+  }
+  
+  // 验证出生地点长度（如果提供）
+  if (birth_data.birth_place && birth_data.birth_place.length > 100) {
+    throw new AppError('出生地点长度不能超过100个字符', 400, 'BIRTH_PLACE_TOO_LONG');
+  }
+}
+
+/**
+ * 通用分析响应处理函数
+ * @param {Object} analysisResult - 分析结果
+ * @param {Object} res - Express响应对象
+ */
+function sendAnalysisResponse(analysisResult, res) {
+  res.json({
+    data: {
+      analysis: analysisResult
+    }
+  });
+}
+
+/**
+ * 八字分析接口
+ * 执行八字命理分析，不存储历史记录
+ */
+router.post('/bazi', authenticate, asyncHandler(async (req, res) => {
+  const { birth_data } = req.body;
+  
+  // 使用通用验证函数
+  validateBirthData(birth_data);
   
   try {
     // 执行八字分析（纯分析，不存储历史记录）
     const analysisResult = await baziAnalyzer.performFullBaziAnalysis(birth_data);
     
-    // 只返回分析结果，不存储历史记录
-    res.json({
-      data: {
-        analysis: analysisResult
-      }
-    });
+    // 使用通用响应函数
+    sendAnalysisResponse(analysisResult, res);
   } catch (error) {
     console.error('八字分析错误:', error);
-    throw new AppError('八字分析过程中发生错误', 500, 'BAZI_ANALYSIS_ERROR');
+    throw new AppError(`八字分析过程中发生错误: ${error.message}`, 500, 'BAZI_ANALYSIS_ERROR');
   }
 }));
 
-// 易经分析接口
+/**
+ * 易经分析接口
+ * 执行易经占卜分析，不存储历史记录
+ */
 router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
   const { question, user_id, divination_method, user_timezone, local_time } = req.body;
   
   // 输入验证
-  if (!question) {
-    throw new AppError('缺少必要参数：占卜问题', 400, 'MISSING_QUESTION');
+  if (!question || typeof question !== 'string' || question.trim().length === 0) {
+    throw new AppError('缺少必要参数：占卜问题不能为空', 400, 'MISSING_QUESTION');
+  }
+  
+  if (question.length > 200) {
+    throw new AppError('占卜问题长度不能超过200个字符', 400, 'QUESTION_TOO_LONG');
+  }
+  
+  // 验证起卦方法
+  if (divination_method) {
+    const validMethods = ['time', 'plum_blossom', 'coin', 'number'];
+    if (!validMethods.includes(divination_method)) {
+      throw new AppError(`不支持的起卦方法: ${divination_method}`, 400, 'INVALID_DIVINATION_METHOD');
+    }
+  }
+  
+  // 验证用户ID
+  const targetUserId = user_id || req.user.id;
+  if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+    throw new AppError('用户ID无效', 400, 'INVALID_USER_ID');
   }
   
   try {
     // 执行易经分析（纯分析，不存储历史记录）
     const analysisResult = yijingAnalyzer.performYijingAnalysis({
-      question: question,
-      user_id: user_id || req.user.id,
+      question: question.trim(),
+      user_id: targetUserId,
       divination_method: divination_method || 'time',
       user_timezone: user_timezone,
       local_time: local_time
     });
     
-    // 只返回分析结果，不存储历史记录
-    res.json({
-      data: {
-        analysis: analysisResult
-      }
-    });
+    // 使用通用响应函数
+    sendAnalysisResponse(analysisResult, res);
   } catch (error) {
     console.error('易经分析详细错误:', error);
     console.error('错误堆栈:', error.stack);
@@ -92,42 +177,30 @@ router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
   }
 }));
 
-// 紫微斗数分析接口
+/**
+ * 紫微斗数分析接口
+ * 执行紫微斗数分析，不存储历史记录
+ */
 router.post('/ziwei', authenticate, asyncHandler(async (req, res) => {
   const { birth_data } = req.body;
   
-  // 输入验证
-  if (!birth_data || !birth_data.name || !birth_data.birth_date) {
-    throw new AppError('缺少必要参数：姓名和出生日期', 400, 'MISSING_BIRTH_DATA');
-  }
+  // 使用通用验证函数
+  validateBirthData(birth_data);
   
-  // 验证出生日期格式
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(birth_data.birth_date)) {
-    throw new AppError('出生日期格式应为 YYYY-MM-DD', 400, 'INVALID_DATE_FORMAT');
-  }
-  
-  // 验证出生时间格式（如果提供）
-  if (birth_data.birth_time) {
-    const timeRegex = /^\d{2}:\d{2}$/;
-    if (!timeRegex.test(birth_data.birth_time)) {
-      throw new AppError('出生时间格式应为 HH:MM', 400, 'INVALID_TIME_FORMAT');
-    }
+  // 紫微斗数需要性别信息
+  if (!birth_data.gender) {
+    throw new AppError('紫微斗数分析需要性别信息', 400, 'MISSING_GENDER');
   }
   
   try {
     // 执行紫微斗数分析（纯分析，不存储历史记录）
     const analysisResult = ziweiAnalyzer.performRealZiweiAnalysis(birth_data);
     
-    // 只返回分析结果，不存储历史记录
-    res.json({
-      data: {
-        analysis: analysisResult
-      }
-    });
+    // 使用通用响应函数
+    sendAnalysisResponse(analysisResult, res);
   } catch (error) {
     console.error('紫微斗数分析错误:', error);
-    throw new AppError('紫微斗数分析过程中发生错误', 500, 'ZIWEI_ANALYSIS_ERROR');
+    throw new AppError(`紫微斗数分析过程中发生错误: ${error.message}`, 500, 'ZIWEI_ANALYSIS_ERROR');
   }
 }));
 

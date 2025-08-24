@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ErrorInfo } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity } from 'lucide-react';
+import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { BackToTop } from './ui/BackToTop';
 import DownloadButton from './ui/DownloadButton';
@@ -8,22 +8,121 @@ import AIInterpretationButton from './ui/AIInterpretationButton';
 import AIConfigModal from './ui/AIConfigModal';
 import { localApi } from '../lib/localApi';
 
+/**
+ * 八字分析组件的Props接口
+ */
 interface CompleteBaziAnalysisProps {
+  /** 出生日期信息 */
   birthDate: {
+    /** 出生日期 (YYYY-MM-DD) */
     date: string;
+    /** 出生时间 (HH:MM) */
     time: string;
+    /** 姓名（可选） */
     name?: string;
+    /** 性别（可选） */
     gender?: string;
   };
-  analysisData?: any; // 可选的预先分析的数据
-  recordId?: number; // 历史记录ID，用于AI解读
+  /** 可选的预先分析的数据 */
+  analysisData?: any;
+  /** 历史记录ID，用于AI解读 */
+  recordId?: number;
 }
+
+/**
+ * 验证出生日期数据的有效性
+ * @param birthDate 出生日期数据
+ * @returns 验证结果和错误信息
+ */
+const validateBirthDate = (birthDate: CompleteBaziAnalysisProps['birthDate']): { isValid: boolean; error?: string } => {
+  if (!birthDate) {
+    return { isValid: false, error: '出生日期数据不能为空' };
+  }
+  
+  if (!birthDate.date || typeof birthDate.date !== 'string') {
+    return { isValid: false, error: '出生日期不能为空' };
+  }
+  
+  // 验证日期格式
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(birthDate.date)) {
+    return { isValid: false, error: '出生日期格式必须为 YYYY-MM-DD' };
+  }
+  
+  // 验证日期有效性
+  const date = new Date(birthDate.date);
+  if (isNaN(date.getTime())) {
+    return { isValid: false, error: '出生日期无效' };
+  }
+  
+  if (!birthDate.time || typeof birthDate.time !== 'string') {
+    return { isValid: false, error: '出生时间不能为空' };
+  }
+  
+  // 验证时间格式
+  const timeRegex = /^\d{2}:\d{2}$/;
+  if (!timeRegex.test(birthDate.time)) {
+    return { isValid: false, error: '出生时间格式必须为 HH:MM' };
+  }
+  
+  // 验证时间有效性
+  const [hours, minutes] = birthDate.time.split(':').map(Number);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return { isValid: false, error: '出生时间无效' };
+  }
+  
+  // 验证姓名长度
+  if (birthDate.name && birthDate.name.length > 50) {
+    return { isValid: false, error: '姓名长度不能超过50个字符' };
+  }
+  
+  // 验证性别
+  if (birthDate.gender) {
+    const validGenders = ['male', 'female', '男', '女'];
+    if (!validGenders.includes(birthDate.gender)) {
+      return { isValid: false, error: '性别必须是 male/female 或 男/女' };
+    }
+  }
+  
+  return { isValid: true };
+};
+
+/**
+ * 错误显示组件
+ */
+const ErrorDisplay: React.FC<{ error: string; onRetry?: () => void }> = ({ error, onRetry }) => (
+  <Card className="border-red-200 bg-red-50">
+    <CardContent className="p-6">
+      <div className="flex items-center space-x-3">
+        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0" />
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-red-800 mb-2">分析出错</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              重新分析
+            </button>
+          )}
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, analysisData: propAnalysisData, recordId }) => {
   const [isLoading, setIsLoading] = useState(!propAnalysisData);
   const [error, setError] = useState<string | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(propAnalysisData || null);
   const [showAIConfig, setShowAIConfig] = useState(false);
+  
+  // 输入验证
+  const validation = validateBirthDate(birthDate);
+  if (!validation.isValid) {
+    return <ErrorDisplay error={validation.error!} />;
+  }
 
   // 五行颜色配置
   const elementColors: { [key: string]: string } = {
@@ -58,6 +157,40 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
     '日主': 'bg-amber-100 text-amber-800 border-amber-300'
   };
 
+  // 分析数据获取函数
+  const fetchAnalysisData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const birthData = {
+        name: birthDate.name || '用户',
+        birth_date: birthDate.date,
+        birth_time: birthDate.time,
+        gender: birthDate.gender || 'male'
+      };
+
+      const baziResponse = await localApi.analysis.bazi(birthData);
+
+      if (baziResponse.error) {
+        throw new Error(baziResponse.error.message || '八字分析失败');
+      }
+
+      const analysisResult = baziResponse.data?.analysis;
+      if (!analysisResult) {
+        throw new Error('分析结果为空');
+      }
+
+      setAnalysisData(analysisResult);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '分析数据获取失败，请稍后重试';
+      console.error('八字分析错误:', err);
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     // 如果已经有分析数据，直接使用
     if (propAnalysisData) {
@@ -65,37 +198,6 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
       setIsLoading(false);
       return;
     }
-
-    const fetchAnalysisData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const birthData = {
-          name: birthDate.name || '用户',
-          birth_date: birthDate.date,
-          birth_time: birthDate.time,
-          gender: birthDate.gender || 'male'
-        };
-
-        const baziResponse = await localApi.analysis.bazi(birthData);
-
-        if (baziResponse.error) {
-          throw new Error(baziResponse.error.message || '八字分析失败');
-        }
-
-        const analysisResult = baziResponse.data?.analysis;
-        if (!analysisResult) {
-          throw new Error('分析结果为空');
-        }
-
-        setAnalysisData(analysisResult);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '分析数据获取失败，请稍后重试');
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
     if (birthDate?.date && !propAnalysisData) {
       fetchAnalysisData();
@@ -119,6 +221,11 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
 
   // 渲染错误状态
   if (error) {
+    return <ErrorDisplay error={error} onRetry={fetchAnalysisData} />;
+  }
+  
+  // 检查分析数据的完整性
+  if (!analysisData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-yellow-50">
         <Card className="chinese-card-decoration border-2 border-red-400 p-8">
