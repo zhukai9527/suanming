@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ErrorInfo } from 'react';
+import React, { useState, useEffect, useCallback, ErrorInfo } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { Calendar, Star, BookOpen, Sparkles, User, BarChart3, Zap, TrendingUp, Loader2, Clock, Target, Heart, DollarSign, Activity, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
@@ -120,9 +120,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
   
   // 输入验证
   const validation = validateBirthDate(birthDate);
-  if (!validation.isValid) {
-    return <ErrorDisplay error={validation.error!} />;
-  }
+  const isValidInput = validation.isValid;
 
   // 五行颜色配置
   const elementColors: { [key: string]: string } = {
@@ -158,7 +156,7 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
   };
 
   // 分析数据获取函数
-  const fetchAnalysisData = async () => {
+  const fetchAnalysisData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -189,9 +187,14 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [birthDate.name, birthDate.date, birthDate.time, birthDate.gender]);
 
   useEffect(() => {
+    // 如果输入无效，不执行分析
+    if (!isValidInput) {
+      return;
+    }
+    
     // 如果已经有分析数据，直接使用
     if (propAnalysisData) {
       setAnalysisData(propAnalysisData);
@@ -202,7 +205,12 @@ const CompleteBaziAnalysis: React.FC<CompleteBaziAnalysisProps> = ({ birthDate, 
     if (birthDate?.date && !propAnalysisData) {
       fetchAnalysisData();
     }
-  }, [birthDate?.date, birthDate?.time, birthDate?.name, birthDate?.gender, propAnalysisData]);
+  }, [birthDate?.date, birthDate?.time, birthDate?.name, birthDate?.gender, propAnalysisData, isValidInput, fetchAnalysisData]);
+
+  // 输入验证失败时的早期返回
+  if (!isValidInput) {
+    return <ErrorDisplay error={validation.error!} />;
+  }
 
   // 渲染加载状态
   if (isLoading) {
