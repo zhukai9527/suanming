@@ -154,7 +154,9 @@ router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
   
   // 验证用户ID
   const targetUserId = user_id || req.user.id;
-  if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+  const numericUserId = typeof targetUserId === 'string' ? parseInt(targetUserId, 10) : targetUserId;
+  
+  if (!numericUserId || isNaN(numericUserId) || numericUserId <= 0) {
     throw new AppError('用户ID无效', 400, 'INVALID_USER_ID');
   }
   
@@ -162,7 +164,7 @@ router.post('/yijing', authenticate, asyncHandler(async (req, res) => {
     // 执行易经分析（纯分析，不存储历史记录）
     const analysisResult = yijingAnalyzer.performYijingAnalysis({
       question: question.trim(),
-      user_id: targetUserId,
+      user_id: numericUserId,
       divination_method: divination_method || 'time',
       user_timezone: user_timezone,
       local_time: local_time
