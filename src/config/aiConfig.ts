@@ -68,7 +68,24 @@ export const aiPromptTemplates = {
 易经占卜结果：
 {analysisContent}
 
-请提供智慧的AI解读：`
+请提供智慧的AI解读：`,
+
+  qimen: `你是一位精通奇门遁甲的预测大师，请对以下奇门遁甲分析结果进行专业解读。
+
+请重点分析：
+1. 奇门盘局的整体格局特点
+2. 用神落宫的吉凶分析
+3. 九星八门八神的组合意义
+4. 格局对事情发展的具体影响
+5. 最佳行动时机和策略建议
+6. 需要注意的不利因素
+
+请结合现代实际情况，提供具有指导价值的预测分析。
+
+奇门遁甲分析结果：
+{analysisContent}
+
+请提供专业的AI解读：`
 };
 
 // 获取AI配置
@@ -103,6 +120,6 @@ export const validateAIConfig = (config: AIConfig): boolean => {
 };
 
 // 获取提示词模板
-export const getPromptTemplate = (analysisType: 'bazi' | 'ziwei' | 'yijing'): string => {
+export const getPromptTemplate = (analysisType: 'bazi' | 'ziwei' | 'yijing' | 'qimen'): string => {
   return aiPromptTemplates[analysisType] || aiPromptTemplates.bazi;
 };

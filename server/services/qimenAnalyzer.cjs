@@ -5,6 +5,7 @@ const AnalysisCache = require('./common/AnalysisCache.cjs');
 const EnhancedRandom = require('./common/EnhancedRandom.cjs');
 const TimeConverter = require('../utils/timeConverter.cjs');
 const SolarTerms = require('../utils/solarTerms.cjs');
+const BaziAnalyzer = require('./baziAnalyzer.cjs');
 
 class QimenAnalyzer {
   constructor() {
@@ -26,6 +27,9 @@ class QimenAnalyzer {
     
     // 初始化时间转换器
     this.timeConverter = new TimeConverter();
+    
+    // 初始化八字分析器（复用农历计算功能）
+    this.baziAnalyzer = new BaziAnalyzer();
     
     // 初始化节气计算器
     this.solarTerms = new SolarTerms();
@@ -334,19 +338,19 @@ class QimenAnalyzer {
       const currentTime = datetime ? new Date(datetime) : new Date();
       
       // 起局
-      const qimenPan = this.calculateQimenPan(currentTime);
+      const qimenPan = this.calculator.calculateQimenPan(currentTime);
       
       // 选择用神
-      const yongShen = this.selectYongShen(question, birth_data, qimenPan);
+      const yongShen = this.yongShenAnalyzer.selectYongShen(question, birth_data, qimenPan);
       
       // 格局分析
-      const patterns = this.analyzePatterns(qimenPan);
+      const patterns = this.patternAnalyzer.analyzePatterns(qimenPan);
       
       // 用神分析
-      const yongShenAnalysis = this.analyzeYongShen(yongShen, qimenPan);
+      const yongShenAnalysis = this.yongShenAnalyzer.analyzeYongShen(yongShen, qimenPan);
       
       // 生成预测结果
-      const prediction = this.generatePrediction(qimenPan, yongShenAnalysis, question, patterns);
+      const prediction = this.predictionGenerator.generatePrediction(qimenPan, yongShenAnalysis, question, patterns);
       
       const result = {
         analysis_type: 'qimen',
@@ -359,17 +363,17 @@ class QimenAnalyzer {
             lunar_info: this.calculateLunarInfo(currentTime)
           },
           qimen_info: {
-            jieqi: qimenPan.timeInfo.jieqi,
-            yuan: qimenPan.timeInfo.yuan,
-            jushu: qimenPan.timeInfo.jushu,
-            yindun: qimenPan.timeInfo.yindun ? '阴遁' : '阳遁',
-            zhifu: qimenPan.zhifu,
-            zhishi: qimenPan.zhishi,
+            jieqi: qimenPan.timeInfo?.jieqi || '未知',
+            yuan: qimenPan.timeInfo?.yuan || '未知',
+            jushu: qimenPan.timeInfo?.jushu || qimenPan.jushu || '未知',
+            yindun: qimenPan.timeInfo?.yindun !== undefined ? (qimenPan.timeInfo.yindun ? '阴遁' : '阳遁') : (qimenPan.yindun ? '阴遁' : '阳遁'),
+            zhifu: qimenPan.zhifu || '未知',
+            zhishi: qimenPan.zhishi || '未知',
             ganzhi: {
-              year: qimenPan.timeInfo.year,
-              month: qimenPan.timeInfo.month,
-              day: qimenPan.timeInfo.day,
-              hour: qimenPan.timeInfo.hour
+              year: qimenPan.timeInfo?.year || { gan: '未知', zhi: '未知' },
+              month: qimenPan.timeInfo?.month || { gan: '未知', zhi: '未知' },
+              day: qimenPan.timeInfo?.day || { gan: '未知', zhi: '未知' },
+              hour: qimenPan.timeInfo?.hour || { gan: '未知', zhi: '未知' }
             }
           }
         },
@@ -957,17 +961,56 @@ class QimenAnalyzer {
    * @returns {number} 成功概率（0-100）
    */
   calculateProbability(yongShenAnalysis, patterns) {
-    let baseProbability = yongShenAnalysis.overall.favorability || 50;
+    let baseProbability = 50; // 基础概率
+    
+    // 基于用神分析调整概率
+    if (yongShenAnalysis && yongShenAnalysis.overall) {
+      const favorability = yongShenAnalysis.overall.favorability;
+      if (typeof favorability === 'number') {
+        baseProbability = favorability;
+      } else {
+        // 如果没有favorability，基于用神旺衰计算
+        let yongShenScore = 0;
+        let yongShenCount = 0;
+        
+        // 遍历所有用神分析
+        ['primary', 'secondary', 'auxiliary'].forEach(category => {
+          if (yongShenAnalysis[category]) {
+            Object.values(yongShenAnalysis[category]).forEach(analysis => {
+              if (analysis && analysis.wangshui) {
+                yongShenCount++;
+                switch (analysis.wangshui) {
+                  case '旺': yongShenScore += 20; break;
+                  case '相': yongShenScore += 10; break;
+                  case '休': yongShenScore += 0; break;
+                  case '囚': yongShenScore -= 10; break;
+                  case '死': yongShenScore -= 20; break;
+                }
+              }
+            });
+          }
+        });
+        
+        if (yongShenCount > 0) {
+          baseProbability = 50 + (yongShenScore / yongShenCount);
+        }
+      }
+    }
     
     // 根据格局调整概率
     if (patterns && patterns.length > 0) {
-      const patternScore = patterns.reduce((sum, pattern) => sum + pattern.score, 0);
-      const patternAdjustment = Math.min(Math.max(patternScore, -20), 20);
+      const patternScore = patterns.reduce((sum, pattern) => {
+        const score = pattern.score || 0;
+        return sum + score;
+      }, 0);
+      
+      // 格局影响权重调整
+      const patternAdjustment = Math.min(Math.max(patternScore * 0.8, -25), 25);
       baseProbability += patternAdjustment;
     }
     
     // 确保概率在合理范围内
-    return Math.min(Math.max(baseProbability, 10), 90);
+    return Math.min(Math.max(Math.round(baseProbability), 15), 85);
   }
   
   /**
@@ -1032,15 +1075,34 @@ class QimenAnalyzer {
     return '不利，建议暂缓或改变策略';
   }
 
-  // 辅助方法：计算农历信息
+  // 辅助方法：计算农历信息（复用八字分析器的农历算法）
   calculateLunarInfo(datetime) {
-    // 简化实现，实际应用中需要更精确的农历转换
-    return {
-      year: '甲辰',
-      month: '丁卯',
-      day: '庚申',
-      description: '农历信息（简化版）'
-    };
+    try {
+      // 将datetime转换为日期字符串格式
+      const date = new Date(datetime);
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD格式
+      
+      // 复用八字分析器的农历计算功能
+      const lunarInfo = this.baziAnalyzer.calculateLunarInfo(dateStr);
+      
+      return {
+        year: lunarInfo.ganzhi_year,
+        month: lunarInfo.lunar_month,
+        day: lunarInfo.lunar_day,
+        description: lunarInfo.lunar_date,
+        zodiac: lunarInfo.zodiac,
+        solar_term: lunarInfo.solar_term
+      };
+    } catch (error) {
+      console.error('农历信息计算失败:', error);
+      // 降级处理：返回基本信息
+      return {
+        year: '未知',
+        month: '未知',
+        day: '未知',
+        description: '农历信息计算失败'
+      };
+    }
   }
 
   // 辅助方法：分类问题类型
@@ -1928,14 +1990,265 @@ class QimenAnalyzer {
     };
   }
   
-  generateDetailedAnalysis(yongShenAnalysis, patterns) {
-    // 生成详细分析
-    return ['用神状态良好', '格局组合有利'];
+  /**
+   * 生成详细分析
+   * @param {Object} qimenPan - 奇门盘
+   * @param {Object} yongShenAnalysis - 用神分析
+   * @param {Array} patterns - 格局列表
+   * @returns {Object} 详细分析
+   */
+  generateDetailedAnalysis(qimenPan, yongShenAnalysis, patterns) {
+    const analysis = {
+      yongshen_status: this.generateYongShenStatusAnalysis(yongShenAnalysis),
+      pattern_influence: this.generatePatternInfluenceAnalysis(patterns),
+      palace_analysis: this.generatePalaceAnalysis(qimenPan),
+      wuxing_balance: this.generateWuXingAnalysis(qimenPan),
+      timing_factors: this.generateTimingAnalysis(qimenPan),
+      overall_trend: this.generateOverallTrendAnalysis(yongShenAnalysis, patterns)
+    };
+    
+    return analysis;
   }
   
-  generateSuggestions(yongShenAnalysis, qimenPan, question) {
-    // 生成建议
-    return ['把握时机', '积极行动'];
+  /**
+   * 生成用神状态分析
+   */
+  generateYongShenStatusAnalysis(yongShenAnalysis) {
+    if (!yongShenAnalysis || !yongShenAnalysis.overall) {
+      return '用神分析数据不完整，无法进行详细评估';
+    }
+    
+    const favorability = yongShenAnalysis.overall.favorability || 50;
+    
+    if (favorability >= 80) {
+      return '用神状态极佳，各项要素配合得当，时机非常有利，建议积极行动';
+    } else if (favorability >= 65) {
+      return '用神状态良好，大部分要素较为有利，整体趋势向好，可以适度推进';
+    } else if (favorability >= 50) {
+      return '用神状态一般，有利不利因素并存，需要谨慎评估，稳步前进';
+    } else if (favorability >= 35) {
+      return '用神状态偏弱，不利因素较多，建议暂缓行动，等待更好时机';
+    } else {
+      return '用神状态不佳，阻力较大，不宜贸然行动，应重新规划策略';
+    }
+  }
+  
+  /**
+   * 生成格局影响分析
+   */
+  generatePatternInfluenceAnalysis(patterns) {
+    if (!patterns || patterns.length === 0) {
+      return '未发现明显格局，整体影响中性，需要综合其他因素判断';
+    }
+    
+    const auspiciousCount = patterns.filter(p => p.level === '吉' || p.level === '大吉').length;
+    const inauspiciousCount = patterns.filter(p => p.level === '凶' || p.level === '大凶').length;
+    
+    if (auspiciousCount > inauspiciousCount) {
+      return `发现${auspiciousCount}个吉利格局，${inauspiciousCount}个不利格局，整体格局偏向有利，可以借助吉格之力推进事情发展`;
+    } else if (inauspiciousCount > auspiciousCount) {
+      return `发现${inauspiciousCount}个不利格局，${auspiciousCount}个吉利格局，需要化解凶格影响，谨慎行事避免不利后果`;
+    } else {
+      return `吉凶格局数量相当，影响相互抵消，整体趋势平稳，需要依靠个人努力创造机会`;
+    }
+  }
+  
+  /**
+   * 生成宫位分析
+   */
+  generatePalaceAnalysis(qimenPan) {
+    if (!qimenPan || !qimenPan.dipan) {
+      return '奇门盘数据不完整，无法进行宫位分析';
+    }
+    
+    const palaceNames = ['坎宫', '坤宫', '震宫', '巽宫', '中宫', '乾宫', '兑宫', '艮宫', '离宫'];
+    const activePalaces = [];
+    
+    for (let i = 0; i < 9; i++) {
+      const palace = qimenPan.dipan[i];
+      if (palace && (palace.star || palace.door || palace.god)) {
+        activePalaces.push(palaceNames[i]);
+      }
+    }
+    
+    return `当前奇门盘中${activePalaces.join('、')}等宫位较为活跃，星门神配置完整，形成了相对稳定的能量分布格局`;
+  }
+  
+  /**
+   * 生成五行分析
+   */
+  generateWuXingAnalysis(qimenPan) {
+    const wuxingCount = { '金': 0, '木': 0, '水': 0, '火': 0, '土': 0 };
+    
+    if (qimenPan && qimenPan.dipan) {
+      for (let i = 0; i < 9; i++) {
+        const palace = qimenPan.dipan[i];
+        if (palace && palace.gan) {
+          const wuxing = this.getGanZhiWuXing(palace.gan);
+          if (wuxingCount[wuxing] !== undefined) {
+            wuxingCount[wuxing]++;
+          }
+        }
+      }
+    }
+    
+    const maxWuxing = Object.keys(wuxingCount).reduce((a, b) => wuxingCount[a] > wuxingCount[b] ? a : b);
+    const total = Object.values(wuxingCount).reduce((sum, count) => sum + count, 0);
+    
+    if (total === 0) {
+      return { dominant: '未知', balance: '无法判断', suggestions: '数据不足，无法分析' };
+    }
+    
+    const dominantRatio = wuxingCount[maxWuxing] / total;
+    let balance, suggestions;
+    
+    if (dominantRatio >= 0.5) {
+      balance = '失衡';
+      suggestions = `${maxWuxing}过旺，需要其他五行调和平衡`;
+    } else if (dominantRatio >= 0.3) {
+      balance = '较为平衡';
+      suggestions = `${maxWuxing}稍强，整体尚可，注意维持平衡`;
+    } else {
+      balance = '平衡';
+      suggestions = '五行分布均匀，相互制约，整体和谐';
+    }
+    
+    return { dominant: maxWuxing, balance, suggestions };
+  }
+  
+  /**
+   * 生成时机分析
+   */
+  generateTimingAnalysis(qimenPan) {
+    const currentDate = new Date();
+    const season = this.getCurrentSeason(currentDate);
+    
+    let favorability, notes;
+    
+    switch (season) {
+      case '春季':
+        favorability = '有利';
+        notes = '春季木旺，万物复苏，利于新的开始和发展';
+        break;
+      case '夏季':
+        favorability = '较为有利';
+        notes = '夏季火旺，阳气充沛，利于积极行动和扩展';
+        break;
+      case '秋季':
+        favorability = '中等';
+        notes = '秋季金旺，收获季节，利于总结和巩固成果';
+        break;
+      case '冬季':
+        favorability = '需谨慎';
+        notes = '冬季水旺，宜蛰伏养精，不宜大动作';
+        break;
+      default:
+        favorability = '中等';
+        notes = '时机平常，需要综合其他因素判断';
+    }
+    
+    return { season, favorability, notes };
+  }
+  
+  /**
+   * 生成整体趋势分析
+   */
+  generateOverallTrendAnalysis(yongShenAnalysis, patterns) {
+    const favorability = yongShenAnalysis?.overall?.favorability || 50;
+    const patternScore = patterns ? patterns.reduce((sum, p) => sum + (p.score || 0), 0) : 0;
+    
+    const totalScore = favorability + patternScore;
+    
+    if (totalScore >= 80) {
+      return '整体趋势非常积极，各项因素配合良好，成功概率很高，建议抓住机会全力推进';
+    } else if (totalScore >= 60) {
+      return '整体趋势较为积极，大部分因素有利，有较好的成功基础，可以稳步推进';
+    } else if (totalScore >= 40) {
+      return '整体趋势中性偏好，有利不利因素并存，需要谨慎规划，稳中求进';
+    } else if (totalScore >= 20) {
+      return '整体趋势偏向不利，阻力较大，建议暂缓行动，寻找更好时机';
+    } else {
+      return '整体趋势不佳，不利因素较多，不建议贸然行动，应重新评估策略';
+    }
+  }
+  
+  /**
+   * 获取当前季节
+   */
+  getCurrentSeason(date) {
+    const month = date.getMonth() + 1;
+    
+    if (month >= 3 && month <= 5) {
+      return '春季';
+    } else if (month >= 6 && month <= 8) {
+      return '夏季';
+    } else if (month >= 9 && month <= 11) {
+      return '秋季';
+    } else {
+      return '冬季';
+    }
+  }
+  
+  /**
+   * 生成建议
+   * @param {Object} yongShenAnalysis - 用神分析
+   * @param {Array} patterns - 格局列表
+   * @param {Object} timing - 应期分析
+   * @returns {Array} 建议列表
+   */
+  generateSuggestions(yongShenAnalysis, patterns, timing) {
+    const suggestions = [];
+    
+    // 基于用神状态的建议
+    if (yongShenAnalysis && yongShenAnalysis.overall) {
+      const favorability = yongShenAnalysis.overall.favorability || 50;
+      
+      if (favorability >= 70) {
+        suggestions.push('用神得力，时机有利，可以积极主动地推进计划');
+        suggestions.push('抓住当前的有利时机，果断行动，成功概率较高');
+      } else if (favorability >= 50) {
+        suggestions.push('用神状态一般，需要谨慎评估，稳步推进');
+        suggestions.push('可以适度行动，但要做好充分准备和风险控制');
+      } else {
+        suggestions.push('用神不利，建议暂缓行动，等待更好的时机');
+        suggestions.push('当前阻力较大，宜以守为攻，积蓄力量');
+      }
+    }
+    
+    // 基于格局的建议
+    if (patterns && patterns.length > 0) {
+      const auspiciousPatterns = patterns.filter(p => p.level === '吉' || p.level === '大吉');
+      const inauspiciousPatterns = patterns.filter(p => p.level === '凶' || p.level === '大凶');
+      
+      if (auspiciousPatterns.length > inauspiciousPatterns.length) {
+        suggestions.push('格局组合整体有利，可以借助贵人力量，寻求合作机会');
+        suggestions.push('吉格当头，宜主动出击，把握机遇，扩大成果');
+      } else if (inauspiciousPatterns.length > 0) {
+        suggestions.push('存在不利格局，需要化解阻碍，避免冲动行事');
+        suggestions.push('凶格影响，宜低调行事，避免锋芒太露，以免招致麻烦');
+      }
+    }
+    
+    // 基于应期的建议
+    if (timing && timing.mainTiming) {
+      switch (timing.mainTiming) {
+        case '近期':
+          suggestions.push('应期在即，宜抓紧时间行动，不可错失良机');
+          break;
+        case '中期':
+          suggestions.push('需要耐心等待，做好充分准备，时机成熟时再行动');
+          break;
+        case '远期':
+          suggestions.push('应期较远，宜长远规划，循序渐进，不可急于求成');
+          break;
+      }
+    }
+    
+    // 通用建议
+    suggestions.push('保持积极心态，相信自己的判断，同时要灵活应变');
+    suggestions.push('多与有经验的人交流，听取不同意见，完善行动方案');
+    
+    return suggestions;
   }
   
   calculateTiming(yongShenAnalysis, qimenPan) {
@@ -2871,7 +3184,7 @@ class YongShenAnalyzer {
    * @returns {Object} 用神配置
    */
   selectYongShen(question, birthData, qimenPan) {
-    const questionType = this.classifyQuestion(question);
+    const questionType = this.analyzer.classifyQuestion(question);
     const rigan = qimenPan.timeInfo.day.gan;
     const gender = birthData?.gender || '未知';
     
@@ -3858,8 +4171,8 @@ class YongShenAnalyzer {
       recommendation,
       factors,
       analysis: {
-        zhifuAnalysis: zhifu ? `值符${zhifu.star}` : '值符未知',
-        zhishiAnalysis: zhishi ? `值使${zhishi.door}` : '值使未知',
+        zhifuAnalysis: zhifu ? `值符${typeof zhifu === 'object' ? zhifu.star : zhifu}` : '值符未知',
+        zhishiAnalysis: zhishi ? `值使${typeof zhishi === 'object' ? zhishi.door : zhishi}` : '值使未知',
         hourAnalysis: `${hourZhi}时`,
         seasonAnalysis: `${jieqi}节气`,
         yindunAnalysis: timeInfo.yindun ? '阴遁' : '阳遁'
@@ -3887,13 +4200,14 @@ class PredictionGenerator {
   }
   
   generatePrediction(qimenPan, yongShenAnalysis, question, patterns) {
-    const score = this.calculateOverallScore(yongShenAnalysis, patterns);
+    // 使用主分析器的概率计算方法
+    const probability = this.analyzer.calculateProbability(yongShenAnalysis, patterns);
     
     return {
-      overall: this.interpretScore(score),
-      probability: score,
-      details: this.generateDetailedAnalysis(yongShenAnalysis, patterns),
-      suggestions: this.generateSuggestions(yongShenAnalysis, qimenPan, question),
+      overall: this.analyzer.generateOverallAssessment(probability, yongShenAnalysis),
+      probability: probability,
+      details: this.analyzer.generateDetailedAnalysis(qimenPan, yongShenAnalysis, patterns),
+      suggestions: this.analyzer.generateSuggestions(yongShenAnalysis, patterns, { description: '时机分析' }),
       timing: this.calculateTiming(yongShenAnalysis, qimenPan)
     };
   }

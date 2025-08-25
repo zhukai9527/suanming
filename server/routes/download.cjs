@@ -35,7 +35,7 @@ router.post('/', authenticate, async (req, res) => {
     }
 
     // 验证分析类型
-    const supportedAnalysisTypes = ['bazi', 'ziwei', 'yijing'];
+    const supportedAnalysisTypes = ['bazi', 'ziwei', 'yijing', 'qimen'];
     if (!supportedAnalysisTypes.includes(analysisType)) {
       return res.status(400).json({
         error: '不支持的分析类型',

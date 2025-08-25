@@ -216,7 +216,7 @@ router.post('/save-history', authenticate, asyncHandler(async (req, res) => {
   }
   
   // 验证分析类型
-  const validTypes = ['bazi', 'ziwei', 'yijing'];
+  const validTypes = ['bazi', 'ziwei', 'yijing', 'qimen'];
   if (!validTypes.includes(analysis_type)) {
     throw new AppError('无效的分析类型', 400, 'INVALID_ANALYSIS_TYPE');
   }
@@ -234,6 +234,15 @@ router.post('/save-history', authenticate, asyncHandler(async (req, res) => {
       name = userProfile?.full_name || '易经占卜用户';
       birth_date = null;
       birth_time = null;
+      birth_place = null;
+      gender = null;
+    } else if (analysis_type === 'qimen') {
+      // 奇门遁甲：获取用户档案信息
+      const getUserProfile = db.prepare('SELECT full_name FROM user_profiles WHERE user_id = ?');
+      const userProfile = getUserProfile.get(req.user.id);
+      name = userProfile?.full_name || '奇门遁甲用户';
+      birth_date = input_data?.birth_date || null;
+      birth_time = input_data?.birth_time || null;
       birth_place = null;
       gender = null;
     } else {

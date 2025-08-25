@@ -8,11 +8,11 @@ import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } 
 import YijingQuestionSelector from '../components/ui/YijingQuestionSelector';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
 import { toast } from 'sonner';
-import { Sparkles, Star, Compass, Calendar, MapPin, User, Loader2 } from 'lucide-react';
+import { Sparkles, Star, Compass, Calendar, MapPin, User, Loader2, Hexagon } from 'lucide-react';
 import { UserProfile, AnalysisRequest, NumerologyReading } from '../types';
 import { cn } from '../lib/utils';
 
-type AnalysisType = 'bazi' | 'ziwei' | 'yijing';
+type AnalysisType = 'bazi' | 'ziwei' | 'yijing' | 'qimen';
 
 const AnalysisPage: React.FC = () => {
   const { user } = useAuth();
@@ -32,7 +32,7 @@ const AnalysisPage: React.FC = () => {
 
   // 使用useMemo缓存birthDate对象，避免重复渲染导致useEffect重复执行
   const memoizedBirthDate = useMemo(() => {
-    if (analysisType === 'bazi' || analysisType === 'ziwei') {
+    if (analysisType === 'bazi' || analysisType === 'ziwei' || analysisType === 'qimen') {
       return {
         date: formData.birth_date,
         time: formData.birth_time,
@@ -83,6 +83,15 @@ const AnalysisPage: React.FC = () => {
         toast.error('请填写占卜问题');
         return;
       }
+    } else if (analysisType === 'qimen') {
+      if (!formData.question) {
+        toast.error('请填写占卜问题');
+        return;
+      }
+      if (!formData.birth_date || !formData.birth_time) {
+        toast.error('奇门遁甲需要准确的出生日期和时间');
+        return;
+      }
     } else {
       if (!formData.name || !formData.birth_date) {
         toast.error('请填写姓名和出生日期');
@@ -121,6 +130,16 @@ const AnalysisPage: React.FC = () => {
             local_time: new Date().toISOString()
           };
           response = await localApi.analysis.yijing(yijingData);
+          break;
+        }
+        case 'qimen': {
+          const qimenData = {
+            ...birthData,
+            question: formData.question,
+            user_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            local_time: new Date().toISOString()
+          };
+          response = await localApi.analysis.qimen(qimenData);
           break;
         }
         default:
@@ -215,6 +234,15 @@ const AnalysisPage: React.FC = () => {
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
       borderColor: 'border-orange-300'
+    },
+    {
+      type: 'qimen' as AnalysisType,
+      title: '奇门遁甲',
+      description: '古代帝王之学，通过时空奇门盘分析事物发展趋势',
+      icon: Hexagon,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-300'
     }
   ];
 
@@ -233,7 +261,7 @@ const AnalysisPage: React.FC = () => {
           <p className="text-gray-600 font-chinese">选择您感兴趣的命理分析方式</p>
         </ChineseCardHeader>
         <ChineseCardContent>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {analysisTypes.map((type) => {
               const Icon = type.icon;
               const isSelected = analysisType === type.type;
@@ -291,6 +319,52 @@ const AnalysisPage: React.FC = () => {
                 onChange={(value) => setFormData(prev => ({ ...prev, question: value }))}
               />
             </div>
+          ) : analysisType === 'qimen' ? (
+            // 奇门遁甲表单
+            <>
+              <div className="mb-6">
+                <YijingQuestionSelector
+                  value={formData.question}
+                  onChange={(value) => setFormData(prev => ({ ...prev, question: value }))}
+                  placeholder="请输入您要占卜的问题，如：事业发展、投资决策、感情婚姻等"
+                  label="占卜问题"
+                />
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6">
+                <div className="relative">
+                  <ChineseInput
+                    type="date"
+                    label="出生日期"
+                    value={formData.birth_date}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                        return;
+                      }
+                      setFormData(prev => ({ ...prev, birth_date: value }));
+                    }}
+                    min="1900-01-01"
+                    max="2100-12-31"
+                    required
+                    variant="filled"
+                    className="pr-10"
+                    helperText="奇门遁甲需要准确的出生日期"
+                  />
+                  <Calendar className="absolute right-3 top-9 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+                
+                <ChineseInput
+                  type="time"
+                  label="出生时间"
+                  value={formData.birth_time}
+                  onChange={(e) => setFormData(prev => ({ ...prev, birth_time: e.target.value }))}
+                  required
+                  variant="filled"
+                  helperText="奇门遁甲必须填写准确的出生时间"
+                />
+              </div>
+            </>
           ) : (
             // 八字和紫微表单
             <>
@@ -402,9 +476,10 @@ const AnalysisPage: React.FC = () => {
             analysisResult={analysisResult}
             analysisType={analysisType}
             birthDate={memoizedBirthDate}
-            question={analysisType === 'yijing' ? formData.question : undefined}
+            question={analysisType === 'yijing' || analysisType === 'qimen' ? formData.question : undefined}
             userId={user?.id?.toString()}
             divinationMethod="time"
+            preAnalysisData={analysisResult.data}
             recordId={analysisResult.recordId}
           />
         </div>

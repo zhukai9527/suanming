@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Star, Compass, Heart, BarChart3, BookOpen, Shield, Zap, Users, Award, Brain, TrendingUp } from 'lucide-react';
+import { Sparkles, Star, Compass, Hexagon, Heart, BarChart3, BookOpen, Shield, Zap, Users, Award, Brain, TrendingUp } from 'lucide-react';
 import { ChineseButton } from '../components/ui/ChineseButton';
 import { ChineseCard, ChineseCardContent, ChineseCardHeader, ChineseCardTitle } from '../components/ui/ChineseCard';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,6 +31,15 @@ const HomePage: React.FC = () => {
       icon: Compass,
       title: '易经占卜',
       description: '运用梅花易数起卦法，解读卦象含义，为您的人生决策提供智慧指引。使用高质量随机数生成，确保卦象的准确性',
+      color: 'text-red-700',
+      bgColor: 'chinese-golden-glow',
+      iconBg: 'bg-gradient-to-br from-yellow-400 to-amber-500',
+      link: '/analysis'
+    },
+    {
+      icon: Hexagon,
+      title: '奇门遁甲',
+      description: '古代帝王之学，通过时空奇门盘分析事物发展趋势。结合九星八门八神布局，为重要决策提供战略指导',
       color: 'text-red-700',
       bgColor: 'chinese-golden-glow',
       iconBg: 'bg-gradient-to-br from-yellow-400 to-amber-500',

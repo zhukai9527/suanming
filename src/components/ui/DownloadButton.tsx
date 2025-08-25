@@ -11,7 +11,7 @@ export type ExportMode = 'server' | 'frontend';
 
 interface DownloadButtonProps {
   analysisData: any;
-  analysisType: 'bazi' | 'ziwei' | 'yijing';
+  analysisType: 'bazi' | 'ziwei' | 'yijing' | 'qimen';
   userName?: string;
   onDownload?: (format: DownloadFormat) => Promise<void>;
   className?: string;
@@ -480,6 +480,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       case 'bazi': return '八字命理';
       case 'ziwei': return '紫微斗数';
       case 'yijing': return '易经占卜';
+      case 'qimen': return '奇门遁甲';
       default: return '命理';
     }
   };

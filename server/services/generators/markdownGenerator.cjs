@@ -18,6 +18,9 @@ const generateMarkdown = async (analysisData, analysisType, userName) => {
       case 'yijing':
         markdown = generateYijingMarkdown(analysisData, userName);
         break;
+      case 'qimen':
+        markdown = generateQimenMarkdown(analysisData, userName);
+        break;
       default:
         throw new Error(`不支持的分析类型: ${analysisType}`);
     }
@@ -2278,6 +2281,458 @@ const generateYijingMarkdown = (analysisData, userName) => {
       });
     } else {
       markdown += `${analysisData.precautions}\n`;
+    }
+    markdown += `\n`;
+  }
+  
+  // 页脚
+  markdown += `---\n\n`;
+  markdown += `*本报告由神机阁AI命理分析平台生成*\n`;
+  markdown += `*生成时间：${timestamp}*\n`;
+  markdown += `*仅供参考，请理性对待*\n`;
+  
+  return markdown;
+};
+
+/**
+ * 生成奇门遁甲Markdown文档
+ */
+const generateQimenMarkdown = (analysisData, userName) => {
+  const timestamp = new Date().toLocaleString('zh-CN');
+  
+  // 字段名称中文映射
+  const fieldNameMap = {
+    'question': '问题',
+    'method': '起局方法',
+    'divination_time': '起局时间',
+    'jieqi': '节气',
+    'yuan': '元',
+    'jushu': '局数',
+    'yindun': '阴阳遁',
+    'ganzhi': '干支',
+    'year': '年柱',
+    'month': '月柱',
+    'day': '日柱',
+    'hour': '时柱',
+    'gan': '干',
+    'zhi': '支',
+    'zhifu': '值符',
+    'zhishi': '值使',
+    'star': '九星',
+    'door': '八门',
+    'god': '八神',
+    'primary': '主用神',
+    'secondary': '次用神',
+    'overall': '综合评估',
+    'favorability': '有利度',
+    'strength': '力量强度',
+    'timing': '时机评估',
+    'recommendation': '建议',
+    'element': '天干',
+    'position': '宫位',
+    'palaceName': '宫位名称',
+    'wangshui': '旺衰',
+    'wangshuiScore': '旺衰评分',
+    'palaceRelation': '宫位关系',
+    'palaceHarmony': '宫位和谐度',
+    'seasonalInfluence': '季节影响',
+    'seasonalScore': '季节评分',
+    'totalScore': '综合评分',
+    'status': '状态',
+    'description': '详细描述',
+    'name': '名称',
+    'type': '类型',
+    'level': '等级',
+    'influence': '影响',
+    'probability': '成功概率',
+    'analysis': '详细分析',
+    'key_factors': '关键因素',
+    'timing_advice': '时机建议',
+    'action_suggestions': '行动建议',
+    'precautions': '注意事项',
+    'wuxing_analysis': '五行分析',
+    'timing_analysis': '时机分析',
+    'zhifuAnalysis': '值符分析',
+    'zhishiAnalysis': '值使分析',
+    'hourAnalysis': '时辰分析',
+    'seasonAnalysis': '节气分析',
+    'yindunAnalysis': '阴阳遁分析',
+     'score': '评分',
+     'factors': '影响因素',
+     // 财运相关字段
+     'profit': '利润',
+     'investment': '投资',
+     'wealth': '财富',
+     'money': '金钱',
+     'finance': '财务',
+     'business': '生意',
+     'career': '事业',
+     'work': '工作',
+     'job': '职业',
+     'success': '成功',
+     'failure': '失败',
+     'opportunity': '机会',
+     'risk': '风险',
+     'challenge': '挑战',
+     'advantage': '优势',
+     'disadvantage': '劣势',
+     // 用神分析字段
+     'matter': '事情',
+     'result': '结果',
+     'self': '自身',
+     'opponent': '对手',
+     'helper': '帮助者',
+     'obstacle': '阻碍',
+     // 五行分析字段
+     'dominant': '主导五行',
+     'balance': '平衡状态',
+     'suggestions': '建议',
+     'notes': '备注',
+     'season': '季节',
+     // 时机分析字段
+     'favorable': '有利',
+     'unfavorable': '不利',
+     'neutral': '中性',
+     // 其他常见字段
+     'true': '是',
+     'false': '否',
+     'unknown': '未知',
+     'good': '好',
+     'bad': '差',
+     'excellent': '极佳',
+     'poor': '很差',
+     'average': '一般',
+     // 感情相关字段
+     'spouse': '配偶',
+     'relationship': '感情关系',
+     'matchmaker': '媒人',
+     'marriage_palace': '婚姻宫',
+     'relationship_door': '感情门',
+     'love': '爱情',
+     'marriage': '婚姻',
+     'partner': '伴侣',
+     'emotion': '情感',
+     'affection': '感情',
+     'romance': '浪漫',
+     'compatibility': '相配度',
+     'harmony': '和谐度',
+     'conflict': '冲突',
+     'separation': '分离',
+     'reunion': '复合',
+     'commitment': '承诺',
+     'trust': '信任',
+     'loyalty': '忠诚'
+   };
+  
+  // 获取中文字段名
+  const getChineseFieldName = (fieldName) => {
+    return fieldNameMap[fieldName] || fieldName;
+  };
+  
+  let markdown = `# 奇门遁甲分析报告\n\n`;
+  // 从userName中提取实际姓名，去掉"奇门_"前缀
+  const actualUserName = userName ? userName.replace(/^奇门_/, '') : '用户';
+  markdown += `**占卜者：** ${actualUserName}\n`;
+  markdown += `**生成时间：** ${timestamp}\n`;
+  markdown += `**分析类型：** 奇门遁甲\n\n`;
+  
+  markdown += `---\n\n`;
+  
+  // 占卜问题
+  if (analysisData.basic_info?.divination_data) {
+    markdown += `## ❓ 占卜问题\n\n`;
+    const divination = analysisData.basic_info.divination_data;
+    if (divination.question) {
+      markdown += `**问题：** ${divination.question}\n\n`;
+    }
+    if (divination.method) {
+      markdown += `**起局方法：** ${divination.method}\n\n`;
+    }
+    if (divination.divination_time) {
+      const time = new Date(divination.divination_time).toLocaleString('zh-CN');
+      markdown += `**起局时间：** ${time}\n\n`;
+    }
+  }
+  
+  // 时空信息
+  if (analysisData.basic_info?.qimen_info) {
+    markdown += `## ⏰ 时空信息\n\n`;
+    const qimenInfo = analysisData.basic_info.qimen_info;
+    
+    if (qimenInfo.jieqi) {
+      markdown += `**节气：** ${qimenInfo.jieqi}\n`;
+    }
+    if (qimenInfo.yuan) {
+      markdown += `**元：** ${qimenInfo.yuan}\n`;
+    }
+    if (qimenInfo.jushu) {
+      markdown += `**局数：** ${qimenInfo.jushu}局\n`;
+    }
+    if (qimenInfo.yindun !== undefined) {
+      markdown += `**阴阳遁：** ${qimenInfo.yindun ? '阴遁' : '阳遁'}\n`;
+    }
+    
+    // 干支四柱
+    if (qimenInfo.ganzhi) {
+      markdown += `\n### 🎋 干支四柱\n\n`;
+      const ganzhi = qimenInfo.ganzhi;
+      if (ganzhi.year) markdown += `- **年柱：** ${ganzhi.year.gan}${ganzhi.year.zhi}\n`;
+      if (ganzhi.month) markdown += `- **月柱：** ${ganzhi.month.gan}${ganzhi.month.zhi}\n`;
+      if (ganzhi.day) markdown += `- **日柱：** ${ganzhi.day.gan}${ganzhi.day.zhi}\n`;
+      if (ganzhi.hour) markdown += `- **时柱：** ${ganzhi.hour.gan}${ganzhi.hour.zhi}\n`;
+    }
+    
+    // 值符值使
+    if (qimenInfo.zhifu || qimenInfo.zhishi) {
+      markdown += `\n### ⭐ 值符值使\n\n`;
+      if (qimenInfo.zhifu) markdown += `- **值符：** ${qimenInfo.zhifu}\n`;
+      if (qimenInfo.zhishi) markdown += `- **值使：** ${qimenInfo.zhishi}\n`;
+    }
+    
+    markdown += `\n`;
+  }
+  
+  // 奇门盘布局
+  if (analysisData.detailed_analysis?.qimen_pan) {
+    markdown += `## 🔮 奇门盘布局\n\n`;
+    const qimenPan = analysisData.detailed_analysis.qimen_pan;
+    
+    if (qimenPan.dipan && Array.isArray(qimenPan.dipan)) {
+      const palaceNames = ['坎一宫', '坤二宫', '震三宫', '巽四宫', '中五宫', '乾六宫', '兑七宫', '艮八宫', '离九宫'];
+      
+      markdown += `| 宫位 | 九星 | 八门 | 八神 |\n`;
+      markdown += `|------|------|------|------|\n`;
+      
+      qimenPan.dipan.forEach((palace, index) => {
+        if (palace && palaceNames[index]) {
+          const star = palace.star || '-';
+          const door = palace.door || '-';
+          const god = palace.god || '-';
+          markdown += `| ${palaceNames[index]} | ${star} | ${door} | ${god} |\n`;
+        }
+      });
+      
+      markdown += `\n`;
+    }
+  }
+  
+  // 用神分析
+  if (analysisData.detailed_analysis?.yongshen_analysis) {
+    markdown += `## 🎯 用神分析\n\n`;
+    const yongShenAnalysis = analysisData.detailed_analysis.yongshen_analysis;
+    
+    // 主用神
+    if (yongShenAnalysis.primary) {
+      markdown += `### 主用神\n\n`;
+      Object.entries(yongShenAnalysis.primary).forEach(([key, value]) => {
+        const chineseKey = getChineseFieldName(key);
+        if (typeof value === 'object' && value !== null) {
+          markdown += `**${chineseKey}：**\n`;
+          Object.entries(value).forEach(([subKey, subValue]) => {
+            const chineseSubKey = getChineseFieldName(subKey);
+            markdown += `- ${chineseSubKey}：${subValue}\n`;
+          });
+        } else {
+          markdown += `- **${chineseKey}：** ${value}\n`;
+        }
+      });
+      markdown += `\n`;
+    }
+    
+    // 次用神
+    if (yongShenAnalysis.secondary) {
+      markdown += `### 次用神\n\n`;
+      Object.entries(yongShenAnalysis.secondary).forEach(([key, value]) => {
+        const chineseKey = getChineseFieldName(key);
+        if (typeof value === 'object' && value !== null) {
+          markdown += `**${chineseKey}：**\n`;
+          Object.entries(value).forEach(([subKey, subValue]) => {
+            const chineseSubKey = getChineseFieldName(subKey);
+            markdown += `- ${chineseSubKey}：${subValue}\n`;
+          });
+        } else {
+          markdown += `- **${chineseKey}：** ${value}\n`;
+        }
+      });
+      markdown += `\n`;
+    }
+    
+    // 综合评估
+    if (yongShenAnalysis.overall) {
+      markdown += `### 用神综合评估\n\n`;
+      if (typeof yongShenAnalysis.overall === 'object') {
+        Object.entries(yongShenAnalysis.overall).forEach(([key, value]) => {
+          const chineseKey = getChineseFieldName(key);
+          if (typeof value === 'object' && value !== null) {
+            if (Array.isArray(value)) {
+              markdown += `- **${chineseKey}：** ${value.join('、')}\n`;
+            } else {
+              const subEntries = Object.entries(value).map(([subK, subV]) => {
+                const chineseSubKey = getChineseFieldName(subK);
+                return `${chineseSubKey}：${subV}`;
+              }).join('；');
+              markdown += `- **${chineseKey}：** ${subEntries}\n`;
+            }
+          } else {
+            markdown += `- **${chineseKey}：** ${value}\n`;
+          }
+        });
+      } else {
+        markdown += `${yongShenAnalysis.overall}\n`;
+      }
+      markdown += `\n`;
+    }
+  }
+  
+  // 格局识别
+  if (analysisData.detailed_analysis?.pattern_analysis && Array.isArray(analysisData.detailed_analysis.pattern_analysis)) {
+    markdown += `## ⭐ 格局识别\n\n`;
+    
+    const patterns = analysisData.detailed_analysis.pattern_analysis;
+    const auspiciousPatterns = patterns.filter(p => p.type === 'auspicious');
+    const inauspiciousPatterns = patterns.filter(p => p.type === 'inauspicious');
+    const neutralPatterns = patterns.filter(p => p.type === 'neutral');
+    
+    if (auspiciousPatterns.length > 0) {
+      markdown += `### 🌟 吉利格局\n\n`;
+      auspiciousPatterns.forEach(pattern => {
+        markdown += `**${pattern.name}** (${pattern.level || '吉'})\n`;
+        if (pattern.description) markdown += `${pattern.description}\n`;
+        if (pattern.influence) markdown += `**影响：** ${pattern.influence}\n`;
+        markdown += `\n`;
+      });
+    }
+    
+    if (neutralPatterns.length > 0) {
+      markdown += `### ⚖️ 中性格局\n\n`;
+      neutralPatterns.forEach(pattern => {
+        markdown += `**${pattern.name}** (${pattern.level || '中'})\n`;
+        if (pattern.description) markdown += `${pattern.description}\n`;
+        if (pattern.influence) markdown += `**影响：** ${pattern.influence}\n`;
+        markdown += `\n`;
+      });
+    }
+    
+    if (inauspiciousPatterns.length > 0) {
+      markdown += `### ⚠️ 不利格局\n\n`;
+      inauspiciousPatterns.forEach(pattern => {
+        markdown += `**${pattern.name}** (${pattern.level || '凶'})\n`;
+        if (pattern.description) markdown += `${pattern.description}\n`;
+        if (pattern.influence) markdown += `**影响：** ${pattern.influence}\n`;
+        markdown += `\n`;
+      });
+    }
+  }
+  
+  // 预测结果
+  if (analysisData.prediction_result) {
+    markdown += `## 🔮 预测结果\n\n`;
+    const prediction = analysisData.prediction_result;
+    
+    if (prediction.probability !== undefined) {
+      markdown += `### 成功概率\n\n`;
+      markdown += `**概率：** ${prediction.probability}%\n\n`;
+      
+      let probabilityLevel = '';
+      if (prediction.probability >= 80) probabilityLevel = '极高';
+      else if (prediction.probability >= 60) probabilityLevel = '较高';
+      else if (prediction.probability >= 40) probabilityLevel = '中等';
+      else if (prediction.probability >= 20) probabilityLevel = '较低';
+      else probabilityLevel = '很低';
+      
+      markdown += `**评级：** ${probabilityLevel}\n\n`;
+    }
+    
+    if (prediction.analysis) {
+      markdown += `### 详细分析\n\n`;
+      if (typeof prediction.analysis === 'object') {
+        Object.entries(prediction.analysis).forEach(([key, value]) => {
+          const chineseKey = getChineseFieldName(key);
+          markdown += `**${chineseKey}：** ${value}\n`;
+        });
+      } else {
+        markdown += `${prediction.analysis}\n`;
+      }
+      markdown += `\n`;
+    }
+    
+    if (prediction.key_factors) {
+      markdown += `### 关键因素\n\n`;
+      if (typeof prediction.key_factors === 'object') {
+        Object.entries(prediction.key_factors).forEach(([factor, impact]) => {
+          const chineseFactor = getChineseFieldName(factor);
+          markdown += `- **${chineseFactor}：** ${impact}\n`;
+        });
+      } else {
+        markdown += `${prediction.key_factors}\n`;
+      }
+      markdown += `\n`;
+    }
+  }
+  
+  // 指导建议
+  if (analysisData.guidance) {
+    markdown += `## 💡 指导建议\n\n`;
+    const guidance = analysisData.guidance;
+    
+    if (guidance.timing_advice) {
+      markdown += `### ⏰ 时机建议\n\n`;
+      if (typeof guidance.timing_advice === 'object') {
+        Object.entries(guidance.timing_advice).forEach(([key, value]) => {
+          const chineseKey = getChineseFieldName(key);
+          markdown += `**${chineseKey}：** ${value}\n`;
+        });
+      } else {
+        markdown += `${guidance.timing_advice}\n`;
+      }
+      markdown += `\n`;
+    }
+    
+    if (guidance.action_suggestions && Array.isArray(guidance.action_suggestions)) {
+      markdown += `### 🎯 行动建议\n\n`;
+      guidance.action_suggestions.forEach(suggestion => {
+        markdown += `- ${suggestion}\n`;
+      });
+      markdown += `\n`;
+    }
+    
+    if (guidance.precautions && Array.isArray(guidance.precautions)) {
+      markdown += `### ⚠️ 注意事项\n\n`;
+      guidance.precautions.forEach(precaution => {
+        markdown += `- ${precaution}\n`;
+      });
+      markdown += `\n`;
+    }
+  }
+  
+  // 五行分析
+  if (analysisData.detailed_analysis?.wuxing_analysis) {
+    markdown += `## 🌟 五行分析\n\n`;
+    const wuxingAnalysis = analysisData.detailed_analysis.wuxing_analysis;
+    
+    if (typeof wuxingAnalysis === 'object') {
+      Object.entries(wuxingAnalysis).forEach(([key, value]) => {
+        const chineseKey = getChineseFieldName(key);
+        markdown += `**${chineseKey}：** ${value}\n`;
+      });
+    } else {
+      markdown += `${wuxingAnalysis}\n`;
+    }
+    markdown += `\n`;
+  }
+  
+  // 时机分析
+  if (analysisData.detailed_analysis?.timing_analysis) {
+    markdown += `## ⏰ 时机分析\n\n`;
+    const timingAnalysis = analysisData.detailed_analysis.timing_analysis;
+    
+    if (typeof timingAnalysis === 'object') {
+      Object.entries(timingAnalysis).forEach(([key, value]) => {
+        const chineseKey = getChineseFieldName(key);
+        markdown += `**${chineseKey}：** ${value}\n`;
+      });
+    } else {
+      markdown += `${timingAnalysis}\n`;
     }
     markdown += `\n`;
   }

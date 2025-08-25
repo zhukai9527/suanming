@@ -264,6 +264,14 @@ class LocalApiClient {
       }, yijingData);
     },
 
+    // 奇门遁甲分析
+    qimen: async (qimenData: any): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
+      return this.requestWithDeduplication<{ record_id: number; analysis: any }>('/qimen/analyze', {
+        method: 'POST',
+        body: JSON.stringify(qimenData),
+      }, qimenData);
+    },
+
     // 综合分析
     comprehensive: async (birthData: any, includeTypes?: string[]): Promise<ApiResponse<{ record_id: number; analysis: any }>> => {
       return this.request<{ record_id: number; analysis: any }>('/analysis/comprehensive', {

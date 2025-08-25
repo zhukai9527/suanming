@@ -12,7 +12,7 @@ export interface AIInterpretationResult {
 
 // AI解读请求参数
 export interface AIInterpretationRequest {
-  analysisType: 'bazi' | 'ziwei' | 'yijing';
+  analysisType: 'bazi' | 'ziwei' | 'yijing' | 'qimen';
   analysisContent: any; // 改为any类型，支持对象数据
   customPrompt?: string;
   onStreamUpdate?: (content: string) => void; // 流式更新回调
@@ -33,6 +33,9 @@ export const convertAnalysisToMarkdown = (analysisData: any, analysisType: strin
         break;
       case 'yijing':
         markdown += generateYijingMarkdown(analysisData);
+        break;
+      case 'qimen':
+        markdown += generateQimenMarkdown(analysisData);
         break;
       default:
         markdown += JSON.stringify(analysisData, null, 2);
@@ -578,12 +581,113 @@ const generateYijingMarkdown = (data: any): string => {
   return markdown;
 };
 
+// 生成奇门遁甲分析的Markdown
+const generateQimenMarkdown = (data: any): string => {
+  const timestamp = new Date().toLocaleString('zh-CN');
+  let markdown = `## 奇门遁甲分析报告\n\n**分析时间：** ${timestamp}\n\n`;
+  
+  try {
+    // 基本信息
+    if (data.timeInfo) {
+      markdown += `### 时空信息\n\n`;
+      if (data.timeInfo.jieqi) markdown += `**节气：** ${data.timeInfo.jieqi}\n`;
+      if (data.qimenPan?.jushu) markdown += `**局数：** ${data.qimenPan.jushu}局\n`;
+      if (data.qimenPan?.yindun !== undefined) {
+        markdown += `**阴阳遁：** ${data.qimenPan.yindun ? '阴遁' : '阳遁'}\n`;
+      }
+      if (data.timeInfo.hour) {
+        markdown += `**时辰：** ${data.timeInfo.hour.gan}${data.timeInfo.hour.zhi}时\n`;
+      }
+      markdown += `\n`;
+    }
+    
+    // 奇门盘信息
+    if (data.qimenPan && data.qimenPan.dipan) {
+      markdown += `### 奇门盘布局\n\n`;
+      const palaceNames = ['坎一宫', '坤二宫', '震三宫', '巽四宫', '中五宫', '乾六宫', '兑七宫', '艮八宫', '离九宫'];
+      
+      data.qimenPan.dipan.forEach((palace: any, index: number) => {
+        if (palace) {
+          markdown += `**${palaceNames[index]}：**\n`;
+          if (palace.star) markdown += `- 九星：${palace.star}\n`;
+          if (palace.door) markdown += `- 八门：${palace.door}\n`;
+          if (palace.god) markdown += `- 八神：${palace.god}\n`;
+          markdown += `\n`;
+        }
+      });
+    }
+    
+    // 用神分析
+    if (data.yongShenAnalysis) {
+      markdown += `### 用神分析\n\n`;
+      
+      if (data.yongShenAnalysis.primary) {
+        markdown += `**主用神：**\n`;
+        Object.entries(data.yongShenAnalysis.primary).forEach(([key, value]) => {
+          markdown += `- ${key}：${value}\n`;
+        });
+        markdown += `\n`;
+      }
+      
+      if (data.yongShenAnalysis.secondary) {
+        markdown += `**次用神：**\n`;
+        Object.entries(data.yongShenAnalysis.secondary).forEach(([key, value]) => {
+          markdown += `- ${key}：${value}\n`;
+        });
+        markdown += `\n`;
+      }
+      
+      if (data.yongShenAnalysis.overall) {
+        markdown += `**综合分析：**\n${data.yongShenAnalysis.overall}\n\n`;
+      }
+    }
+    
+    // 格局识别
+    if (data.patterns && data.patterns.length > 0) {
+      markdown += `### 格局识别\n\n`;
+      data.patterns.forEach((pattern: any, index: number) => {
+        markdown += `**${pattern.name}** (${pattern.type === 'auspicious' ? '吉格' : '凶格'})\n`;
+        if (pattern.description) markdown += `${pattern.description}\n`;
+        if (pattern.influence) markdown += `影响：${pattern.influence}\n`;
+        markdown += `\n`;
+      });
+    }
+    
+    // 预测结果
+    if (data.prediction) {
+      markdown += `### 预测结果\n\n`;
+      
+      if (data.prediction.probability) {
+        markdown += `**成功概率：** ${data.prediction.probability}%\n\n`;
+      }
+      
+      if (data.prediction.analysis) {
+        markdown += `**详细分析：**\n${data.prediction.analysis}\n\n`;
+      }
+      
+      if (data.prediction.suggestions && data.prediction.suggestions.length > 0) {
+        markdown += `**建议：**\n`;
+        data.prediction.suggestions.forEach((suggestion: string) => {
+          markdown += `- ${suggestion}\n`;
+        });
+        markdown += `\n`;
+      }
+    }
+    
+  } catch (error) {
+    markdown += `\n**原始数据：**\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`;
+  }
+  
+  return markdown;
+};
+
 // 获取分析类型标题
 const getAnalysisTitle = (analysisType: string): string => {
   const titles = {
     'bazi': '八字命理',
     'ziwei': '紫微斗数',
-    'yijing': '易经占卜'
+    'yijing': '易经占卜',
+    'qimen': '奇门遁甲'
   };
   return titles[analysisType as keyof typeof titles] || '命理';
 };

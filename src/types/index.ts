@@ -15,7 +15,7 @@ export interface UserProfile {
 export interface AnalysisRecord {
   id: number;
   user_id: number;
-  analysis_type: 'bazi' | 'ziwei' | 'yijing';
+  analysis_type: 'bazi' | 'ziwei' | 'yijing' | 'qimen';
   name: string;
   birth_date: string;
   birth_time?: string;
@@ -32,7 +32,7 @@ export interface NumerologyReading {
   id: number;
   user_id: number;
   profile_id?: string;
-  reading_type: 'bazi' | 'ziwei' | 'yijing' | 'comprehensive';
+  reading_type: 'bazi' | 'ziwei' | 'yijing' | 'qimen' | 'comprehensive';
   name: string;
   birth_date: string;
   birth_time?: string;
@@ -43,6 +43,7 @@ export interface NumerologyReading {
     bazi?: { bazi_analysis: any };
     ziwei?: { ziwei_analysis: any };
     yijing?: { yijing_analysis: any };
+    qimen?: { qimen_analysis: any };
     metadata: {
       analysis_time: string;
       version: string;

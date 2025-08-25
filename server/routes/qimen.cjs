@@ -8,6 +8,72 @@ const logger = require('../middleware/logger.cjs');
 
 const router = express.Router();
 const qimenAnalyzer = new QimenAnalyzer();
+const { authenticate } = require('../middleware/auth.cjs');
+const { getDB } = require('../database/index.cjs');
+const { AppError, asyncHandler } = require('../middleware/errorHandler.cjs');
+
+/**
+ * @route POST /api/qimen/analyze
+ * @desc 奇门遁甲完整分析
+ * @access Private
+ */
+router.post('/analyze', asyncHandler(async (req, res) => {
+  try {
+    const { question, birth_date, birth_time, user_timezone, local_time, user_id } = req.body;
+    const userId = user_id || 1; // 测试用户ID
+    
+    // 输入验证
+    if (!question || typeof question !== 'string' || question.trim().length === 0) {
+      throw new AppError('缺少必要参数：占卜问题不能为空', 400, 'MISSING_QUESTION');
+    }
+    
+    if (!birth_date || typeof birth_date !== 'string') {
+      throw new AppError('缺少必要参数：出生日期', 400, 'MISSING_BIRTH_DATE');
+    }
+    
+    if (!birth_time || typeof birth_time !== 'string') {
+      throw new AppError('缺少必要参数：出生时间', 400, 'MISSING_BIRTH_TIME');
+    }
+    
+    // 构建分析数据
+    const analysisData = {
+      question: question.trim(),
+      birth_date,
+      birth_time,
+      user_timezone: user_timezone || 'Asia/Shanghai',
+      local_time: local_time || new Date().toISOString()
+    };
+    
+    // 执行奇门遁甲分析
+     const analysisResult = qimenAnalyzer.performQimenAnalysis(analysisData);
+    
+    // 保存到历史记录
+     const db = getDB();
+     const insertReading = db.prepare(`
+       INSERT INTO numerology_readings (
+         user_id, reading_type, input_data, analysis, created_at
+       ) VALUES (?, ?, ?, ?, datetime('now'))
+     `);
+    
+    const result = insertReading.run(
+      userId,
+      'qimen',
+      JSON.stringify(analysisData),
+      JSON.stringify(analysisResult)
+    );
+    
+    res.json({
+      data: {
+        record_id: result.lastInsertRowid,
+        analysis: analysisResult
+      }
+    });
+    
+  } catch (error) {
+    console.error('奇门遁甲分析错误:', error);
+    throw new AppError(`奇门遁甲分析过程中发生错误: ${error.message}`, 500, 'QIMEN_ANALYSIS_ERROR');
+  }
+}));
 
 /**
  * @route POST /api/qimen/calculate
@@ -536,7 +602,7 @@ router.post('/batch-calculate', async (req, res) => {
 
 // 错误处理中间件
 router.use((error, req, res, next) => {
-  logger.error('奇门API错误', error);
+  console.error('奇门API错误:', error);
   
   res.status(500).json({
     success: false,

@@ -8,6 +8,8 @@ interface YijingQuestionSelectorProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  label?: string;
+  placeholder?: string;
 }
 
 // 问题分类和预设问题数据
@@ -115,7 +117,9 @@ const questionCategories = {
 export const YijingQuestionSelector: React.FC<YijingQuestionSelectorProps> = ({
   value,
   onChange,
-  className
+  className,
+  label = '占卜问题',
+  placeholder = '请输入您要占卜的问题'
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedQuestion, setSelectedQuestion] = useState<string>('');
@@ -261,10 +265,10 @@ variant="default"
 
       {/* 主要问题输入框 */}
       <ChineseInput
-        label="占卜问题"
+        label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="请输入您希望占卜的具体问题，或选择上方预设问题"
+        placeholder={placeholder}
         required
         variant="filled"
         helperText="💡 提示：问题越具体，占卜结果越准确。您可以使用预设问题或自行输入。"

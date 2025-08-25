@@ -2,11 +2,12 @@ import React from 'react';
 import CompleteBaziAnalysis from './CompleteBaziAnalysis';
 import CompleteZiweiAnalysis from './CompleteZiweiAnalysis';
 import CompleteYijingAnalysis from './CompleteYijingAnalysis';
+import CompleteQimenAnalysis from './CompleteQimenAnalysis';
 import BaziAnalysisDisplay from './BaziAnalysisDisplay';
 
 interface AnalysisResultDisplayProps {
   analysisResult?: any;
-  analysisType: 'bazi' | 'ziwei' | 'yijing';
+  analysisType: 'bazi' | 'ziwei' | 'yijing' | 'qimen';
   birthDate?: {
     date: string;
     time: string;
@@ -429,6 +430,8 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
         return renderZiweiAnalysis();
       case 'yijing':
         return renderYijingAnalysis();
+      case 'qimen':
+        return <CompleteQimenAnalysis analysis={analysisResult?.data || analysisResult} />;
       default:
         return (
           <div className="bg-white rounded-lg p-6 shadow-lg">
@@ -459,6 +462,11 @@ const AnalysisResultDisplay: React.FC<AnalysisResultDisplayProps> = ({
   // 对于紫微斗数，如果有 birthDate 参数，直接返回 CompleteZiweiAnalysis 组件（不添加额外容器）
   if (analysisType === 'ziwei' && birthDate) {
     return <CompleteZiweiAnalysis birthDate={birthDate} analysisData={preAnalysisData} recordId={recordId} />;
+  }
+  
+  // 对于奇门遁甲，如果有预分析数据，直接返回 CompleteQimenAnalysis 组件
+  if (analysisType === 'qimen' && preAnalysisData) {
+    return <CompleteQimenAnalysis analysis={preAnalysisData} recordId={recordId} />;
   }
   
   // 如果没有分析结果数据

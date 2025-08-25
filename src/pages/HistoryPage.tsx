@@ -8,7 +8,7 @@ import { ChineseLoading } from '../components/ui/ChineseLoading';
 import AnalysisResultDisplay from '../components/AnalysisResultDisplay';
 import DownloadButton from '../components/ui/DownloadButton';
 import { toast } from 'sonner';
-import { History, Calendar, User, Sparkles, Star, Compass, Eye, Trash2, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { History, Calendar, User, Sparkles, Star, Compass, Hexagon, Eye, Trash2, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NumerologyReading } from '../types';
 import { cn } from '../lib/utils';
 
@@ -145,6 +145,7 @@ const HistoryPage: React.FC = () => {
       case 'bazi': return Sparkles;
       case 'ziwei': return Star;
       case 'yijing': return Compass;
+      case 'qimen': return Hexagon;
       default: return History;
     }
   };
@@ -154,6 +155,7 @@ const HistoryPage: React.FC = () => {
       case 'bazi': return 'text-red-600 bg-red-50';
       case 'ziwei': return 'text-yellow-600 bg-yellow-50';
       case 'yijing': return 'text-orange-600 bg-orange-50';
+      case 'qimen': return 'text-purple-600 bg-purple-50';
       default: return 'text-gray-600 bg-gray-50';
     }
   };
@@ -163,6 +165,7 @@ const HistoryPage: React.FC = () => {
       case 'bazi': return '八字命理';
       case 'ziwei': return '紫微斗数';
       case 'yijing': return '易经占卜';
+      case 'qimen': return '奇门遁甲';
       default: return '未知类型';
     }
   };
@@ -210,14 +213,14 @@ const HistoryPage: React.FC = () => {
 
         <AnalysisResultDisplay 
           analysisResult={selectedReading.analysis}
-          analysisType={selectedReading.reading_type as 'bazi' | 'ziwei' | 'yijing'}
+          analysisType={selectedReading.reading_type as 'bazi' | 'ziwei' | 'yijing' | 'qimen'}
           birthDate={selectedReading.reading_type !== 'yijing' ? {
             date: selectedReading.birth_date || '',
             time: selectedReading.birth_time || '12:00',
             name: selectedReading.name || '',
             gender: selectedReading.gender || 'male'
           } : undefined}
-          question={selectedReading.reading_type === 'yijing' ? 
+          question={selectedReading.reading_type === 'yijing' || selectedReading.reading_type === 'qimen' ? 
             getInputDataValue(selectedReading.input_data, 'question', '综合运势如何？') : undefined}
           userId={selectedReading.user_id?.toString()}
           divinationMethod={selectedReading.reading_type === 'yijing' ? 
@@ -333,7 +336,7 @@ const HistoryPage: React.FC = () => {
                               ...(reading.analysis || reading.results),
                               created_at: reading.created_at
                             }}
-                            analysisType={reading.reading_type as 'bazi' | 'ziwei' | 'yijing'}
+                            analysisType={reading.reading_type as 'bazi' | 'ziwei' | 'yijing' | 'qimen'}
                             userName={reading.name}
                             className="min-h-[40px] px-2 sm:px-6 py-2.5 text-xs sm:text-sm flex-shrink-0"
                           />

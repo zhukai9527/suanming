@@ -527,7 +527,7 @@ class SolarTerms {
    * @returns {Date} 立春时间
    */
   getSpringBeginning(year) {
-    return this.calculateSolarTerm(year, 0);
+    return this.calculateSolarTermDate(year, '立春');
   }
 
   /**
