@@ -107,47 +107,25 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
     // 奇门盘字段中文映射
     'palace': '宫位',
     'wuxing': '五行',
-    'type': '类型',
-    'score': '评分',
-    'level': '等级',
-    'name': '名称',
-    'elements': '构成要素',
-    'overall': '综合评估',
-    'primary': '主要用神',
-    'secondary': '次要用神',
-    'auxiliary': '辅助用神',
     // 财运相关字段
     'profit': '利润',
     'investment': '投资',
-    'wealth': '财富',
     'money': '金钱',
     'finance': '财务',
     'business': '生意',
     'career': '事业',
     'work': '工作',
-    'job': '职业',
     'success': '成功',
     'failure': '失败',
-    'opportunity': '机会',
     'risk': '风险',
     'challenge': '挑战',
     'advantage': '优势',
     'disadvantage': '劣势',
-    // 用神分析字段
-    'matter': '事情',
-    'result': '结果',
-    'self': '自身',
-    'opponent': '对手',
+    // 用神分析字段（移除重复项）
     'helper': '帮助者',
     'obstacle': '阻碍',
-    // 五行分析字段
-    'dominant': '主导五行',
-    'balance': '平衡状态',
-    'suggestions': '建议',
-    'notes': '备注',
-    'season': '季节',
-    // 时机分析字段
-    'favorable': '有利',
+    // 五行分析字段（移除重复项）
+    // 时机分析字段（移除重复项）
     'unfavorable': '不利',
     'neutral': '中性',
     // 其他常见字段
@@ -160,9 +138,7 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
     'poor': '很差',
     'average': '一般',
     // 感情相关字段
-    'spouse': '配偶',
     'relationship': '感情关系',
-    'matchmaker': '媒人',
     'marriage_palace': '婚姻宫',
     'relationship_door': '感情门',
     'love': '爱情',
@@ -637,7 +613,7 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
                         <div className="flex justify-between items-center">
                           <span className="font-medium text-purple-700">{getYongShenName(key)}：</span>
                           <span className="text-red-700 font-bold">
-                            {key === 'favorability' ? `${Math.round(value)}分` : getChineseValue(key, value)}
+                            {key === 'favorability' ? `${Math.round(Number(value))}分` : getChineseValue(key, value)}
                           </span>
                         </div>
                         {key === 'favorability' && (
@@ -645,10 +621,10 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div 
                                 className={`h-2 rounded-full ${
-                                  value >= 70 ? 'bg-green-500' : 
-                                  value >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                  Number(value) >= 70 ? 'bg-green-500' : 
+                                  Number(value) >= 50 ? 'bg-yellow-500' : 'bg-red-500'
                                 }`}
-                                style={{ width: `${Math.min(value, 100)}%` }}
+                                style={{ width: `${Math.min(Number(value), 100)}%` }}
                               ></div>
                             </div>
                           </div>
