@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 interface AIInterpretationButtonProps {
   analysisData?: any; // 分析数据对象（可选）
   analysisMarkdown?: string; // 直接传递的MD内容（可选）
-  analysisType: 'bazi' | 'ziwei' | 'yijing';
+  analysisType: 'bazi' | 'ziwei' | 'yijing' | 'qimen';
   recordId?: number; // 分析记录ID，用于AI解读
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';

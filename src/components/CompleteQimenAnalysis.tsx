@@ -292,7 +292,7 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
     return String(value);
   };
 
-  // 渲染奇门盘九宫格（参考传统样式）
+  // 渲染专业奇门盘九宫格（参考传统专业样式）
   const renderQimenPan = () => {
     if (!qimenPan || !qimenPan.dipan) return null;
 
@@ -304,116 +304,228 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
     ];
     
     const palaceNames = ['坎', '坤', '震', '巽', '中', '乾', '兑', '艮', '离'];
-    const palacePositions = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    const palaceNumbers = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    const palaceElements = ['水', '土', '木', '木', '土', '金', '金', '土', '火'];
+    
+    // 地支对应
+    const palaceZhi = ['子', '未', '卯', '辰', '戊', '戌', '酉', '丑', '午'];
+    
+    // 获取宫位颜色
+    const getPalaceColor = (palaceIndex: number, palace: any) => {
+      const isCenter = palaceIndex === 4;
+      if (isCenter) return 'bg-yellow-100 border-yellow-400';
+      
+      // 根据九星设置颜色
+      const starColors = {
+        '天蓬': 'bg-blue-50 border-blue-300',
+        '天任': 'bg-green-50 border-green-300', 
+        '天冲': 'bg-red-50 border-red-300',
+        '天辅': 'bg-purple-50 border-purple-300',
+        '天英': 'bg-orange-50 border-orange-300',
+        '天芮': 'bg-gray-50 border-gray-300',
+        '天柱': 'bg-indigo-50 border-indigo-300',
+        '天心': 'bg-pink-50 border-pink-300',
+        '天禽': 'bg-yellow-50 border-yellow-300'
+      };
+      
+      return starColors[palace?.star] || 'bg-gray-50 border-gray-300';
+    };
+    
+    // 获取门的颜色
+    const getDoorColor = (door: string) => {
+      const doorColors = {
+        '休门': 'text-blue-600',
+        '生门': 'text-green-600',
+        '伤门': 'text-red-600',
+        '杜门': 'text-gray-600',
+        '景门': 'text-orange-600',
+        '死门': 'text-black',
+        '惊门': 'text-purple-600',
+        '开门': 'text-yellow-600'
+      };
+      return doorColors[door] || 'text-gray-600';
+    };
+    
+    // 获取神的颜色
+    const getGodColor = (god: string) => {
+      const godColors = {
+        '值符': 'text-red-700',
+        '腾蛇': 'text-red-500',
+        '太阴': 'text-blue-700',
+        '六合': 'text-green-700',
+        '白虎': 'text-gray-700',
+        '玄武': 'text-black',
+        '九地': 'text-yellow-700',
+        '九天': 'text-purple-700'
+      };
+      return godColors[god] || 'text-gray-600';
+    };
 
     return (
       <div className="space-y-6">
-        {/* 四柱信息 */}
+        {/* 四柱信息和基本信息 */}
         {timeInfo?.ganzhi && (
-          <div className="text-center mb-6">
-            <div className="text-lg font-bold text-red-800 mb-2">
-              四柱：{timeInfo.ganzhi.year?.gan}{timeInfo.ganzhi.year?.zhi} {timeInfo.ganzhi.month?.gan}{timeInfo.ganzhi.month?.zhi} {timeInfo.ganzhi.day?.gan}{timeInfo.ganzhi.day?.zhi} {timeInfo.ganzhi.hour?.gan}{timeInfo.ganzhi.hour?.zhi}
-            </div>
-            <div className="text-sm text-red-700 space-y-1">
-              <div>节气：{timeInfo.jieqi || '未知'} ~ {timeInfo.yuan || '未知'} {qimenPan?.yindun ? '阴遁' : '阳遁'}{qimenPan?.jushu || ''}局</div>
-              <div>值符：{timeInfo.zhifu || '未知'} 值使：{timeInfo.zhishi || '未知'}</div>
-              <div>旬首：甲戌旬 空亡：申酉 马星：寅</div>
+          <div className="bg-gradient-to-r from-red-50 to-yellow-50 p-4 rounded-lg border border-red-200">
+            <div className="text-center space-y-2">
+              <div className="text-lg font-bold text-red-800">
+                四柱：{timeInfo.ganzhi.year?.gan}{timeInfo.ganzhi.year?.zhi}年 {timeInfo.ganzhi.month?.gan}{timeInfo.ganzhi.month?.zhi}月 {timeInfo.ganzhi.day?.gan}{timeInfo.ganzhi.day?.zhi}日 {timeInfo.ganzhi.hour?.gan}{timeInfo.ganzhi.hour?.zhi}时
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-red-700">
+                <div>节气：{timeInfo.jieqi || '未知'}</div>
+                <div>元运：{timeInfo.yuan || '未知'}</div>
+                <div>局数：{qimenPan?.yindun ? '阴遁' : '阳遁'}{qimenPan?.jushu || ''}局</div>
+                <div>旬首：甲戌旬</div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-red-700">
+                <div>值符：{timeInfo.zhifu || '未知'}</div>
+                <div>值使：{timeInfo.zhishi || '未知'}</div>
+                <div>空亡：申酉</div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* 传统九宫格布局 */}
-        <div className="max-w-lg mx-auto">
-          <div className="grid grid-cols-3 gap-0 border-2 border-black">
-            {gridPositions.map((row, rowIndex) =>
-              row.map((palaceIndex, colIndex) => {
-                const palace = qimenPan.dipan[palaceIndex];
-                const isCenter = rowIndex === 1 && colIndex === 1;
-                
-                return (
-                  <div
-                    key={`${rowIndex}-${colIndex}`}
-                    className={cn(
-                      'aspect-square border border-black p-2 text-xs bg-yellow-50 relative',
-                      isCenter && 'bg-yellow-100'
-                    )}
-                  >
-                    {/* 宫位标识 */}
-                    <div className="absolute top-0 left-0 text-xs text-gray-600 font-bold">
-                      {palaceNames[palaceIndex]}
-                    </div>
-                    
-                    {/* 宫位内容 */}
-                    <div className="h-full flex flex-col justify-center items-center space-y-1">
-                      {/* 天干 */}
-                      {palace?.gan && (
-                        <div className="text-black font-bold text-lg">
-                          {palace.gan}
-                        </div>
-                      )}
-                      
-                      {/* 九星 */}
-                      {palace?.star && (
-                        <div className="text-blue-700 font-medium text-sm">
-                          {palace.star}
-                        </div>
-                      )}
-                      
-                      {/* 八门 */}
-                      {palace?.door && (
-                        <div className="text-green-700 font-medium text-sm">
-                          {palace.door}
-                        </div>
-                      )}
-                      
-                      {/* 八神 */}
-                      {palace?.god && (
-                        <div className="text-purple-700 font-medium text-sm">
-                          {palace.god}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* 宫位编号 */}
-                    <div className="absolute bottom-0 right-0 text-xs text-gray-600">
-                      {palacePositions[palaceIndex]}
-                    </div>
-                  </div>
-                );
-              })
-            )}
+        {/* 专业九宫格奇门盘 */}
+         <div className="w-full max-w-sm mx-auto p-4">
+           <div className="grid grid-cols-3 gap-3 w-full">
+             {gridPositions.map((row, rowIndex) =>
+               row.map((palaceIndex, colIndex) => {
+                 const palace = qimenPan.dipan[palaceIndex];
+                 const isCenter = palaceIndex === 4;
+                 const colorClass = getPalaceColor(palaceIndex, palace);
+                 
+                 return (
+                   <div
+                     key={`${rowIndex}-${colIndex}`}
+                     className={cn(
+                       'aspect-square border-2 relative flex flex-col justify-between p-1',
+                       'min-h-[80px] min-w-[80px]',
+                       colorClass,
+                       isCenter && 'border-4 border-yellow-500 bg-yellow-200'
+                     )}
+                   >
+                     {/* 顶部行：宫位信息 */}
+                     <div className="flex justify-between items-start text-xs leading-none">
+                       <div className="text-red-800 font-bold">
+                         <div>{palaceNames[palaceIndex]}</div>
+                         <div className="text-gray-600">{palaceNumbers[palaceIndex]}</div>
+                       </div>
+                       <div className="text-center">
+                         <div className="text-blue-700 font-medium">{palaceElements[palaceIndex]}</div>
+                         <div className="text-gray-700">{palaceZhi[palaceIndex]}</div>
+                       </div>
+                     </div>
+                     
+                     {/* 中心区域：主要信息 */}
+                     <div className="flex-1 flex flex-col justify-center items-center">
+                       {/* 天干 - 最大最显眼 */}
+                       {palace?.gan && (
+                         <div className="text-black font-bold text-lg sm:text-xl md:text-2xl">
+                           {palace.gan}
+                         </div>
+                       )}
+                       
+                       {/* 九星 */}
+                       {palace?.star && (
+                         <div className="text-blue-700 font-bold text-xs">
+                           {palace.star}
+                         </div>
+                       )}
+                     </div>
+                     
+                     {/* 底部行：门神信息 */}
+                     <div className="flex justify-between items-end text-xs font-bold">
+                       {/* 左下角：八门 */}
+                       <div>
+                         {palace?.door && (
+                           <div className={getDoorColor(palace.door)}>
+                             {palace.door}
+                           </div>
+                         )}
+                       </div>
+                       
+                       {/* 右下角：八神 */}
+                       <div>
+                         {palace?.god && (
+                           <div className={getGodColor(palace.god)}>
+                             {palace.god}
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                     
+                     {/* 特殊标记 */}
+                     {palace?.special && (
+                       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                         <div className="w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+                           {palace.special}
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 );
+               })
+             )}
+           </div>
+         </div>
+        
+        {/* 颜色和符号说明 */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h4 className="font-bold text-red-800 mb-3 text-center">奇门盘要素说明</h4>
+          <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+              <div className="font-semibold text-red-700 mb-2">九星（天时）：</div>
+              <div className="grid grid-cols-2 gap-1 text-xs">
+                <div className="flex items-center"><span className="w-3 h-3 bg-blue-200 rounded mr-1"></span>天蓬（水）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-green-200 rounded mr-1"></span>天任（土）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-red-200 rounded mr-1"></span>天冲（木）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-purple-200 rounded mr-1"></span>天辅（木）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-orange-200 rounded mr-1"></span>天英（火）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-gray-200 rounded mr-1"></span>天芮（土）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-indigo-200 rounded mr-1"></span>天柱（金）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-pink-200 rounded mr-1"></span>天心（金）</div>
+                <div className="flex items-center"><span className="w-3 h-3 bg-yellow-200 rounded mr-1"></span>天禽（土）</div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="font-semibold text-red-700 mb-2">八门（人事）：</div>
+              <div className="grid grid-cols-2 gap-1 text-xs">
+                <div className="text-blue-600">休门（水）</div>
+                <div className="text-green-600">生门（土）</div>
+                <div className="text-red-600">伤门（木）</div>
+                <div className="text-gray-600">杜门（木）</div>
+                <div className="text-orange-600">景门（火）</div>
+                <div className="text-black">死门（土）</div>
+                <div className="text-purple-600">惊门（金）</div>
+                <div className="text-yellow-600">开门（金）</div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="font-semibold text-red-700 mb-2">八神（神煞）：</div>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div className="text-red-700">值符</div>
+              <div className="text-red-500">腾蛇</div>
+              <div className="text-blue-700">太阴</div>
+              <div className="text-green-700">六合</div>
+              <div className="text-gray-700">白虎</div>
+              <div className="text-black">玄武</div>
+              <div className="text-yellow-700">九地</div>
+              <div className="text-purple-700">九天</div>
+            </div>
           </div>
         </div>
         
-        {/* 四害颜色说明 */}
-        <div className="text-center text-sm text-red-700">
-          四害颜色：<span className="text-red-600">刑</span><span className="text-green-600">墓</span><span className="text-purple-600">迫</span> <span className="text-red-600">【刑墓】</span> <span className="text-gray-600">空○</span>
-        </div>
-        
-        {/* 奇门盘构成要素详解 */}
-        <div className="bg-white p-4 rounded-lg border-l-4 border-indigo-500">
-          <h4 className="font-bold text-red-800 mb-3">奇门盘构成要素详解</h4>
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <span className="w-3 h-3 bg-blue-500 rounded mr-2"></span>
-                <span className="text-red-700"><strong>九星：</strong>天蓬、天任、天冲、天辅、天英、天芮、天柱、天心、天禽，代表天时因素</span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 bg-green-500 rounded mr-2"></span>
-                <span className="text-red-700"><strong>八门：</strong>休、生、伤、杜、景、死、惊、开，代表人事因素</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <span className="w-3 h-3 bg-purple-500 rounded mr-2"></span>
-                <span className="text-red-700"><strong>八神：</strong>值符、腾蛇、太阴、六合、白虎、玄武、九地、九天，代表神煞因素</span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 bg-orange-500 rounded mr-2"></span>
-                <span className="text-red-700"><strong>天干：</strong>甲乙丙丁戊己庚辛壬癸，代表地利因素</span>
-              </div>
-            </div>
+        {/* 奇门盘解读要点 */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+          <h4 className="font-bold text-red-800 mb-3">奇门盘解读要点</h4>
+          <div className="text-sm text-red-700 space-y-2">
+            <div>• <strong>天干：</strong>位于宫位中央，代表事物的本质和核心</div>
+            <div>• <strong>九星：</strong>位于天干下方，代表天时和自然规律</div>
+            <div>• <strong>八门：</strong>位于左下角，代表人事活动和行动方式</div>
+            <div>• <strong>八神：</strong>位于右下角，代表神煞和隐性因素</div>
+            <div>• <strong>宫位：</strong>九宫代表不同的方位和领域</div>
+            <div>• <strong>颜色：</strong>不同颜色代表不同的五行属性和吉凶性质</div>
           </div>
         </div>
       </div>

@@ -1052,6 +1052,9 @@ export const getAIInterpretation = async (readingId: number): Promise<AIInterpre
             tokensUsed: data.data.tokens_used
           };
         }
+      } else if (response.status === 404) {
+        // 404是正常情况，表示还没有AI解读记录
+        return null;
       }
     }
 

@@ -46,9 +46,8 @@ tests/
 # Development tools
 .eslintrc*
 .prettierrc*
-tailwind.config.js
-vite.config.ts
-tsconfig*.json
+
+
 components.json
 
 # Logs

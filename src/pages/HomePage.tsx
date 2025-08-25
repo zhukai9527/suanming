@@ -165,7 +165,7 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Features Section */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 relative max-w-6xl mx-auto px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 relative max-w-7xl mx-auto px-4">
         {/* 装饰元素 - 仅在大屏幕显示 */}
         <div className="absolute -left-12 top-1/4 w-16 h-16 opacity-15 pointer-events-none hidden xl:block">
           <img 
@@ -185,15 +185,15 @@ const HomePage: React.FC = () => {
         {features.map((feature, index) => {
           const Icon = feature.icon;
           return (
-            <ChineseCard key={index} variant="elevated" className="text-center sm:col-span-1 lg:col-span-1 last:sm:col-span-2 last:lg:col-span-1">
+            <ChineseCard key={index} variant="elevated" className="text-center h-full flex flex-col">
               <ChineseCardHeader>
                 <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 shadow-lg border-2 border-red-600">
                   <Icon className="h-6 w-6 md:h-7 md:w-7 text-red-800" />
                 </div>
                 <ChineseCardTitle className="text-red-600 text-heading-md font-bold font-chinese">{feature.title}</ChineseCardTitle>
               </ChineseCardHeader>
-              <ChineseCardContent>
-                <p className="text-gray-700 leading-relaxed font-chinese mb-4 text-body-md">{feature.description}</p>
+              <ChineseCardContent className="flex-1 flex flex-col">
+                <p className="text-gray-700 leading-relaxed font-chinese mb-4 text-body-md flex-1">{feature.description}</p>
                 {user && (
                   <Link to={feature.link}>
                     <ChineseButton variant="secondary" className="w-full">
