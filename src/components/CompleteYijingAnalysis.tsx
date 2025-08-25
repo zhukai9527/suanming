@@ -319,12 +319,12 @@ const CompleteYijingAnalysis: React.FC<CompleteYijingAnalysisProps> = ({
                   <div>
                     <p className="text-red-700"><span className="font-medium">问题类型：</span>
                       <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
-                        questionTypeColors[analysisData.dynamic_guidance.question_analysis.type] || 'bg-gray-100 text-gray-800'
+                        (analysisData.dynamic_guidance?.question_analysis?.type && questionTypeColors[analysisData.dynamic_guidance.question_analysis.type]) || 'bg-gray-100 text-gray-800'
                       }`}>
-                        {analysisData.dynamic_guidance.question_analysis.type}
+                        {analysisData.dynamic_guidance?.question_analysis?.type || '未知'}
                       </span>
                     </p>
-                    <p className="text-red-700"><span className="font-medium">关注重点：</span>{analysisData.dynamic_guidance.question_analysis.focus}</p>
+                    <p className="text-red-700"><span className="font-medium">关注重点：</span>{analysisData.dynamic_guidance?.question_analysis?.focus || '暂无'}</p>
                   </div>
                 </div>
               </div>
