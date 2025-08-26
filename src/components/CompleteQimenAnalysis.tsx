@@ -362,8 +362,8 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
         )}
 
         {/* 专业九宫格奇门盘 */}
-         <div className="w-full max-w-sm mx-auto p-4">
-           <div className="grid grid-cols-3 gap-3 w-full">
+         <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto p-2 sm:p-4">
+           <div className="grid grid-cols-3 gap-1 sm:gap-2 md:gap-3 w-full">
              {gridPositions.map((row, rowIndex) =>
                row.map((palaceIndex, colIndex) => {
                  const palace = qimenPan.dipan[palaceIndex];
@@ -374,21 +374,22 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
                    <div
                      key={`${rowIndex}-${colIndex}`}
                      className={cn(
-                       'aspect-square border-2 relative flex flex-col justify-between p-1',
-                       'min-h-[80px] min-w-[80px]',
+                       'aspect-square border-2 relative flex flex-col justify-between',
+                       'min-h-[70px] min-w-[70px] sm:min-h-[80px] sm:min-w-[80px] md:min-h-[90px] md:min-w-[90px]',
+                       'p-0.5 sm:p-1 md:p-2',
                        colorClass,
                        isCenter && 'border-4 border-yellow-500 bg-yellow-200'
                      )}
                    >
                      {/* 顶部行：宫位信息 */}
-                     <div className="flex justify-between items-start text-xs leading-none">
+                     <div className="flex justify-between items-start text-[10px] sm:text-xs leading-none">
                        <div className="text-red-800 font-bold">
-                         <div>{palaceNames[palaceIndex]}</div>
-                         <div className="text-gray-600">{palaceNumbers[palaceIndex]}</div>
+                         <div className="text-[10px] sm:text-xs">{palaceNames[palaceIndex]}</div>
+                         <div className="text-gray-600 text-[8px] sm:text-[10px]">{palaceNumbers[palaceIndex]}</div>
                        </div>
                        <div className="text-center">
-                         <div className="text-blue-700 font-medium">{palaceElements[palaceIndex]}</div>
-                         <div className="text-gray-700">{palaceZhi[palaceIndex]}</div>
+                         <div className="text-blue-700 font-medium text-[10px] sm:text-xs">{palaceElements[palaceIndex]}</div>
+                         <div className="text-gray-700 text-[8px] sm:text-[10px]">{palaceZhi[palaceIndex]}</div>
                        </div>
                      </div>
                      
@@ -396,21 +397,21 @@ const CompleteQimenAnalysis: React.FC<QimenAnalysisProps> = ({ analysis, classNa
                      <div className="flex-1 flex flex-col justify-center items-center">
                        {/* 天干 - 最大最显眼 */}
                        {palace?.gan && (
-                         <div className="text-black font-bold text-lg sm:text-xl md:text-2xl">
+                         <div className="text-black font-bold text-sm sm:text-lg md:text-xl">
                            {palace.gan}
                          </div>
                        )}
                        
                        {/* 九星 */}
                        {palace?.star && (
-                         <div className="text-blue-700 font-bold text-xs">
+                         <div className="text-blue-700 font-bold text-[8px] sm:text-xs">
                            {palace.star}
                          </div>
                        )}
                      </div>
                      
                      {/* 底部行：门神信息 */}
-                     <div className="flex justify-between items-end text-xs font-bold">
+                     <div className="flex justify-between items-end text-[8px] sm:text-xs font-bold">
                        {/* 左下角：八门 */}
                        <div>
                          {palace?.door && (

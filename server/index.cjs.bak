@@ -83,7 +83,7 @@ app.use(cors({
         const allowedOrigins = [
           'http://localhost:5173',
           'http://localhost:4173',
-          ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : [])
+          process.env.CORS_ORIGIN
         ].filter(Boolean);
         
         // 允许所有.koyeb.app域名
