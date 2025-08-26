@@ -155,7 +155,32 @@ if (isProduction) {
     console.log('dist目录内容:', fs.readdirSync(distPath));
   }
   
-  app.use(express.static(distPath));
+  // 配置静态文件服务，明确设置MIME类型
+  app.use(express.static(distPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+      } else if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (path.endsWith('.mjs')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (path.endsWith('.json')) {
+        res.setHeader('Content-Type', 'application/json');
+      } else if (path.endsWith('.woff') || path.endsWith('.woff2')) {
+        res.setHeader('Content-Type', 'font/woff2');
+      } else if (path.endsWith('.ttf')) {
+        res.setHeader('Content-Type', 'font/ttf');
+      } else if (path.endsWith('.svg')) {
+        res.setHeader('Content-Type', 'image/svg+xml');
+      } else if (path.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (path.endsWith('.webp')) {
+        res.setHeader('Content-Type', 'image/webp');
+      }
+    }
+  }));
   
   // SPA路由处理 - 只处理非API请求
   app.get('*', (req, res, next) => {
