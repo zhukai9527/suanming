@@ -68,6 +68,9 @@ class DatabaseManager {
       // 首先检查是否需要迁移ai_interpretations表
       this.migrateAiInterpretationsTable();
       
+      // 检查并迁移numerology_readings表以支持qimen类型
+      this.migrateQimenSupport();
+      
       const schema = fs.readFileSync(this.schemaPath, 'utf8');
       
       // 直接执行整个schema文件
@@ -237,6 +240,92 @@ class DatabaseManager {
       return result.changes;
     } catch (error) {
       console.error('清理过期会话失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 迁移numerology_readings表以支持qimen类型
+   * 检查现有约束并在需要时更新
+   */
+  migrateQimenSupport() {
+    try {
+      // 检查numerology_readings表是否存在
+      const tableExists = this.db.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name='numerology_readings'
+      `).get();
+      
+      if (!tableExists) {
+        console.log('numerology_readings表不存在，跳过qimen迁移');
+        return;
+      }
+      
+      // 检查是否已经支持qimen类型
+      try {
+        // 尝试插入一个qimen类型的测试记录来检查约束
+        const testStmt = this.db.prepare(`
+          INSERT INTO numerology_readings (user_id, reading_type, name) 
+          VALUES (?, ?, ?)
+        `);
+        const testResult = testStmt.run(1, 'qimen', 'test_qimen_support');
+        
+        // 如果插入成功，说明已经支持qimen，删除测试记录
+        const deleteStmt = this.db.prepare('DELETE FROM numerology_readings WHERE id = ?');
+        deleteStmt.run(testResult.lastInsertRowid);
+        
+        console.log('✅ numerology_readings表已支持qimen类型');
+        return;
+      } catch (error) {
+        if (error.code === 'SQLITE_CONSTRAINT_CHECK') {
+          console.log('🔄 检测到需要更新numerology_readings表约束以支持qimen类型');
+          
+          // 执行表重建以更新约束
+          const transaction = this.db.transaction(() => {
+            // 创建临时表，包含新的CHECK约束
+            this.db.exec(`
+              CREATE TABLE numerology_readings_temp (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                reading_type TEXT NOT NULL CHECK (reading_type IN ('bazi', 'ziwei', 'yijing', 'wuxing', 'qimen')),
+                name TEXT,
+                birth_date TEXT,
+                birth_time TEXT,
+                birth_place TEXT,
+                gender TEXT,
+                input_data TEXT,
+                results TEXT,
+                analysis TEXT,
+                status TEXT DEFAULT 'completed' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+              );
+            `);
+            
+            // 复制现有数据到临时表
+            this.db.exec(`
+              INSERT INTO numerology_readings_temp 
+              SELECT id, user_id, reading_type, name, birth_date, birth_time, birth_place, gender, 
+                     input_data, results, analysis, status, created_at, updated_at 
+              FROM numerology_readings;
+            `);
+            
+            // 删除原表
+            this.db.exec('DROP TABLE numerology_readings;');
+            
+            // 重命名临时表为原表名
+            this.db.exec('ALTER TABLE numerology_readings_temp RENAME TO numerology_readings;');
+          });
+          
+          transaction();
+          console.log('✅ numerology_readings表约束更新完成，现已支持qimen类型');
+        } else {
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('❌ qimen支持迁移失败:', error);
       throw error;
     }
   }
