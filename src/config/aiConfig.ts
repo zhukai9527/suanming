@@ -11,8 +11,8 @@ export interface AIConfig {
 
 // 默认AI配置
 export const defaultAIConfig: AIConfig = {
-  apiKey: import.meta.env.VITE_AI_API_KEY || 'dee444451bdf4232920a88ef430ce753.Z4SAbECrSnf5JMq7',
-  apiUrl: import.meta.env.VITE_AI_API_URL || 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  apiKey: import.meta.env.VITE_AI_API_KEY || '',
+  apiUrl: import.meta.env.VITE_AI_API_URL || '',
   modelName: import.meta.env.VITE_AI_MODEL_NAME || 'GLM-4.5',
   maxTokens: parseInt(import.meta.env.VITE_AI_MAX_TOKENS || '50000'),
   temperature: parseFloat(import.meta.env.VITE_AI_TEMPERATURE || '0.6'),

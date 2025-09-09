@@ -59,9 +59,9 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
+      scriptSrc: ["'self'", "https:", "http:"],
+      imgSrc: ["'self'", "data:", "https:", "http:"],
       connectSrc: [
         "'self'",
         "https://api.openai.com",
@@ -158,6 +158,8 @@ if (isProduction) {
   // 配置静态文件服务，明确设置MIME类型
   app.use(express.static(distPath, {
     setHeaders: (res, path) => {
+      res.setHeader('Strict-Transport-Security', 'max-age=0');
+      res.setHeader('Content-Security-Policy', "default-src 'self' http: https:");
       if (path.endsWith('.css')) {
         res.setHeader('Content-Type', 'text/css');
       } else if (path.endsWith('.js')) {
